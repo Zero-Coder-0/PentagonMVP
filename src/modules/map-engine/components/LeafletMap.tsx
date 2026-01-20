@@ -1,94 +1,141 @@
 'use client'
 
 import React, { useEffect } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
-import 'leaflet/dist/leaflet.css' // FIX: Restores the map styles
+import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from 'react-leaflet'
 import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+import { InventoryItem, Zone } from '@/modules/inventory/types'
 
-// FIX: Fixes missing default marker icons in Next.js
-const iconUrl = 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png'
-const iconRetinaUrl = 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png'
-const shadowUrl = 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png'
+// ==========================================
+// 1. ICONS (Now includes a "Search" Icon)
+// ==========================================
+const getIconForZone = (zone: Zone) => {
+  let color = 'blue';
+  switch (zone) {
+    case 'North': color = 'blue'; break;
+    case 'South': color = 'green'; break;
+    case 'East':  color = 'red'; break;
+    case 'West':  color = 'gold'; break;
+    default: color = 'blue';
+  }
+  return new L.Icon({
+    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+}
 
-const defaultIcon = L.icon({
-  iconUrl,
-  iconRetinaUrl,
-  shadowUrl,
+// Special Black Icon for User Search Location
+const SearchIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
   shadowSize: [41, 41]
-})
+});
 
-// Helper: Forces map to recalculate size when layout changes
-function MapResizer() {
-  const map = useMap()
-  useEffect(() => {
-    // Wait for layout to settle, then invalidate size
-    const timer = setTimeout(() => {
-      map.invalidateSize()
-    }, 100)
-    return () => clearTimeout(timer)
-  }, [map])
-  return null
-}
+// ==========================================
+// 2. CONTROLLER (Faster Speed)
+// ==========================================
+const MapController = ({ center, zoom }: { center: [number, number] | null, zoom: number }) => {
+  const map = useMap();
 
-// Helper: Flies to new center when selected
-function MapController({ center }: { center: [number, number] | null }) {
-  const map = useMap()
   useEffect(() => {
     if (center) {
-      map.flyTo(center, 14, { duration: 1.5 })
+      // FIX: Faster animation (0.5s) for snappy feel
+      map.flyTo(center, zoom, {
+        animate: true,
+        duration: 0.5 
+      });
     }
-  }, [center, map])
-  return null
+  }, [center, zoom, map]);
+
+  return null;
 }
 
+// ==========================================
+// 3. RESIZE HELPER
+// ==========================================
+function ResizeMap() {
+  const map = useMap();
+  useEffect(() => {
+    setTimeout(() => map.invalidateSize(), 100);
+  }, [map]);
+  return null;
+}
+
+// ==========================================
+// 4. MAIN COMPONENT
+// ==========================================
 interface LeafletMapProps {
-  items: any[]
-  selectedId: string | null
-  onSelect: (id: string) => void
+  items: InventoryItem[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  center?: [number, number]; 
 }
 
-export default function LeafletMap({ items, selectedId, onSelect }: LeafletMapProps) {
-  const selectedItem = items.find(item => item.id === selectedId)
-  const center: [number, number] = selectedItem 
-    ? [selectedItem.lat, selectedItem.lng] 
-    : [12.9716, 77.5946] // Bangalore Center
+const LeafletMap: React.FC<LeafletMapProps> = ({ items, selectedId, onSelect, center }) => {
+  // Default: Bangalore Center
+  const mapCenter: [number, number] = center || [12.9716, 77.5946];
 
   return (
-    // FIX: "h-full" ensures it fills the parent container we made in page.tsx
-    <div className="h-full w-full relative z-0">
-      <MapContainer 
-        center={center} 
-        zoom={12} 
-        scrollWheelZoom={true}
-        style={{ height: '100%', width: '100%', minHeight: '400px' }}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        
-        <MapResizer />
-        <MapController center={selectedItem ? [selectedItem.lat, selectedItem.lng] : null} />
+    <MapContainer
+      center={mapCenter}
+      zoom={11}
+      style={{ height: '100%', width: '100%', zIndex: 0 }}
+    >
+      <ResizeMap />
+      <MapController center={center ? mapCenter : null} zoom={12} />
 
-        {items.map((item) => (
-          <Marker 
-            key={item.id} 
-            position={[item.lat, item.lng]}
-            icon={defaultIcon}
-            eventHandlers={{
-              click: () => onSelect(item.id),
-            }}
-          >
-            <Popup>
-              <div className="text-sm font-bold">{item.name}</div>
-              <div className="text-xs">{item.price}</div>
-            </Popup>
+      <TileLayer
+        attribution='&copy; OpenStreetMap contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      
+      {/* 
+         NEW: Search Location Marker 
+         If a center is provided (search active), show a Black Pin + Circle 
+      */}
+      {center && (
+        <>
+          <Marker position={center} icon={SearchIcon}>
+            <Popup>📍 <strong>Your Search Location</strong></Popup>
           </Marker>
-        ))}
-      </MapContainer>
-    </div>
+          {/* Visual Circle Radius (3km) to show context */}
+          <Circle 
+            center={center}
+            radius={3000} 
+            pathOptions={{ color: 'black', fillColor: 'black', fillOpacity: 0.1, weight: 1 }} 
+          />
+        </>
+      )}
+
+      {/* Property Inventory Markers */}
+      {items.map((item) => (
+        <Marker 
+          key={item.id} 
+          position={[item.lat, item.lng]}
+          icon={getIconForZone(item.zone)}
+          eventHandlers={{
+            click: () => onSelect(item.id),
+          }}
+          opacity={selectedId === item.id ? 1.0 : 0.7}
+        >
+          <Popup>
+            <div className="text-center">
+              <strong>{item.name}</strong><br/>
+              {item.location}<br/>
+              <span className="text-blue-600 font-bold">{item.price}</span>
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+    </MapContainer>
   )
 }
+
+export default LeafletMap;

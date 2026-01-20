@@ -9,116 +9,131 @@ import { GeoCalc } from '@/modules/map-engine/utils/geo-calc'
 // Dynamically import map (No SSR)
 const LeafletMap = dynamic(
   () => import('@/modules/map-engine/components/LeafletMap'),
-  { ssr: false, loading: () => <div className="h-full w-full bg-gray-100 animate-pulse" /> }
+  { ssr: false, loading: () => <div style={{height: '100%', width: '100%', background: '#eee'}}>Loading Map...</div> }
 )
 
 export default function DashboardPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  
-  // State for search
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number; displayName: string } | null>(null)
 
-  // FILTER & SORT LOGIC
-  // If user searches a location, we calculate distance and sort by nearest
+  // Filter & Sort Logic
   const displayedProperties = useMemo(() => {
     let items = [...MOCK_INVENTORY]
-
     if (userLocation) {
       items = items.map(item => ({
         ...item,
-        // Add a temporary 'distance' property for sorting/display
         distance: GeoCalc.getDistanceKm(userLocation.lat, userLocation.lng, item.lat, item.lng)
       }))
-      // Sort: Nearest first
       items.sort((a: any, b: any) => a.distance - b.distance)
     }
-
     return items
   }, [userLocation])
 
   const selectedProp = displayedProperties.find(p => p.id === selectedId)
+  const mapCenter: [number, number] | undefined = userLocation ? [userLocation.lat, userLocation.lng] : undefined
 
+  // ==================================================================================
+  // CRITICAL FIX: HARDCODED STYLES TO FORCE LAYOUT
+  // Tailwind classes are removed from the wrapper to guarantee grid works
+  // ==================================================================================
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: '1fr 300px 350px',
+      gridTemplateColumns: '1fr 300px 350px', // Map | List | Details
       height: '100vh',
       width: '100vw',
       overflow: 'hidden',
-      backgroundColor: '#f3f4f6'
+      margin: 0,
+      padding: 0,
+      fontFamily: 'sans-serif' // Fallback font
     }}>
       
       {/* COLUMN 1: MAP */}
-      <div className="relative h-full border-r border-gray-200">
-        <div className="absolute inset-0">
+      <div style={{ position: 'relative', height: '100%', width: '100%', borderRight: '1px solid #ccc' }}>
+        <div style={{ position: 'absolute', inset: 0 }}>
           <LeafletMap 
             items={displayedProperties} 
             selectedId={selectedId} 
             onSelect={setSelectedId} 
+            center={mapCenter}
           />
         </div>
         
-        {/* Floating Search Status (Optional visual feedback on map) */}
+        {/* Floating Search Status */}
         {userLocation && (
-          <div className="absolute top-4 left-14 z-[1000] bg-white px-3 py-1 rounded shadow-md text-xs font-bold text-gray-700">
+          <div style={{
+            position: 'absolute',
+            top: '10px',
+            left: '50px',
+            zIndex: 1000,
+            background: 'white',
+            padding: '5px 10px',
+            borderRadius: '4px',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+            fontSize: '12px',
+            fontWeight: 'bold'
+          }}>
              📍 Center: {userLocation.displayName}
           </div>
         )}
       </div>
 
-      {/* COLUMN 2: LIST (Now with Search + Distances) */}
-      <div className="flex flex-col h-full bg-white border-r border-gray-200">
-        {/* Search Bar sits at top of list */}
+      {/* COLUMN 2: LIST */}
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'white', borderRight: '1px solid #ccc' }}>
         <LocationSearch onLocationSelect={setUserLocation} />
         
-        <div className="flex-1 overflow-y-auto">
+        <div style={{ flex: 1, overflowY: 'auto' }}>
           {displayedProperties.map((prop: any) => (
             <div 
               key={prop.id}
               onClick={() => setSelectedId(prop.id)}
-              className={`p-4 border-b cursor-pointer hover:bg-blue-50 transition-colors ${selectedId === prop.id ? 'bg-blue-100 border-l-4 border-blue-500' : ''}`}
+              style={{
+                padding: '16px',
+                borderBottom: '1px solid #eee',
+                cursor: 'pointer',
+                background: selectedId === prop.id ? '#e6f0ff' : 'white',
+                borderLeft: selectedId === prop.id ? '4px solid #0066ff' : 'none'
+              }}
             >
-              <div className="flex justify-between items-start">
-                <h3 className="font-bold text-sm text-gray-800">{prop.name}</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 'bold' }}>{prop.name}</h3>
                 {prop.distance !== undefined && (
-                  <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded">
+                  <span style={{ fontSize: '12px', color: 'green', background: '#e6fffa', padding: '2px 5px', borderRadius: '4px' }}>
                     {prop.distance} km
                   </span>
                 )}
               </div>
-              <p className="text-xs text-gray-500 mt-1">{prop.location}</p>
-              <p className="text-sm font-medium text-blue-600 mt-1">{prop.price}</p>
+              <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#666' }}>{prop.location}</p>
+              <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: '500', color: '#0066ff' }}>{prop.price}</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* COLUMN 3: DETAILS */}
-      <div className="flex flex-col h-full bg-white">
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'white', overflowY: 'auto' }}>
         {selectedProp ? (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-2 text-gray-800">{selectedProp.name}</h2>
-            {/* Show distance here too if search is active */}
+          <div style={{ padding: '24px' }}>
+            <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px' }}>{selectedProp.name}</h2>
             {selectedProp.distance !== undefined && (
-               <div className="mb-4 text-sm text-gray-600">
-                 Distance from {userLocation?.displayName}: <strong>{selectedProp.distance} km</strong>
+               <div style={{ marginBottom: '16px', fontSize: '14px', color: '#555' }}>
+                 Distance: <strong>{selectedProp.distance} km</strong>
                </div>
             )}
             
-            <div className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded">
-                <p className="text-xs text-gray-500 uppercase">Price</p>
-                <p className="text-xl font-bold text-gray-900">{selectedProp.price}</p>
-              </div>
-              <div className="bg-gray-50 p-4 rounded">
-                <p className="text-xs text-gray-500 uppercase">Configuration</p>
-                <p className="text-lg text-gray-900">{selectedProp.configuration}</p>
-              </div>
+            <div style={{ marginBottom: '16px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
+              <p style={{ margin: 0, fontSize: '10px', textTransform: 'uppercase', color: '#888' }}>Price</p>
+              <p style={{ margin: 0, fontSize: '20px', fontWeight: 'bold' }}>{selectedProp.price}</p>
+            </div>
+            
+             <div style={{ marginBottom: '16px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
+              <p style={{ margin: 0, fontSize: '10px', textTransform: 'uppercase', color: '#888' }}>Configuration</p>
+              <p style={{ margin: 0, fontSize: '18px' }}>{selectedProp.configuration}</p>
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400 p-6 text-center">
-            <p>Select a property</p>
+          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999' }}>
+            <p>Select a property to view details</p>
           </div>
         )}
       </div>
