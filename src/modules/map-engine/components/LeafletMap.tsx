@@ -1,57 +1,94 @@
 'use client'
 
+import React, { useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import 'leaflet/dist/leaflet.css' // FIX: Restores the map styles
 import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
-import { MapViewProps, ZoneColor } from '../types'
-import { useEffect } from 'react'
 
-// Fix Icons
-const createColorIcon = (color: ZoneColor) => {
-  return L.divIcon({
-    className: 'custom-pin',
-    html: `<div style="background-color: ${color === 'red' ? '#ef4444' : '#3b82f6'}; width: 1.2rem; height: 1.2rem; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
-    iconSize: [20, 20],
-    iconAnchor: [10, 10],
-  })
-}
+// FIX: Fixes missing default marker icons in Next.js
+const iconUrl = 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png'
+const iconRetinaUrl = 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png'
+const shadowUrl = 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png'
 
-// Resizer component to fix gray tiles
+const defaultIcon = L.icon({
+  iconUrl,
+  iconRetinaUrl,
+  shadowUrl,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+})
+
+// Helper: Forces map to recalculate size when layout changes
 function MapResizer() {
   const map = useMap()
   useEffect(() => {
+    // Wait for layout to settle, then invalidate size
     const timer = setTimeout(() => {
       map.invalidateSize()
-    }, 200)
+    }, 100)
     return () => clearTimeout(timer)
   }, [map])
   return null
 }
 
-export default function LeafletMap({ points, center, zoom }: MapViewProps) {
+// Helper: Flies to new center when selected
+function MapController({ center }: { center: [number, number] | null }) {
+  const map = useMap()
+  useEffect(() => {
+    if (center) {
+      map.flyTo(center, 14, { duration: 1.5 })
+    }
+  }, [center, map])
+  return null
+}
+
+interface LeafletMapProps {
+  items: any[]
+  selectedId: string | null
+  onSelect: (id: string) => void
+}
+
+export default function LeafletMap({ items, selectedId, onSelect }: LeafletMapProps) {
+  const selectedItem = items.find(item => item.id === selectedId)
+  const center: [number, number] = selectedItem 
+    ? [selectedItem.lat, selectedItem.lng] 
+    : [12.9716, 77.5946] // Bangalore Center
+
   return (
-    // FIX: height must be 100% to fill the grid cell, NOT 100vh
-    <div className="w-full h-full relative isolate">
-       <MapContainer 
-         center={center || [12.9716, 77.5946]} 
-         zoom={zoom || 11} 
-         style={{ height: '100%', width: '100%', background: '#e5e7eb' }} 
-       >
-         <MapResizer />
-         <TileLayer
-            attribution='&copy; OpenStreetMap'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-         />
-         {points.map((point) => (
+    // FIX: "h-full" ensures it fills the parent container we made in page.tsx
+    <div className="h-full w-full relative z-0">
+      <MapContainer 
+        center={center} 
+        zoom={12} 
+        scrollWheelZoom={true}
+        style={{ height: '100%', width: '100%', minHeight: '400px' }}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        
+        <MapResizer />
+        <MapController center={selectedItem ? [selectedItem.lat, selectedItem.lng] : null} />
+
+        {items.map((item) => (
           <Marker 
-            key={point.id} 
-            position={[point.lat, point.lng]}
-            icon={createColorIcon(point.color)}
+            key={item.id} 
+            position={[item.lat, item.lng]}
+            icon={defaultIcon}
+            eventHandlers={{
+              click: () => onSelect(item.id),
+            }}
           >
-            <Popup>{point.title}</Popup>
+            <Popup>
+              <div className="text-sm font-bold">{item.name}</div>
+              <div className="text-xs">{item.price}</div>
+            </Popup>
           </Marker>
         ))}
-       </MapContainer>
+      </MapContainer>
     </div>
   )
 }

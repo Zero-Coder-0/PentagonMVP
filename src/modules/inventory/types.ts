@@ -1,11 +1,18 @@
-export interface Property {
+export type Zone = 'North' | 'South' | 'East' | 'West';
+
+export interface InventoryItem {
   id: string;
   name: string;
-  location_name: string;
-  price_min: number;
-  configurations: string[]; // e.g., ["2BHK", "3BHK"]
+  location: string;
+  zone: Zone; // Added Zone field
   lat: number;
   lng: number;
-  zone: 'North' | 'South' | 'East' | 'West';
-  distance_km?: number; // Calculated field
+  price: string;
+  priceValue: number; // Numeric value for calculation (e.g., 15000000)
+  configuration: string; // '2BHK', '3BHK'
+  facing?: {
+    door: string;
+    balcony: string;
+  };
+  // We will add more fields later as per PRD
 }
