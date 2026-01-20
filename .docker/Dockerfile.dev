@@ -1,0 +1,17 @@
+# .docker/Dockerfile.dev
+FROM node:22-alpine
+
+WORKDIR /app
+
+# Install dependencies first (caching layer)
+COPY package.json package-lock.json* ./
+RUN npm install --legacy-peer-deps
+
+# Copy source code
+COPY . .
+
+# Expose Next.js port
+EXPOSE 3000
+
+# Start with Turbo for speed
+CMD ["npm", "run", "dev"]

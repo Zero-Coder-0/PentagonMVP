@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Ensure Next.js root div takes full height */
+html, body, :root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Force Leaflet layers to be visible (Nuclear Fix) */
+.leaflet-pane, 
+.leaflet-tile, 
+.leaflet-marker-icon, 
+.leaflet-marker-shadow, 
+.leaflet-tile-container {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: block !important; 
+}
+
+.leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
+  font-family: inherit;
+}
