@@ -4,15 +4,22 @@ export interface InventoryItem {
   id: string;
   name: string;
   location: string;
-  zone: Zone; // Added Zone field
+  zone: Zone;
   lat: number;
   lng: number;
   price: string;
-  priceValue: number; // Numeric value for calculation (e.g., 15000000)
+  priceValue: number;
   configuration: string; // '2BHK', '3BHK'
+  facingDir?: string; // 'East', 'West' (New field)
+  // Legacy fields if needed
   facing?: {
     door: string;
     balcony: string;
   };
-  // We will add more fields later as per PRD
+}
+
+export interface FilterCriteria {
+  configurations?: string[]; // ['2BHK']
+  priceRange?: { min: number; max: number };
+  facing?: { mainDoor?: string[] };
 }
