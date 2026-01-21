@@ -11,6 +11,8 @@ export interface InventoryItem {
   priceValue: number;
   configuration: string; // '2BHK', '3BHK'
   facingDir?: string; // 'East', 'West'
+  distance?: number; 
+
   
   // NEW FIELDS FOR MEGA FILTER
   status?: 'Ready' | 'Under Construction';
@@ -31,7 +33,14 @@ export interface FilterCriteria {
   configurations?: string[]; // ['2BHK']
   priceRange?: { min: number; max: number };
   facing?: { mainDoor?: string[] };
-  
+  minPrice?: number;
+  maxPrice?: number;
+  zones?: string[];              // FIX: This solves the error           // Added for completio
+
+
+
+
+
   // NEW FILTER CRITERIA
   status?: 'Ready' | 'Under Construction';
   sqFtMin?: number;

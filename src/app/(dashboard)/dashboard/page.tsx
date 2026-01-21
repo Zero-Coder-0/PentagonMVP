@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import LocationSearch from '@/modules/map-engine/components/LocationSearch'
-import FilterModal from '@/modules/inventory/components/FilterModal' // UPDATED IMPORT
+import FilterModal from '@/modules/inventory/components/FilterModal'
 import { MOCK_INVENTORY } from '@/modules/inventory/data/mock'
 import { GeoCalc } from '@/modules/map-engine/utils/geo-calc'
 import { FilterEngine } from '@/modules/inventory/utils/filter-engine'
@@ -20,9 +20,10 @@ export default function DashboardPage() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number; displayName: string } | null>(null)
   const [filters, setFilters] = useState<FilterCriteria>({})
   
-  // NEW: Filter Modal State
+  // Interactions
   const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const [hoveredRecId, setHoveredRecId] = useState<string | null>(null)
+  const [hoveredRecId, setHoveredRecId] = useState<string | null>(null) // For Right Panel Cards
+  const [hoveredListId, setHoveredListId] = useState<string | null>(null) // For Middle Panel List (Mega Popup)
   const [mapBounds, setMapBounds] = useState<[[number, number], [number, number]] | undefined>(undefined)
 
   // 1. FILTER & SEARCH LOGIC
@@ -35,15 +36,14 @@ export default function DashboardPage() {
         ...item,
         distance: GeoCalc.getDistanceKm(userLocation.lat, userLocation.lng, item.lat, item.lng)
       }))
-      items.sort((a: any, b: any) => a.distance - b.distance)
+      items.sort((a: any, b: any) => a.distance - (b.distance || 0))
     }
     return items
   }, [userLocation, filters])
 
   // 2. SELECTED PROPERTY & SMART RANKING
-  const selectedProp = useMemo(() => {
-    return displayedProperties.find(p => p.id === selectedId)
-  }, [selectedId, displayedProperties])
+  const selectedProp = useMemo(() => displayedProperties.find(p => p.id === selectedId), [selectedId, displayedProperties])
+  const hoveredListProp = useMemo(() => displayedProperties.find(p => p.id === hoveredListId), [hoveredListId, displayedProperties])
 
   const similarProperties = useMemo(() => {
     if (!selectedProp) return []
@@ -52,14 +52,13 @@ export default function DashboardPage() {
       .map(p => {
         let score = 0;
         const reasons: string[] = [];
-        
         const dist = GeoCalc.getDistanceKm(selectedProp.lat, selectedProp.lng, p.lat, p.lng);
+        
         if (dist < 5) { score += 40; reasons.push(`${dist}km away`); }
         else if (dist < 10) { score += 20; }
 
         const priceDiff = Math.abs(p.priceValue - selectedProp.priceValue);
         if ((priceDiff / selectedProp.priceValue) < 0.10) { score += 30; reasons.push('Same Price'); }
-
         if (p.configuration === selectedProp.configuration) { score += 30; reasons.push('Same Config'); }
 
         return { ...p, score, reasons, distFromSelected: dist };
@@ -74,8 +73,8 @@ export default function DashboardPage() {
     setSelectedId(recItem.id);
     if (userLocation) {
       setMapBounds([
-        [Math.min(userLocation.lat, recItem.lat), Math.min(userLocation.lng, recItem.lng)], // SW
-        [Math.max(userLocation.lat, recItem.lat), Math.max(userLocation.lng, recItem.lng)]  // NE
+        [Math.min(userLocation.lat, recItem.lat), Math.min(userLocation.lng, recItem.lng)],
+        [Math.max(userLocation.lat, recItem.lat), Math.max(userLocation.lng, recItem.lng)]
       ]);
     } else {
        setMapBounds(undefined);
@@ -98,9 +97,114 @@ export default function DashboardPage() {
       height: '100vh',
       width: '100vw',
       overflow: 'hidden',
-      fontFamily: 'sans-serif'
+      fontFamily: 'sans-serif',
+      position: 'relative' // Needed for fixed popup positioning context
     }}>
       
+      {/* ==================================================================================
+          MEGA POPUP (NARROWER + SCROLLABLE)
+          Position: Fixed Right Side (Over Details Panel)
+          Width: 350px (Narrower)
+          Height: 80vh (Taller)
+      ================================================================================== */}
+      {hoveredListProp && (
+        <div style={{
+          position: 'fixed',
+          top: '10%',
+          right: '20px', // Pushed to the right edge
+          width: '350px', // NARROWER (Requested)
+          maxHeight: '80vh', // TALLER (Requested)
+          backgroundColor: 'white',
+          borderRadius: '12px',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)',
+          border: '1px solid #e5e7eb',
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden' // Internal scroll handled by content div
+        }}>
+          {/* Header Image Area */}
+          <div style={{ padding: '20px', background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', color: 'white' }}>
+             <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 'bold' }}>{hoveredListProp.name}</h2>
+             <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '10px', background: 'rgba(255,255,255,0.2)', padding: '3px 8px', borderRadius: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  {hoveredListProp.status === 'Ready' ? 'Ready to Move' : 'Under Construction'}
+                </span>
+                <span style={{ fontSize: '18px', fontWeight: 'bold' }}>{hoveredListProp.price}</span>
+             </div>
+          </div>
+
+          {/* SCROLLABLE CONTENT AREA */}
+          <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
+             
+             {/* Key Specs */}
+             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
+                <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', textAlign: 'center' }}>
+                   <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase' }}>Config</div>
+                   <div style={{ fontWeight: 'bold', color: '#0f172a' }}>{hoveredListProp.configuration}</div>
+                </div>
+                <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', textAlign: 'center' }}>
+                   <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase' }}>Size</div>
+                   <div style={{ fontWeight: 'bold', color: '#0f172a' }}>{hoveredListProp.sqFt ? `${hoveredListProp.sqFt} sqft` : 'N/A'}</div>
+                </div>
+                <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', textAlign: 'center' }}>
+                   <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase' }}>Zone</div>
+                   <div style={{ fontWeight: 'bold', color: '#0f172a' }}>{hoveredListProp.zone}</div>
+                </div>
+                <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', textAlign: 'center' }}>
+                   <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase' }}>Facing</div>
+                   <div style={{ fontWeight: 'bold', color: '#0f172a' }}>{hoveredListProp.facingDir || 'Any'}</div>
+                </div>
+             </div>
+
+             {/* Inventory Details */}
+             <div style={{ marginBottom: '20px' }}>
+                <h4 style={{ fontSize: '12px', fontWeight: 'bold', color: '#334155', marginBottom: '10px', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px' }}>
+                   Inventory Breakdown
+                </h4>
+                {hoveredListProp.status === 'Ready' ? (
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {Object.entries(hoveredListProp.unitsAvailable || {}).map(([type, count]) => (
+                         <div key={type} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', padding: '8px', background: '#f1f5f9', borderRadius: '6px' }}>
+                           <span style={{ fontWeight: '500' }}>{type}</span>
+                           <span style={{ fontWeight: 'bold', color: count > 0 ? '#16a34a' : '#ef4444' }}>{count} Units Left</span>
+                         </div>
+                      ))}
+                   </div>
+                ) : (
+                   <div style={{ padding: '10px', background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: '6px' }}>
+                      <p style={{ fontSize: '12px', color: '#92400e', margin: 0 }}>
+                         🏗️ Completion: <strong>{hoveredListProp.completionDate}</strong>
+                      </p>
+                      <p style={{ fontSize: '12px', color: '#92400e', margin: '4px 0 0 0' }}>
+                         Total Project Units: <strong>{hoveredListProp.totalUnits}</strong>
+                      </p>
+                   </div>
+                )}
+             </div>
+
+             {/* Amenities List */}
+             <div>
+                <h4 style={{ fontSize: '12px', fontWeight: 'bold', color: '#334155', marginBottom: '10px', borderBottom: '1px solid #e2e8f0', paddingBottom: '4px' }}>
+                   Premium Amenities
+                </h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                   {hoveredListProp.amenities?.map(am => (
+                      <span key={am} style={{ fontSize: '11px', background: '#ffffff', border: '1px solid #cbd5e1', color: '#475569', padding: '4px 8px', borderRadius: '20px' }}>
+                        {am}
+                      </span>
+                   ))}
+                </div>
+             </div>
+          </div>
+          
+          {/* Footer Hint */}
+          <div style={{ padding: '12px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', fontSize: '11px', color: '#64748b', textAlign: 'center' }}>
+             Click property to view full details
+          </div>
+        </div>
+      )}
+
       {/* COLUMN 1: MAP */}
       <div style={{ position: 'relative', height: '100%', borderRight: '1px solid #ccc' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
@@ -153,6 +257,9 @@ export default function DashboardPage() {
             <div 
               key={prop.id}
               onClick={() => setSelectedId(prop.id)}
+              // HOVER TRIGGER FOR MEGA POPUP
+              onMouseEnter={() => setHoveredListId(prop.id)}
+              onMouseLeave={() => setHoveredListId(null)}
               style={{
                 padding: '16px',
                 borderBottom: '1px solid #eee',
