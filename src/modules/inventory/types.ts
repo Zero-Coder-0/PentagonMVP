@@ -11,7 +11,15 @@ export interface InventoryItem {
   priceValue: number;
   configuration: string; // '2BHK', '3BHK'
   facingDir?: string; // 'East', 'West'
-  amenities?: string[]; // Added this array
+  
+  // NEW FIELDS FOR MEGA FILTER
+  status?: 'Ready' | 'Under Construction';
+  unitsAvailable?: Record<string, number>; // { '2BHK': 5 }
+  totalUnits?: number;
+  completionDate?: string;
+  amenities?: string[];
+  sqFt?: number;
+  
   // Legacy fields if needed
   facing?: {
     door: string;
@@ -23,4 +31,9 @@ export interface FilterCriteria {
   configurations?: string[]; // ['2BHK']
   priceRange?: { min: number; max: number };
   facing?: { mainDoor?: string[] };
+  
+  // NEW FILTER CRITERIA
+  status?: 'Ready' | 'Under Construction';
+  sqFtMin?: number;
+  sqFtMax?: number;
 }
