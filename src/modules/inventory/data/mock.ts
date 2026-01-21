@@ -12,7 +12,8 @@ export const MOCK_INVENTORY: InventoryItem[] = [
     price: '1.5 Cr', 
     priceValue: 15000000,
     configuration: '4BHK',
-    facingDir: 'East'
+    facingDir: 'East',
+    amenities: ['Golf Course', 'Pool', 'Clubhouse'] 
   },
   { 
     id: '101', 
@@ -24,7 +25,21 @@ export const MOCK_INVENTORY: InventoryItem[] = [
     price: '1.8 Cr', 
     priceValue: 18000000,
     configuration: '4BHK',
-    facingDir: 'North'
+    facingDir: 'North',
+    amenities: ['Private Pool', 'Gym', 'Concierge'] 
+  },
+  { 
+    id: '102', 
+    name: 'Godrej Reserve', 
+    location: 'Devanahalli', 
+    zone: 'North', 
+    lat: 13.2250, 
+    lng: 77.7000, 
+    price: '1.2 Cr', 
+    priceValue: 12000000,
+    configuration: '3BHK',
+    facingDir: 'East',
+    amenities: ['Park', 'Security'] 
   },
 
   // EAST ZONE
@@ -38,7 +53,8 @@ export const MOCK_INVENTORY: InventoryItem[] = [
     price: '85 L', 
     priceValue: 8500000,
     configuration: '2BHK',
-    facingDir: 'East'
+    facingDir: 'East',
+    amenities: ['Metro Nearby', 'Pool']
   },
   { 
     id: '201', 
@@ -50,7 +66,8 @@ export const MOCK_INVENTORY: InventoryItem[] = [
     price: '95 L', 
     priceValue: 9500000,
     configuration: '3BHK',
-    facingDir: 'West'
+    facingDir: 'West',
+    amenities: ['Mall Nearby', 'Gym']
   },
 
   // SOUTH ZONE
@@ -64,7 +81,8 @@ export const MOCK_INVENTORY: InventoryItem[] = [
     price: '65 L', 
     priceValue: 6500000,
     configuration: '2BHK',
-    facingDir: 'North'
+    facingDir: 'North',
+    amenities: ['School Bus', 'Gardens']
   },
   { 
     id: '301', 
@@ -76,6 +94,7 @@ export const MOCK_INVENTORY: InventoryItem[] = [
     price: '72 L', 
     priceValue: 7200000,
     configuration: '2BHK',
-    facingDir: 'East'
+    facingDir: 'East',
+    amenities: ['View', 'Clubhouse']
   }
 ];

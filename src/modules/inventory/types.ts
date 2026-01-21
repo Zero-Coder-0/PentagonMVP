@@ -10,7 +10,8 @@ export interface InventoryItem {
   price: string;
   priceValue: number;
   configuration: string; // '2BHK', '3BHK'
-  facingDir?: string; // 'East', 'West' (New field)
+  facingDir?: string; // 'East', 'West'
+  amenities?: string[]; // Added this array
   // Legacy fields if needed
   facing?: {
     door: string;

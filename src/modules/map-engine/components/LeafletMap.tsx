@@ -7,7 +7,7 @@ import 'leaflet/dist/leaflet.css'
 import { InventoryItem, Zone } from '@/modules/inventory/types'
 
 // ==========================================
-// 1. ICONS (Now includes a "Search" Icon)
+// 1. ICONS
 // ==========================================
 const getIconForZone = (zone: Zone) => {
   let color = 'blue';
@@ -28,7 +28,6 @@ const getIconForZone = (zone: Zone) => {
   });
 }
 
-// Special Black Icon for User Search Location
 const SearchIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
@@ -39,47 +38,53 @@ const SearchIcon = new L.Icon({
 });
 
 // ==========================================
-// 2. CONTROLLER (Faster Speed)
+// 2. CONTROLLER (Now supports Bounds)
 // ==========================================
-const MapController = ({ center, zoom }: { center: [number, number] | null, zoom: number }) => {
+const MapController = ({ 
+  center, 
+  zoom, 
+  bounds 
+}: { 
+  center: [number, number] | null, 
+  zoom: number,
+  bounds?: [[number, number], [number, number]] | null 
+}) => {
   const map = useMap();
 
   useEffect(() => {
-    if (center) {
-      // FIX: Faster animation (0.5s) for snappy feel
-      map.flyTo(center, zoom, {
-        animate: true,
-        duration: 0.5 
-      });
+    // Priority 1: Fit Bounds (Dual View)
+    if (bounds) {
+      map.fitBounds(bounds, { padding: [50, 50], animate: true, duration: 1.5 });
+      return;
     }
-  }, [center, zoom, map]);
+
+    // Priority 2: Fly to Center
+    if (center) {
+      map.flyTo(center, zoom, { animate: true, duration: 0.5 });
+    }
+  }, [center, zoom, bounds, map]);
 
   return null;
 }
 
 // ==========================================
-// 3. RESIZE HELPER
+// 3. MAIN COMPONENT
 // ==========================================
 function ResizeMap() {
   const map = useMap();
-  useEffect(() => {
-    setTimeout(() => map.invalidateSize(), 100);
-  }, [map]);
+  useEffect(() => { setTimeout(() => map.invalidateSize(), 100); }, [map]);
   return null;
 }
 
-// ==========================================
-// 4. MAIN COMPONENT
-// ==========================================
 interface LeafletMapProps {
   items: InventoryItem[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   center?: [number, number]; 
+  bounds?: [[number, number], [number, number]]; // New Prop
 }
 
-const LeafletMap: React.FC<LeafletMapProps> = ({ items, selectedId, onSelect, center }) => {
-  // Default: Bangalore Center
+const LeafletMap: React.FC<LeafletMapProps> = ({ items, selectedId, onSelect, center, bounds }) => {
   const mapCenter: [number, number] = center || [12.9716, 77.5946];
 
   return (
@@ -89,23 +94,18 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ items, selectedId, onSelect, ce
       style={{ height: '100%', width: '100%', zIndex: 0 }}
     >
       <ResizeMap />
-      <MapController center={center ? mapCenter : null} zoom={12} />
+      <MapController center={center ? mapCenter : null} zoom={12} bounds={bounds} />
 
       <TileLayer
         attribution='&copy; OpenStreetMap contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       
-      {/* 
-         NEW: Search Location Marker 
-         If a center is provided (search active), show a Black Pin + Circle 
-      */}
       {center && (
         <>
           <Marker position={center} icon={SearchIcon}>
             <Popup>📍 <strong>Your Search Location</strong></Popup>
           </Marker>
-          {/* Visual Circle Radius (3km) to show context */}
           <Circle 
             center={center}
             radius={3000} 
@@ -114,15 +114,12 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ items, selectedId, onSelect, ce
         </>
       )}
 
-      {/* Property Inventory Markers */}
       {items.map((item) => (
         <Marker 
           key={item.id} 
           position={[item.lat, item.lng]}
           icon={getIconForZone(item.zone)}
-          eventHandlers={{
-            click: () => onSelect(item.id),
-          }}
+          eventHandlers={{ click: () => onSelect(item.id) }}
           opacity={selectedId === item.id ? 1.0 : 0.7}
         >
           <Popup>
