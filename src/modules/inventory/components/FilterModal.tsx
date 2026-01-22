@@ -43,6 +43,7 @@ export default function FilterModal({ isOpen, onClose, filters, onApply }: Filte
   return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Header */}
         <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <div>
             <h2 className="text-xl font-bold text-slate-800">Filter Inventory</h2>
@@ -53,6 +54,7 @@ export default function FilterModal({ isOpen, onClose, filters, onApply }: Filte
           </button>
         </div>
 
+        {/* Tabs */}
         <div className="flex border-b border-slate-200">
           <button
             onClick={() => setActiveTab('basic')}
@@ -71,9 +73,11 @@ export default function FilterModal({ isOpen, onClose, filters, onApply }: Filte
           </button>
         </div>
 
+        {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-6">
           {activeTab === 'basic' && (
             <div className="space-y-8">
+              {/* Max Budget */}
               <div className="space-y-3">
                 <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">Max Budget (Cr)</label>
                 <input 
@@ -89,28 +93,46 @@ export default function FilterModal({ isOpen, onClose, filters, onApply }: Filte
                 </div>
               </div>
 
+              {/* Facing (UPDATED SECTION) */}
               <div className="space-y-3">
                 <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">Direction Facing</label>
                 <div className="grid grid-cols-2 gap-3">
-                  {/* FIXED: Mapped 'opt' as string directly to resolve 'Property value does not exist' error */}
-                  {FACING_OPTIONS.map((opt: any) => {
-                    // Safe normalization: Handle both string arrays ['North'] and object arrays [{value:'North'}]
+                  {FACING_OPTIONS.map((opt: any, idx: number) => {
+                    // Handle both { label, value } objects AND simple strings
                     const value = typeof opt === 'string' ? opt : opt.value;
                     const label = typeof opt === 'string' ? opt : opt.label;
+                    
+                    // Fallback key if value is missing to prevent key errors
+                    const uniqueKey = value || `facing-${idx}`;
+
+                    // 1. SAFEGUARD: Ensure we are working with an array
+                    const currentFacing = Array.isArray(localFilters.facing) 
+                      ? localFilters.facing 
+                      : []; 
 
                     return (
-                      <label key={value} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${localFilters.facing?.includes(value) ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200 hover:border-slate-300 text-slate-600'}`}>
+                      <label key={uniqueKey} className={`
+                        flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all
+                        ${currentFacing.includes(value) 
+                          ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
+                          : 'border-slate-200 hover:border-slate-300 text-slate-600'}
+                      `}>
                         <input 
-                          type="checkbox" className="hidden"
-                          checked={localFilters.facing?.includes(value) || false}
+                          type="checkbox" 
+                          className="hidden"
+                          checked={currentFacing.includes(value)}
                           onChange={(e) => {
-                            const current = localFilters.facing || [];
-                            const updated = e.target.checked ? [...current, value] : current.filter(x => x !== value);
+                            // 2. LOGIC: Update as a clean string array using the normalized 'value'
+                            const updated = e.target.checked 
+                              ? [...currentFacing, value] 
+                              : currentFacing.filter(x => x !== value);
+                            
+                            // 3. SET: Write back to state as string[]
                             setLocalFilters({ ...localFilters, facing: updated });
                           }}
                         />
                         <span className="text-sm font-medium">{label}</span>
-                        {localFilters.facing?.includes(value) && <Check className="w-4 h-4 ml-auto" />}
+                        {currentFacing.includes(value) && <Check className="w-4 h-4 ml-auto" />}
                       </label>
                     );
                   })}
@@ -149,6 +171,7 @@ export default function FilterModal({ isOpen, onClose, filters, onApply }: Filte
           )}
         </div>
 
+        {/* Footer */}
         <div className="p-5 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
           <button onClick={onClose} className="px-6 py-2.5 text-sm font-semibold text-slate-600 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 rounded-lg transition-all">Cancel</button>
           <button onClick={() => { onApply(localFilters); onClose(); }} className="px-8 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-200 rounded-lg transition-all active:scale-95">Apply Filters</button>

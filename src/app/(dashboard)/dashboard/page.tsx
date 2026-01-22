@@ -46,10 +46,15 @@ export default function DashboardPage() {
       }
 
       // D. Facing Check
-      if (filters.facing && filters.facing.length > 0) {
-        // Ensure we match your mock data's "facingDir"
-        if (!filters.facing.includes(item.facingDir)) return false;
+            // D. Facing Check
+      if (filters.facing) {
+        // FIX: Explicitly check if it is an array to handle the union type error
+        if (Array.isArray(filters.facing) && filters.facing.length > 0) {
+          // Now TypeScript knows it's a string[], so .includes() is allowed
+          if (!filters.facing.includes(item.facingDir || '')) return false;
+        }
       }
+
 
       // E. Dynamic Filters (The new Schema features)
       if (filters.dynamicFilters) {

@@ -1,39 +1,46 @@
+export type Zone = 'North' | 'South' | 'East' | 'West';
+
 export interface InventoryItem {
   id: string;
-  name: string;          // Was 'title' in old type, but 'name' in mock
-  
-  // Location (Flat structure to match mock.ts)
+  name: string;
+  location: string;
+  zone: Zone;
   lat: number;
   lng: number;
-  location: string;      // Text location e.g. "Whitefield"
-  zone: string;          // "North", "East", etc.
+  price: string;
+  priceValue: number;
+  configuration: string;
+  facingDir?: string;
+  distance?: number; 
 
-  // Pricing
-  price: string;         // Display price e.g. "1.5 Cr"
-  priceValue: number;    // Numeric for filtering e.g. 15000000
-
-  // Configuration & Status
-  configuration: string; // e.g. "3BHK"
-  status: 'Ready' | 'Under Construction'; 
+  // Fields that were causing "Property does not exist" errors
+  status?: string; // Changed to string to allow loose matching
+  unitsAvailable?: Record<string, number>;
+  totalUnits?: number;
+  completionDate?: string;
+  amenities?: string[];
+  sqFt?: number;
+  features?: Record<string, any>; // <--- This fixes the mock.ts errors
   
-  // Details
-  sqFt?: number;         // Optional
-  totalUnits?: number;   // Optional
-  unitsAvailable?: Record<string, number>; // e.g. { '3BHK': 5 }
-  completionDate?: string; // e.g. "2027"
-
-  // Features
-  amenities: string[];
-  facingDir: string;     // Matches 'facingDir' in mock.ts
-  
-  // Dynamic Bag (For your Admin Schema features)
-  features?: Record<string, any>;
+  // Legacy support
+  facing?: { door: string; balcony: string; };
 }
 
 export interface FilterCriteria {
-  maxPrice?: number;     // Changed from priceRange object to simple max
+  // Fields that were causing "Property does not exist" errors
+  dynamicFilters?: Record<string, any>; // <--- This fixes FilterModal errors
+  
+  // Standard filters
   configurations?: string[];
+  minPrice?: number;
+  maxPrice?: number;
   status?: string;
-  facing?: string[];     // Array of strings
-  dynamicFilters?: Record<string, any>;
+  zones?: string[];
+  amenities?: string[];
+  sqFtMin?: number;
+  sqFtMax?: number;
+  
+  // Allow facing to be EITHER an array OR an object to stop the conflict
+  facing?: string[] | { mainDoor?: string[] }; 
+  priceRange?: { min: number; max: number };
 }
