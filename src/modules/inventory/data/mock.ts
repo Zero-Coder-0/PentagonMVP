@@ -16,7 +16,9 @@ export const MOCK_INVENTORY: InventoryItem[] = [
     unitsAvailable: { '4BHK': 5, '3BHK': 0 }, 
     totalUnits: 200,
     amenities: ['Golf Course', 'Pool', 'Clubhouse'],
-    facingDir: 'East'
+    facingDir: 'East',
+    // ADDED FEATURES HERE
+    features: { 'ev_charging': true, 'clubhouse': true } 
   },
   { 
     id: '2', 
@@ -32,7 +34,9 @@ export const MOCK_INVENTORY: InventoryItem[] = [
     unitsAvailable: { '2BHK': 12, '1BHK': 4 },
     totalUnits: 1500,
     amenities: ['Metro', 'Clubhouse'],
-    facingDir: 'East'
+    facingDir: 'East',
+    // ADDED FEATURES HERE
+    features: { 'metro_connected': true, 'clubhouse': true }
   },
   { 
     id: '3', 
@@ -47,7 +51,9 @@ export const MOCK_INVENTORY: InventoryItem[] = [
     status: 'Ready',
     totalUnits: 600,
     amenities: ['School Bus', 'Gardens'],
-    facingDir: 'North'
+    facingDir: 'North',
+    // ADDED FEATURES HERE
+    features: { 'garden_view': true }
   },
 
   // UNDER CONSTRUCTION EXAMPLES
@@ -65,7 +71,9 @@ export const MOCK_INVENTORY: InventoryItem[] = [
     completionDate: '2027',
     totalUnits: 500, 
     amenities: ['Private Pool', 'Concierge'],
-    facingDir: 'North'
+    facingDir: 'North',
+    // ADDED FEATURES HERE
+    features: { 'ev_charging': true, 'private_pool': true }
   },
   { 
     id: '201', 
@@ -81,7 +89,9 @@ export const MOCK_INVENTORY: InventoryItem[] = [
     completionDate: '2026',
     totalUnits: 800,
     amenities: ['Mall', 'Gym'],
-    facingDir: 'West'
+    facingDir: 'West',
+    // ADDED FEATURES HERE
+    features: { 'gym': true }
   },
   { 
     id: '301', 
@@ -96,6 +106,8 @@ export const MOCK_INVENTORY: InventoryItem[] = [
     status: 'Under Construction',
     totalUnits: 900,
     amenities: ['View', 'Clubhouse'],
-    facingDir: 'East'
+    facingDir: 'East',
+    // ADDED FEATURES HERE
+    features: { 'hill_view': true, 'clubhouse': true }
   }
 ];
