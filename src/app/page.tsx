@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 
 export default function HomePage() {
-  // DIRECT REDIRECT TO DASHBOARD
-  redirect('http://localhost:3000/admin/inventory/new')
+  // Use relative path so it works on localhost + Vercel
+  redirect('/admin/inventory/new')
 }

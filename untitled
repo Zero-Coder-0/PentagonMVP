@@ -1,0 +1,40 @@
+git remote add origin https://github.com/Zero-Coder-0/geoestate.git
+git branch -M main
+git push -u origin main
+
+
+git init
+git add .
+git commit -m "Initial commit of geoestate"
+git config --global user.email "you@example.com"
+git config --global user.name "Your Name"
+git remote add origin https://github.com/Zero-Coder-0/PentagonMVP.git
+git branch -M main
+git push -u origin main
+
+
+
+
+this is the file which worked and i have the project made and uploaded in the github for your reference for the folder structure i am using lubuntu and i want to now factor this code and put it in separate folders for decoupled development 
+
+so first analyze it then we will move forward what to do with the current code and how to develop the project further also the requirements to be understood from the pdf i will attach
+the fithub link is https://github.com/Zero-Coder-0/PentagonMVP/ understand teh folder structure from this and i will stick onto what i was already developing so the git folderand files structure is the current thing which i am focusing on
+
+analyse and wait for my next instructions
+
+
+
+understand the product requirement from the pdf and implement the docs.pdf content did you understand and i ma using the lubuntu i installed the vscode but what extensions and packages to install using bash i do not know and i want you to start from scratch setup
+
+
+
+
+
+
+
+for now you please summarize everything what i want what you did what is left and what future updates and folder structure of project and what is your role and also the necessary details that i can pass onto future ai instance of yours to continue the work
+
+did you understand me ?
+
+
+
