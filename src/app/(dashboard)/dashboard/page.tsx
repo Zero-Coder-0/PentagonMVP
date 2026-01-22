@@ -6,7 +6,6 @@ import LocationSearch from '@/modules/map-engine/components/LocationSearch'
 import FilterModal from '@/modules/inventory/components/FilterModal'
 import { MOCK_INVENTORY } from '@/modules/inventory/data/mock'
 import { GeoCalc } from '@/modules/map-engine/utils/geo-calc'
-import { FilterEngine } from '@/modules/inventory/utils/filter-engine'
 import { FilterCriteria } from '@/modules/inventory/types'
 
 // Map Import
@@ -28,9 +27,45 @@ export default function DashboardPage() {
 
   // 1. FILTER & SEARCH LOGIC
   const displayedProperties = useMemo(() => {
-    let items = [...MOCK_INVENTORY]
-    items = FilterEngine.apply(items, filters);
+    // --- START: NEW INLINE FILTERING LOGIC ---
+    let items = MOCK_INVENTORY.filter((item) => {
+      // A. Status Check
+      if (filters.status) {
+        if (filters.status === 'Ready to Move' && item.status !== 'Ready') return false;
+        if (filters.status === 'Under Construction' && item.status !== 'Under Construction') return false;
+      }
+
+      // B. Price Check (Max Price)
+      // Default max price is 10Cr if not set in filters
+      const maxPriceVal = (filters.maxPrice || 10) * 10000000; 
+      if (item.priceValue > maxPriceVal) return false;
+
+      // C. Configuration Check (BHK)
+      if (filters.configurations && filters.configurations.length > 0) {
+        if (!filters.configurations.includes(item.configuration)) return false;
+      }
+
+      // D. Facing Check
+      if (filters.facing && filters.facing.length > 0) {
+        // Ensure we match your mock data's "facingDir"
+        if (!filters.facing.includes(item.facingDir)) return false;
+      }
+
+      // E. Dynamic Filters (The new Schema features)
+      if (filters.dynamicFilters) {
+        for (const [key, value] of Object.entries(filters.dynamicFilters)) {
+          if (value === true) {
+            // If the item doesn't have this feature flag, exclude it
+            if (!item.features?.[key]) return false;
+          }
+        }
+      }
+
+      return true;
+    });
+    // --- END: NEW INLINE FILTERING LOGIC ---
     
+    // Sort by Distance if User Location exists
     if (userLocation) {
       items = items.map(item => ({
         ...item,
@@ -40,6 +75,7 @@ export default function DashboardPage() {
     }
     return items
   }, [userLocation, filters])
+
 
   // 2. SELECTED PROPERTY & SMART RANKING
   const selectedProp = useMemo(() => displayedProperties.find(p => p.id === selectedId), [selectedId, displayedProperties])
@@ -68,6 +104,7 @@ export default function DashboardPage() {
       .slice(0, 3);
   }, [selectedProp])
 
+
   // 3. HANDLERS
   const handleRecommendationClick = (recItem: any) => {
     setSelectedId(recItem.id);
@@ -89,6 +126,7 @@ export default function DashboardPage() {
   }
 
   const mapCenter: [number, number] | undefined = userLocation ? [userLocation.lat, userLocation.lng] : undefined
+
 
   return (
     <div style={{
@@ -205,6 +243,7 @@ export default function DashboardPage() {
         </div>
       )}
 
+
       {/* COLUMN 1: MAP */}
       <div style={{ position: 'relative', height: '100%', borderRight: '1px solid #ccc' }}>
         <div style={{ position: 'absolute', inset: 0 }}>
@@ -225,7 +264,10 @@ export default function DashboardPage() {
 
       {/* COLUMN 2: LIST (FIXED SCROLL) */}
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'white', borderRight: '1px solid #ccc' }}>
-        <LocationSearch onLocationSelect={setUserLocation} />
+        <LocationSearch 
+          // FIXED: Wrapped the callback to match the expected signature
+          onLocationSelect={(lat, lng, displayName) => setUserLocation({ lat, lng, displayName })} 
+        />
         
         {/* NEW SINGLE FILTER BUTTON */}
         <div style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
@@ -234,7 +276,8 @@ export default function DashboardPage() {
             style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#f3f4f6', color: '#374151', padding: '10px', borderRadius: '6px', border: '1px solid #d1d5db', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}
           >
             <span>⚙️ Advanced Filters</span>
-            {(filters.status || filters.priceRange) && (
+            {/* FIXED: Changed filters.priceRange to filters.maxPrice */}
+            {(filters.status || filters.maxPrice) && (
               <span style={{ background: '#2563eb', color: 'white', fontSize: '10px', padding: '2px 6px', borderRadius: '10px' }}>Active</span>
             )}
           </button>
