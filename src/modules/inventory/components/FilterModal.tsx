@@ -2,7 +2,10 @@
 
 import React, { useState, useEffect } from 'react'
 import { FilterCriteria } from '../types'
-import { FACING_OPTIONS, AMENITY_OPTIONS, FURNITURE_OPTIONS } from '../data/filter-options' // Import config
+// 👇 Logic preserved: We keep Facing/Furniture as they likely aren't in the schema yet
+import { FACING_OPTIONS, FURNITURE_OPTIONS } from '../data/filter-options' 
+// 👇 New Feature: Dynamic Schema Context
+import { useSchema } from "@/modules/core/context/SchemaContext"
 
 interface FilterModalProps {
   isOpen: boolean;
@@ -12,6 +15,9 @@ interface FilterModalProps {
 }
 
 export default function FilterModal({ isOpen, onClose, filters, onApply }: FilterModalProps) {
+  // 👇 Hook: Get dynamic data
+  const { amenities: dynamicAmenities, projectStatus: dynamicStatus } = useSchema();
+  
   const [localFilters, setLocalFilters] = useState<FilterCriteria>(filters);
   const [activeTab, setActiveTab] = useState('basic'); // basic | facing | amenities
 
@@ -23,17 +29,23 @@ export default function FilterModal({ isOpen, onClose, filters, onApply }: Filte
   if (!isOpen) return null;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
-      <div style={{ background: 'white', borderRadius: '12px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', width: '600px', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
+    // 👇 UI: Converted to Tailwind (from New Code style)
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
         
         {/* Header */}
-        <div style={{ padding: '16px', background: '#f9fafb', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTopLeftRadius: '12px', borderTopRightRadius: '12px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: '#1f2937' }}>Advanced Filters</h2>
-          <button onClick={onClose} style={{ border: 'none', background: 'none', fontSize: '24px', cursor: 'pointer', color: '#9ca3af' }}>×</button>
+        <div className="p-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+          <h2 className="text-lg font-bold text-slate-800">Advanced Filters</h2>
+          <button 
+            onClick={onClose} 
+            className="text-slate-400 hover:text-slate-600 text-2xl leading-none transition-colors"
+          >
+            ×
+          </button>
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', borderBottom: '1px solid #e5e7eb' }}>
+        <div className="flex border-b border-slate-200">
           {['Basic', 'Facing & View', 'Amenities & Extras'].map((tab, idx) => {
              const key = ['basic', 'facing', 'amenities'][idx];
              const isActive = activeTab === key;
@@ -41,13 +53,11 @@ export default function FilterModal({ isOpen, onClose, filters, onApply }: Filte
                <button 
                  key={key}
                  onClick={() => setActiveTab(key)}
-                 style={{
-                   flex: 1, padding: '12px', fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px',
-                   background: isActive ? '#eff6ff' : 'white',
-                   color: isActive ? '#2563eb' : '#6b7280',
-                   border: 'none', borderBottom: isActive ? '2px solid #2563eb' : 'none',
-                   cursor: 'pointer'
-                 }}
+                 className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors
+                   ${isActive 
+                     ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600' 
+                     : 'bg-white text-slate-500 hover:bg-slate-50 border-b-2 border-transparent'
+                   }`}
                >
                  {tab}
                </button>
@@ -56,45 +66,52 @@ export default function FilterModal({ isOpen, onClose, filters, onApply }: Filte
         </div>
 
         {/* Scrollable Body */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+        <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-8">
           
-          {/* TAB 1: BASIC (Status, Budget, Config) */}
+          {/* TAB 1: BASIC (Dynamic Status, Budget, Config) */}
           {activeTab === 'basic' && (
             <>
-              {/* Status Switch */}
+              {/* Status Switch - Dynamic Data */}
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', color: '#6b7280', marginBottom: '8px' }}>Property Status</label>
-                <div style={{ display: 'flex', background: '#f3f4f6', padding: '4px', borderRadius: '8px' }}>
-                  {['Ready', 'Under Construction'].map(status => (
-                    <button
-                      key={status}
-                      onClick={() => setLocalFilters({ ...localFilters, status: status as any })}
-                      style={{
-                        flex: 1, padding: '8px', fontSize: '14px', fontWeight: 'bold', borderRadius: '6px', border: 'none', cursor: 'pointer',
-                        background: localFilters.status === status ? 'white' : 'transparent',
-                        boxShadow: localFilters.status === status ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                        color: localFilters.status === status ? '#2563eb' : '#6b7280'
-                      }}
-                    >
-                      {status === 'Ready' ? 'Ready to Move' : 'Under Construction'}
-                    </button>
-                  ))}
+                <label className="block text-xs font-bold uppercase text-slate-500 mb-2">Property Status</label>
+                <div className="flex flex-wrap gap-2 bg-slate-100 p-1.5 rounded-lg">
+                  {dynamicStatus.map(status => {
+                    const isSelected = localFilters.status === status;
+                    return (
+                      <button
+                        key={status}
+                        onClick={() => setLocalFilters({ ...localFilters, status: status as any })}
+                        className={`flex-1 py-2 px-4 text-sm font-bold rounded-md transition-all shadow-sm
+                          ${isSelected 
+                            ? 'bg-white text-blue-600 shadow-md' 
+                            : 'bg-transparent text-slate-500 hover:text-slate-700'
+                          }`}
+                      >
+                        {status}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
-              {/* Conditional Logic */}
-              {localFilters.status === 'Ready' && (
-                 <div style={{ background: '#ecfdf5', padding: '16px', borderRadius: '8px', border: '1px solid #d1fae5' }}>
-                    <p style={{ fontSize: '12px', fontWeight: 'bold', color: '#047857', marginBottom: '8px', marginTop: 0 }}>UNIT AVAILABILITY</p>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+              {/* Logic: Only show Unit Availability if status contains "Ready" */}
+              {localFilters.status?.includes('Ready') && (
+                 <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
+                    <p className="text-xs font-bold text-emerald-700 mb-2 uppercase">Unit Availability</p>
+                    <div className="flex gap-2">
                        {['1BHK', '2BHK', '3BHK', '4BHK'].map(bhk => (
-                         <label key={bhk} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'white', padding: '4px 12px', borderRadius: '4px', border: '1px solid #d1d5db', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-                           <input type="checkbox" checked={localFilters.configurations?.includes(bhk) || false} onChange={(e) => {
-                             const current = localFilters.configurations || [];
-                             const updated = e.target.checked ? [...current, bhk] : current.filter(c => c !== bhk);
-                             setLocalFilters({...localFilters, configurations: updated});
-                           }} />
-                           <span style={{ fontSize: '14px', fontWeight: '500' }}>{bhk}</span>
+                         <label key={bhk} className="flex items-center gap-2 bg-white px-3 py-1.5 rounded border border-slate-200 cursor-pointer hover:border-emerald-300 transition-colors shadow-sm">
+                           <input 
+                             type="checkbox" 
+                             className="accent-emerald-600"
+                             checked={localFilters.configurations?.includes(bhk) || false} 
+                             onChange={(e) => {
+                               const current = localFilters.configurations || [];
+                               const updated = e.target.checked ? [...current, bhk] : current.filter(c => c !== bhk);
+                               setLocalFilters({...localFilters, configurations: updated});
+                             }} 
+                           />
+                           <span className="text-sm font-medium text-slate-700">{bhk}</span>
                          </label>
                        ))}
                     </div>
@@ -103,9 +120,9 @@ export default function FilterModal({ isOpen, onClose, filters, onApply }: Filte
 
               {/* Budget Slider Placeholder */}
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', color: '#6b7280', marginBottom: '8px' }}>Budget Range</label>
+                <label className="block text-xs font-bold uppercase text-slate-500 mb-2">Budget Range</label>
                 <select 
-                  style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '6px', background: 'white' }} 
+                  className="w-full p-2.5 border border-slate-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                   onChange={(e) => {
                     if(!e.target.value) { setLocalFilters({...localFilters, priceRange: undefined}); return; }
                     const [min, max] = e.target.value.split('-').map(Number);
@@ -122,21 +139,25 @@ export default function FilterModal({ isOpen, onClose, filters, onApply }: Filte
             </>
           )}
 
-          {/* TAB 2: FACING (Door, Balcony) */}
+          {/* TAB 2: FACING (Door, Balcony) - Preserved from Old Code */}
           {activeTab === 'facing' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+            <div className="grid grid-cols-2 gap-6">
               {/* Main Door */}
               <div>
-                <h4 style={{ fontSize: '14px', fontWeight: 'bold', color: '#1f2937', marginBottom: '12px', borderBottom: '1px solid #eee', paddingBottom: '4px' }}>🚪 Main Door Facing</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <h4 className="text-sm font-bold text-slate-800 mb-3 border-b border-slate-100 pb-2">🚪 Main Door Facing</h4>
+                <div className="flex flex-col gap-2">
                   {FACING_OPTIONS.slice(0, 4).map(dir => (
-                    <label key={`door-${dir}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                      <input type="checkbox" onChange={(e) => {
-                        const current = localFilters.facing?.mainDoor || [];
-                        const updated = e.target.checked ? [...current, dir] : current.filter(d => d !== dir);
-                        setLocalFilters({...localFilters, facing: { ...localFilters.facing, mainDoor: updated }});
-                      }} />
-                      <span style={{ fontSize: '14px', color: '#4b5563' }}>{dir}</span>
+                    <label key={`door-${dir}`} className="flex items-center gap-3 cursor-pointer group">
+                      <input 
+                        type="checkbox" 
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                        onChange={(e) => {
+                          const current = localFilters.facing?.mainDoor || [];
+                          const updated = e.target.checked ? [...current, dir] : current.filter(d => d !== dir);
+                          setLocalFilters({...localFilters, facing: { ...localFilters.facing, mainDoor: updated }});
+                        }} 
+                      />
+                      <span className="text-sm text-slate-600 group-hover:text-blue-600 transition-colors">{dir}</span>
                     </label>
                   ))}
                 </div>
@@ -144,12 +165,12 @@ export default function FilterModal({ isOpen, onClose, filters, onApply }: Filte
 
               {/* Balcony */}
               <div>
-                <h4 style={{ fontSize: '14px', fontWeight: 'bold', color: '#1f2937', marginBottom: '12px', borderBottom: '1px solid #eee', paddingBottom: '4px' }}>🌅 Balcony Facing</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <h4 className="text-sm font-bold text-slate-800 mb-3 border-b border-slate-100 pb-2">🌅 Balcony Facing</h4>
+                <div className="flex flex-col gap-2">
                   {FACING_OPTIONS.slice(0, 4).map(dir => (
-                    <label key={`balcony-${dir}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                      <input type="checkbox" />
-                      <span style={{ fontSize: '14px', color: '#4b5563' }}>{dir}</span>
+                    <label key={`balcony-${dir}`} className="flex items-center gap-3 cursor-pointer group">
+                      <input type="checkbox" className="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                      <span className="text-sm text-slate-600 group-hover:text-blue-600 transition-colors">{dir}</span>
                     </label>
                   ))}
                 </div>
@@ -157,28 +178,47 @@ export default function FilterModal({ isOpen, onClose, filters, onApply }: Filte
             </div>
           )}
 
-          {/* TAB 3: AMENITIES & EXTRAS */}
+          {/* TAB 3: AMENITIES & EXTRAS - Merged Dynamic Data */}
           {activeTab === 'amenities' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-               {/* Amenities Grid */}
+            <div className="flex flex-col gap-6">
+               {/* Amenities Grid - Dynamic */}
                <div>
-                 <h4 style={{ fontSize: '14px', fontWeight: 'bold', color: '#1f2937', marginBottom: '12px' }}>Community Amenities</h4>
-                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                   {AMENITY_OPTIONS.map(opt => (
-                     <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f9fafb', padding: '8px', borderRadius: '6px', cursor: 'pointer' }}>
-                        <input type="checkbox" />
-                        <span style={{ fontSize: '12px', fontWeight: '500', color: '#374151' }}>{opt}</span>
+                 <h4 className="text-sm font-bold text-slate-800 mb-3">Community Amenities</h4>
+                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                   {dynamicAmenities.map(amenity => (
+                     <label 
+                       key={amenity} 
+                       className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all
+                         ${localFilters.amenities?.includes(amenity)
+                           ? "border-blue-500 bg-blue-50"
+                           : "border-slate-200 bg-slate-50 hover:border-slate-300"
+                         }`}
+                     >
+                        <input 
+                          type="checkbox" 
+                          className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                          checked={localFilters.amenities?.includes(amenity) || false}
+                          onChange={(e) => {
+                            const current = localFilters.amenities || [];
+                            const updated = e.target.checked ? [...current, amenity] : current.filter(a => a !== amenity);
+                            setLocalFilters({...localFilters, amenities: updated});
+                          }}
+                        />
+                        <span className="text-xs font-medium text-slate-700">{amenity}</span>
                      </label>
                    ))}
                  </div>
                </div>
 
-               {/* Furniture */}
+               {/* Furniture - Static Preserved */}
                <div>
-                  <h4 style={{ fontSize: '14px', fontWeight: 'bold', color: '#1f2937', marginBottom: '12px' }}>Furnishing Status</h4>
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <h4 className="text-sm font-bold text-slate-800 mb-3">Furnishing Status</h4>
+                  <div className="flex gap-2">
                     {FURNITURE_OPTIONS.map(opt => (
-                       <button key={opt} style={{ padding: '4px 12px', border: '1px solid #d1d5db', borderRadius: '999px', fontSize: '12px', fontWeight: '500', background: 'white', cursor: 'pointer' }}>
+                       <button 
+                        key={opt} 
+                        className="px-4 py-1.5 border border-slate-300 rounded-full text-xs font-medium bg-white hover:bg-slate-50 transition-colors"
+                       >
                          {opt}
                        </button>
                     ))}
@@ -190,18 +230,23 @@ export default function FilterModal({ isOpen, onClose, filters, onApply }: Filte
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '16px', background: '#f9fafb', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px' }}>
+        <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
           <button 
             onClick={() => setLocalFilters({})}
-            style={{ fontSize: '12px', color: '#dc2626', fontWeight: 'bold', background: 'none', border: 'none', cursor: 'pointer' }}
+            className="text-xs font-bold text-red-600 hover:text-red-700 transition-colors"
           >
             Reset All
           </button>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button onClick={onClose} style={{ padding: '8px 16px', color: '#4b5563', fontWeight: '500', background: 'transparent', border: 'none', cursor: 'pointer' }}>Cancel</button>
+          <div className="flex gap-3">
+            <button 
+              onClick={onClose} 
+              className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 transition-colors"
+            >
+              Cancel
+            </button>
             <button 
               onClick={() => { onApply(localFilters); onClose(); }} 
-              style={{ padding: '8px 24px', background: '#2563eb', color: 'white', fontWeight: 'bold', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
+              className="px-6 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg shadow hover:bg-blue-700 transition-all active:scale-95"
             >
               Show Properties
             </button>

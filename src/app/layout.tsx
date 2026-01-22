@@ -1,9 +1,14 @@
-import type { Metadata } from 'next'
 import './globals.css'
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import { SchemaProvider } from '@/modules/core/context/SchemaContext';
+
+
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Real Estate Dashboard',
-  description: 'Property management system',
+  title: 'GeoEstate Dashboard',
+  description: 'Real Estate Sales Intelligence Platform',
 }
 
 export default function RootLayout({
@@ -13,8 +18,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className={inter.className}>
+        <SchemaProvider>
+          {children}
+        </SchemaProvider>
+      </body>
     </html>
   )
 }
-

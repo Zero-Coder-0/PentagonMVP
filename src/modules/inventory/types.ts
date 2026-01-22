@@ -36,9 +36,9 @@ export interface FilterCriteria {
   minPrice?: number;
   maxPrice?: number;
   zones?: string[];              // FIX: This solves the error           // Added for completio
+  
 
-
-
+  amenities?: string[]; 
 
 
   // NEW FILTER CRITERIA
