@@ -17,10 +17,22 @@ export const FilterEngine = {
         if (item.priceValue > criteria.priceRange.max) return false;
       }
 
-      // 4. Facing Check
-      if (criteria.facing?.mainDoor && criteria.facing.mainDoor.length > 0) {
-        const itemFacing = item.facingDir || 'East'; 
-        if (!criteria.facing.mainDoor.includes(itemFacing)) return false;
+      // 4. Facing Check - FIXED: Handle both array and object types
+      if (criteria.facing) {
+        const itemFacing = item.facingDir || 'East';
+        
+        // Check if facing is an array (simple string[])
+        if (Array.isArray(criteria.facing)) {
+          if (criteria.facing.length > 0 && !criteria.facing.includes(itemFacing)) {
+            return false;
+          }
+        }
+        // Check if facing is an object with mainDoor property
+        else if (criteria.facing.mainDoor && criteria.facing.mainDoor.length > 0) {
+          if (!criteria.facing.mainDoor.includes(itemFacing)) {
+            return false;
+          }
+        }
       }
 
       return true;

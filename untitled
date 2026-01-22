@@ -1,6 +1,69 @@
-git remote add origin https://github.com/Zero-Coder-0/geoestate.git
-git branch -M main
-git push -u origin main
+-- 1. Create PROFILES table (Linked to Auth)
+create table public.profiles (
+  id uuid references auth.users on delete cascade primary key,
+  email text,
+  role text check (role in ('super_admin', 'tenant_admin', 'vendor', 'sales')) default 'sales',
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
+
+-- 2. Create PROPERTIES table (The Inventory)
+create table public.properties (
+  id uuid default uuid_generate_v4() primary key,
+  created_at timestamp with time zone default timezone('utc'::text, now()),
+  name text not null,
+  developer text,
+  status text,
+  price_display text,
+  price_value numeric,
+  location_area text,
+  zone text,
+  lat float8,
+  lng float8,
+  specs jsonb default '{}'::jsonb,
+  features jsonb default '{}'::jsonb,
+  image_urls text[] default array[]::text[],
+  user_id uuid references public.profiles(id) -- Who uploaded it?
+);
+
+-- 3. Enable RLS (Security)
+alter table public.profiles enable row level security;
+alter table public.properties enable row level security;
+
+-- 4. Policies (Who can do what?)
+-- Everyone can read properties
+create policy "Public properties are viewable by everyone" 
+on public.properties for select using (true);
+
+-- Only Admins/Vendors can insert properties
+create policy "Admins/Vendors can insert properties" 
+on public.properties for insert 
+with check (exists (
+  select 1 from public.profiles
+  where profiles.id = auth.uid() and role in ('super_admin', 'vendor')
+));
+
+-- Users can read their own profile
+create policy "Users can see own profile" 
+on public.profiles for select using (auth.uid() = id);
+
+-- 5. AUTOMATIC TRIGGER (Critical for Google Auth)
+-- This automatically creates a 'sales' profile when a user logs in with Google
+create or replace function public.handle_new_user() 
+returns trigger as $$
+begin
+  insert into public.profiles (id, email, role)
+  values (new.id, new.email, 'sales'); -- Default role is SALES
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
+
+
+npx tsc --noEmit && npm run lint
+
 
 
 git init

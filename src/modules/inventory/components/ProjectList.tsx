@@ -1,9 +1,9 @@
 'use client'
 
-import { Property } from '../types'
+import { InventoryItem } from '../types'
 
 interface ProjectListProps {
-  properties: Property[];
+  properties: InventoryItem[];
   onSelect: (id: string) => void;
 }
 
@@ -19,19 +19,19 @@ export function ProjectList({ properties, onSelect }: ProjectListProps) {
           <div className="flex justify-between items-start">
             <h3 className="font-bold text-gray-900">{prop.name}</h3>
             <span className="text-xs font-semibold px-2 py-1 bg-gray-100 rounded text-gray-600">
-              {prop.configurations.join(' | ')}
+              {prop.configuration}
             </span>
           </div>
           
-          <p className="text-sm text-gray-500 mt-1">{prop.location_name}</p>
+          <p className="text-sm text-gray-500 mt-1">{prop.location}</p>
           
           <div className="mt-3 flex items-center justify-between text-sm">
             <span className="font-medium text-blue-600">
-              ₹{(prop.price_min / 100000).toFixed(1)} L+
+              {prop.price}
             </span>
-            {prop.distance_km && (
+            {prop.distance && (
               <span className="text-xs text-gray-400">
-                {prop.distance_km.toFixed(1)} km away
+                {prop.distance.toFixed(1)} km away
               </span>
             )}
           </div>
