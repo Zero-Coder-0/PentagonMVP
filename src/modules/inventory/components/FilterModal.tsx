@@ -1,182 +1,153 @@
-'use client';
+'use client'
 
-import React, { useState, useEffect } from 'react';
-import { X, Check } from 'lucide-react';
-import { FilterCriteria } from '../types';
-import { useSchema } from '@/modules/core/context/SchemaContext';
-import { FACING_OPTIONS } from '../data/filter-options';
+import React from 'react'
+import { X, Filter } from 'lucide-react'
+import { FilterCriteria } from '@/app/(dashboard)/dashboard/page'
 
 interface FilterModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  filters: FilterCriteria;
-  onApply: (newFilters: FilterCriteria) => void;
+  isOpen: boolean
+  onClose: () => void
+  filters: FilterCriteria
+  onApply: (f: FilterCriteria) => void
 }
 
 export default function FilterModal({ isOpen, onClose, filters, onApply }: FilterModalProps) {
-  const { schemaFields } = useSchema();
-  
-  const [localFilters, setLocalFilters] = useState<FilterCriteria>(filters);
-  const [activeTab, setActiveTab] = useState<'basic' | 'dynamic'>('basic');
+  const [localFilters, setLocalFilters] = React.useState<FilterCriteria>(filters)
 
-  useEffect(() => {
-    if (isOpen) setLocalFilters(filters);
-  }, [isOpen, filters]);
+  // Sync when opening
+  React.useEffect(() => {
+    if (isOpen) setLocalFilters(filters)
+  }, [isOpen, filters])
 
-  const toggleDynamicFilter = (key: string) => {
-    const currentDynamic = localFilters.dynamicFilters || {};
-    const newValue = !currentDynamic[key];
-    
-    if (!newValue) {
-      const { [key]: _, ...rest } = currentDynamic;
-      setLocalFilters({ ...localFilters, dynamicFilters: rest });
-    } else {
-      setLocalFilters({
-        ...localFilters,
-        dynamicFilters: { ...currentDynamic, [key]: true }
-      });
-    }
-  };
+  if (!isOpen) return null
 
-  if (!isOpen) return null;
+  const handleApply = () => {
+    onApply(localFilters)
+    onClose()
+  }
+
+  const toggleConfig = (val: string) => {
+    const current = localFilters.configurations || []
+    const next = current.includes(val) 
+      ? current.filter(c => c !== val) 
+      : [...current, val]
+    setLocalFilters({ ...localFilters, configurations: next })
+  }
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        
         {/* Header */}
-        <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <Filter className="w-5 h-5 text-blue-600" />
+            Advanced Filters
+          </h3>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+            <X className="w-5 h-5 text-slate-500" />
+          </button>
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
+          
+          {/* 1. Status */}
           <div>
-            <h2 className="text-xl font-bold text-slate-800">Filter Inventory</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Refine your search results</p>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 block">Project Status</label>
+            <div className="grid grid-cols-2 gap-3">
+              {['Ready', 'Under Construction'].map(status => (
+                <button
+                  key={status}
+                  onClick={() => setLocalFilters({ ...localFilters, status: localFilters.status === status ? undefined : status })}
+                  className={`py-2 px-3 rounded-lg text-sm font-semibold border transition-all ${
+                    localFilters.status === status 
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-100' 
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'
+                  }`}
+                >
+                  {status === 'Ready' ? 'Ready to Move' : 'Under Construction'}
+                </button>
+              ))}
+            </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-slate-200">
-          <button
-            onClick={() => setActiveTab('basic')}
-            className={`flex-1 py-4 text-sm font-semibold text-center transition-colors border-b-2 ${activeTab === 'basic' ? 'border-indigo-600 text-indigo-600 bg-indigo-50/10' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-          >
-            Basic Config
-          </button>
-          <button
-            onClick={() => setActiveTab('dynamic')}
-            className={`flex-1 py-4 text-sm font-semibold text-center transition-colors border-b-2 flex items-center justify-center gap-2 ${activeTab === 'dynamic' ? 'border-indigo-600 text-indigo-600 bg-indigo-50/10' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-          >
-            Amenities & Features
-            <span className="bg-indigo-100 text-indigo-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">
-              {schemaFields.filter(f => f.isActive).length}
-            </span>
-          </button>
-        </div>
-
-        {/* Content Area */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {activeTab === 'basic' && (
-            <div className="space-y-8">
-              {/* Max Budget */}
-              <div className="space-y-3">
-                <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">Max Budget (Cr)</label>
-                <input 
-                  type="range" min="0" max="10" step="0.5"
-                  className="w-full accent-indigo-600 cursor-pointer"
-                  value={localFilters.maxPrice || 5}
-                  onChange={(e) => setLocalFilters({ ...localFilters, maxPrice: parseFloat(e.target.value) })}
-                />
-                <div className="flex justify-between text-sm text-slate-500 font-medium">
-                  <span>₹0 Cr</span>
-                  <span className="text-indigo-600 font-bold">₹{localFilters.maxPrice || 5} Cr</span>
-                  <span>₹10+ Cr</span>
-                </div>
-              </div>
-
-              {/* Facing (UPDATED SECTION) */}
-              <div className="space-y-3">
-                <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">Direction Facing</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {FACING_OPTIONS.map((opt: any, idx: number) => {
-                    // Handle both { label, value } objects AND simple strings
-                    const value = typeof opt === 'string' ? opt : opt.value;
-                    const label = typeof opt === 'string' ? opt : opt.label;
-                    
-                    // Fallback key if value is missing to prevent key errors
-                    const uniqueKey = value || `facing-${idx}`;
-
-                    // 1. SAFEGUARD: Ensure we are working with an array
-                    const currentFacing = Array.isArray(localFilters.facing) 
-                      ? localFilters.facing 
-                      : []; 
-
-                    return (
-                      <label key={uniqueKey} className={`
-                        flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all
-                        ${currentFacing.includes(value) 
-                          ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
-                          : 'border-slate-200 hover:border-slate-300 text-slate-600'}
-                      `}>
-                        <input 
-                          type="checkbox" 
-                          className="hidden"
-                          checked={currentFacing.includes(value)}
-                          onChange={(e) => {
-                            // 2. LOGIC: Update as a clean string array using the normalized 'value'
-                            const updated = e.target.checked 
-                              ? [...currentFacing, value] 
-                              : currentFacing.filter(x => x !== value);
-                            
-                            // 3. SET: Write back to state as string[]
-                            setLocalFilters({ ...localFilters, facing: updated });
-                          }}
-                        />
-                        <span className="text-sm font-medium">{label}</span>
-                        {currentFacing.includes(value) && <Check className="w-4 h-4 ml-auto" />}
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
+          {/* 2. Budget Slider */}
+          <div>
+            <div className="flex justify-between mb-2">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Max Budget</label>
+              <span className="text-sm font-bold text-blue-600">{localFilters.maxPrice || 10} Cr</span>
             </div>
-          )}
-
-          {activeTab === 'dynamic' && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-2 p-3 bg-blue-50 text-blue-800 rounded-lg text-sm mb-4">
-                <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-                These filters update in real-time from the Admin Panel.
-              </div>
-              <div className="grid grid-cols-1 gap-3">
-                {schemaFields.filter(f => f.isActive && f.type === 'boolean').map(field => {
-                    const isChecked = !!localFilters.dynamicFilters?.[field.key];
-                    return (
-                      <label key={field.id} className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all group ${isChecked ? 'border-indigo-600 bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'border-slate-200 bg-white hover:border-indigo-300 text-slate-700'}`}>
-                        <span className="font-medium">{field.label}</span>
-                        <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-colors ${isChecked ? 'bg-white border-transparent' : 'border-slate-300 bg-slate-50 group-hover:border-indigo-400'}`}>
-                          {isChecked && <Check className="w-4 h-4 text-indigo-600" />}
-                        </div>
-                        <input type="checkbox" className="hidden" checked={isChecked} onChange={() => toggleDynamicFilter(field.key)} />
-                      </label>
-                    );
-                })}
-              </div>
-              {schemaFields.filter(f => f.isActive && f.type === 'boolean').length === 0 && (
-                <div className="text-center py-10 text-slate-400">
-                  <p>No special features configured.</p>
-                  <p className="text-xs mt-1">Go to Admin  Schema Builder to add some.</p>
-                </div>
-              )}
+            <input 
+              type="range" 
+              min="0.5" 
+              max="20" 
+              step="0.5"
+              value={localFilters.maxPrice || 10}
+              onChange={(e) => setLocalFilters({ ...localFilters, maxPrice: Number(e.target.value) })}
+              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+            />
+            <div className="flex justify-between text-[10px] text-slate-400 mt-1 font-medium">
+              <span>50L</span>
+              <span>20Cr+</span>
             </div>
-          )}
+          </div>
+
+          {/* 3. Configurations */}
+          <div>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 block">Configurations</label>
+            <div className="flex flex-wrap gap-2">
+              {['1BHK', '2BHK', '3BHK', '4BHK', 'Villa'].map(conf => (
+                <button
+                  key={conf}
+                  onClick={() => toggleConfig(conf)}
+                  className={`px-4 py-2 rounded-full text-xs font-bold border transition-all ${
+                    localFilters.configurations?.includes(conf)
+                      ? 'bg-slate-800 text-white border-slate-800'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  {conf}
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          {/* 4. Facing (New Schema Field) */}
+          <div>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 block">Facing</label>
+            <select 
+               className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white"
+               onChange={(e) => setLocalFilters({ ...localFilters, facing: e.target.value ? [e.target.value] : [] })}
+               value={localFilters.facing?.[0] || ''}
+            >
+               <option value="">Any Direction</option>
+               <option value="North">North Facing</option>
+               <option value="East">East Facing</option>
+               <option value="West">West Facing</option>
+               <option value="South">South Facing</option>
+            </select>
+          </div>
+
         </div>
 
-        {/* Footer */}
-        <div className="p-5 border-t border-slate-200 bg-slate-50 flex justify-end gap-3">
-          <button onClick={onClose} className="px-6 py-2.5 text-sm font-semibold text-slate-600 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 rounded-lg transition-all">Cancel</button>
-          <button onClick={() => { onApply(localFilters); onClose(); }} className="px-8 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-200 rounded-lg transition-all active:scale-95">Apply Filters</button>
+        {/* Footer Actions */}
+        <div className="p-6 pt-4 border-t border-slate-100 bg-slate-50 flex gap-3">
+          <button 
+            onClick={() => setLocalFilters({})}
+            className="flex-1 py-3 text-slate-500 font-bold text-sm hover:bg-slate-100 rounded-lg transition-colors"
+          >
+            Reset
+          </button>
+          <button 
+            onClick={handleApply}
+            className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-lg shadow-lg shadow-blue-200 transition-all active:scale-95"
+          >
+            Apply Filters
+          </button>
         </div>
+
       </div>
     </div>
-  );
+  )
 }
