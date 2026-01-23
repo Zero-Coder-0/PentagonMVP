@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 // TOGGLE THIS TO TRUE TO SKIP LOGIN
-const DEV_BYPASS_AUTH = true
+const DEV_BYPASS_AUTH = false 
 
 export async function createClient() {
   const cookieStore = await cookies()

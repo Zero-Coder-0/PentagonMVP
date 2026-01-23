@@ -40,4 +40,3 @@ export function ProjectList({ properties, onSelect }: ProjectListProps) {
     </div>
   )
 }
-export default ProjectList

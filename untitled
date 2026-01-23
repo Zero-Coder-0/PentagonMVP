@@ -1,119 +1,65 @@
--- =====================================================
--- GEOESTATE FINAL SCHEMA - NO FK ISSUES + PROVEN ORDER
--- =====================================================
-
--- STEP 1: WIPE EXISTING (safe)
-drop table if exists public.site_visits cascade;
-drop table if exists public.properties cascade;
-drop table if exists public.profiles cascade;
-drop trigger if exists on_auth_user_created on auth.users;
-drop function if exists public.handle_new_user();
-
--- STEP 2: PROFILES (explicit auth schema reference)
+-- 1. Create PROFILES table (Linked to Auth)
 create table public.profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
-  email text not null,
-  role text check (role in ('admin', 'sales')) default 'sales',
-  created_at timestamptz default now()
+  id uuid references auth.users on delete cascade primary key,
+  email text,
+  role text check (role in ('super_admin', 'tenant_admin', 'vendor', 'sales')) default 'sales',
+  created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
--- STEP 3: PROPERTIES (no FK to profiles)
+-- 2. Create PROPERTIES table (The Inventory)
 create table public.properties (
-  id uuid default gen_random_uuid() primary key,
-  created_at timestamptz default now(),
+  id uuid default uuid_generate_v4() primary key,
+  created_at timestamp with time zone default timezone('utc'::text, now()),
   name text not null,
   developer text,
-  location_area text,
-  zone text check (zone in ('North', 'South', 'East', 'West')),
-  lat float8 not null,
-  lng float8 not null,
-  status text check (status in ('Ready', 'Under Construction')) default 'Under Construction',
+  status text,
   price_display text,
   price_value numeric,
-  price_min bigint,
-  price_per_sqft int,
-  configurations text,
-  sq_ft_range text,
-  facing_direction text,
-  balcony_count int,
-  floor_levels text,
-  units_available jsonb default '{}',
-  amenities text[],
-  nearby_locations jsonb default '{}',
-  contact_person text,
-  contact_phone text,
-  completion_duration text
+  location_area text,
+  zone text,
+  lat float8,
+  lng float8,
+  specs jsonb default '{}'::jsonb,
+  features jsonb default '{}'::jsonb,
+  image_urls text[] default array[]::text[],
+  user_id uuid references public.profiles(id) -- Who uploaded it?
 );
 
--- STEP 4: SITE VISITS (FKs after parents exist)
-create table public.site_visits (
-  id uuid default gen_random_uuid() primary key,
-  property_id uuid references public.properties(id) on delete cascade,
-  sales_agent_id uuid references public.profiles(id) on delete cascade,
-  customer_name text not null,
-  customer_phone text not null,
-  visit_time timestamptz not null,
-  status text check (status in ('Scheduled','Completed','Cancelled')) default 'Scheduled',
-  notes text,
-  created_at timestamptz default now()
-);
-
--- STEP 5: RLS (NOW tables exist)
+-- 3. Enable RLS (Security)
 alter table public.profiles enable row level security;
 alter table public.properties enable row level security;
-alter table public.site_visits enable row level security;
 
--- Profiles RLS
-create policy "Users see own profile" on public.profiles 
-for select using (auth.uid() = id);
+-- 4. Policies (Who can do what?)
+-- Everyone can read properties
+create policy "Public properties are viewable by everyone" 
+on public.properties for select using (true);
 
--- Properties RLS
-create policy "Everyone reads properties" on public.properties 
-for all using (true) 
-with check (exists(select 1 from public.profiles where id = auth.uid() and role = 'admin'));
+-- Only Admins/Vendors can insert properties
+create policy "Admins/Vendors can insert properties" 
+on public.properties for insert 
+with check (exists (
+  select 1 from public.profiles
+  where profiles.id = auth.uid() and role in ('super_admin', 'vendor')
+));
 
--- Site visits RLS
-create policy "Sales see own visits" on public.site_visits 
-for select using (auth.uid() = sales_agent_id or exists(select 1 from public.profiles where id = auth.uid() and role = 'admin'));
+-- Users can read their own profile
+create policy "Users can see own profile" 
+on public.profiles for select using (auth.uid() = id);
 
-create policy "Sales create visits" on public.site_visits 
-for insert with check (auth.uid() = sales_agent_id);
-
--- STEP 6: AUTH TRIGGER
-create or replace function public.handle_new_user()
+-- 5. AUTOMATIC TRIGGER (Critical for Google Auth)
+-- This automatically creates a 'sales' profile when a user logs in with Google
+create or replace function public.handle_new_user() 
 returns trigger as $$
 begin
   insert into public.profiles (id, email, role)
-  values (new.id, new.email, 'sales')
-  on conflict (id) do nothing;
+  values (new.id, new.email, 'sales'); -- Default role is SALES
   return new;
 end;
 $$ language plpgsql security definer;
 
 create trigger on_auth_user_created
-after insert on auth.users
-for each row execute function public.handle_new_user();
-
--- STEP 7: SEED 8 BANGALORE PROPERTIES
-insert into public.properties (name, developer, location_area, zone, lat, lng, price_display, price_value, price_min, price_per_sqft, configurations, sq_ft_range, facing_direction, balcony_count, floor_levels, units_available, amenities, nearby_locations, contact_person, contact_phone, completion_duration) values
-('Sobha Neopolis', 'Sobha Ltd', 'Panathur', 'North', 12.9716, 77.5946, '1.2 Cr', 12000000, 12000000, 6500, '2BHK,3BHK', '1200-1800 sqft', 'East', 2, 'G+15', '{"2BHK":8,"3BHK":15}', ARRAY['Pool','Gym'], '{"mall":"2km"}', 'Mr. Rajesh', '9876543210', 'Q4 2026'),
-
-('Prestige Lakeside Habitat', 'Prestige Group', 'Hebbal', 'North', 13.0384, 77.5701, '1.8 Cr', 18000000, 18000000, 7200, '3BHK,4BHK', '1800-2800 sqft', 'North-East', 3, 'G+20', '{"3BHK":12}', ARRAY['Pool','Tennis'], '{"metro":"800m"}', 'Ms. Priya', '8765432109', 'Q2 2027'),
-
-('Sobha Dream Acres', 'Sobha Ltd', 'Panathur', 'South', 12.9018, 77.7000, '98 Lac', 9800000, 9800000, 5800, '2BHK,3BHK', '1050-1650 sqft', 'South', 1, 'G+12', '{"2BHK":20}', ARRAY['Pool'], '{"mall":"3km"}', 'Mr. Kumar', '7654321098', 'Q3 2026'),
-
-('Godrej Woodland', 'Godrej Properties', 'Whitefield', 'East', 12.9698, 77.7630, '1.1 Cr', 11000000, 11000000, 6200, '2BHK,3BHK', '1150-1750 sqft', 'East', 2, 'G+14', '{"2BHK":15}', ARRAY['Gym'], '{"IT Park":"1km"}', 'Mr. Anil', '6543210987', 'Q1 2027'),
-
-('Brigade Gateway', 'Brigade Group', 'Mysore Road', 'West', 12.9833, 77.5333, '1.5 Cr', 15000000, 15000000, 6800, '3BHK', '1600-2600 sqft', 'West', 2, 'G+18', '{"3BHK":6}', ARRAY['Mall'], '{"mall":"0km"}', 'Ms. Lakshmi', '5432109876', 'Ready'),
-
-('Purva Venezia', 'Puravankara', 'Yelahanka', 'North', 13.1000, 77.5833, '85 Lac', 8500000, 8500000, 5500, '2BHK', '950-1500 sqft', 'North', 2, 'G+10', '{"2BHK":25}', ARRAY['Gym'], '{"school":"1km"}', 'Mr. Singh', '9123456789', 'Q1 2026'),
-
-('Salarpuria Eligo', 'Salarpuria', 'JP Nagar', 'South', 12.9100, 77.5833, '1.0 Cr', 10000000, 10000000, 6000, '3BHK', '1100-1700 sqft', 'South-East', 2, 'G+16', '{"3BHK":18}', ARRAY['Clubhouse'], '{"metro":"1km"}', 'Ms. Rao', '9012345678', 'Q4 2026'),
-
-('Vaswani Menlo Park', 'Vaswani Group', 'KR Puram', 'East', 13.0000, 77.6833, '75 Lac', 7500000, 7500000, 5200, '2BHK', '800-1300 sqft', 'East', 1, 'G+9', '{"2BHK":20}', ARRAY['Park'], '{"IT Park":"500m"}', 'Mr. Patel', '8901234567', 'Q2 2026');
-
-commit;
-
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
 
 
 npx tsc --noEmit && npm run lint
