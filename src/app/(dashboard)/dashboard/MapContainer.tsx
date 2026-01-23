@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { Search, MapPin, Navigation } from 'lucide-react'
+import { MapPin, Navigation } from 'lucide-react' // Search is now inside LocationSearch
 import { useDashboard } from './page'
 import styles from './Dashboard.module.css'
+import LocationSearch from '@/modules/map-engine/components/LocationSearch'
 
 // Dynamic import for Leaflet (No SSR)
 const LeafletMap = dynamic(
@@ -30,14 +31,13 @@ export default function MapContainer() {
     setMapBounds
   } = useDashboard()
 
-  const [searchQuery, setSearchQuery] = useState('')
-
-  // Handle Quick Location Click
-  const handleQuickLoc = (loc: { lat: number; lng: number; name: string }) => {
-    setUserLocation({ lat: loc.lat, lng: loc.lng, displayName: loc.name })
+  // Handle Location Selection (from Search or Chips)
+  const handleLocationUpdate = (lat: number, lng: number, name: string) => {
+    setUserLocation({ lat, lng, displayName: name })
+    // Zoom in slightly when a specific location is chosen
     setMapBounds([
-      [loc.lat - 0.05, loc.lng - 0.05], 
-      [loc.lat + 0.05, loc.lng + 0.05]
+      [lat - 0.03, lng - 0.03], 
+      [lat + 0.03, lng + 0.03]
     ])
   }
 
@@ -45,18 +45,12 @@ export default function MapContainer() {
     <div className={styles.mapContainer}>
       {/* Floating Search Bar */}
       <div className={styles.searchWrapper}>
-        <div className={styles.searchBar}>
-          <Search className="w-5 h-5 text-slate-400 my-auto ml-2" />
-          <input 
-            className={styles.searchInput}
-            placeholder="Search location (e.g. Indiranagar)"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && alert('Implement Google Places API here')}
-          />
-          <button className={styles.navButton}>
-            <Navigation className="w-4 h-4" />
-          </button>
+        
+        {/* Replaced manual input with smart LocationSearch */}
+        <div className="w-full relative shadow-lg rounded-xl">
+           <LocationSearch 
+             onLocationSelect={(lat, lng, label) => handleLocationUpdate(lat, lng, label)}
+           />
         </div>
 
         {/* Quick Chips */}
@@ -64,7 +58,7 @@ export default function MapContainer() {
           {QUICK_LOCATIONS.map(loc => (
             <button 
               key={loc.name}
-              onClick={() => handleQuickLoc(loc)}
+              onClick={() => handleLocationUpdate(loc.lat, loc.lng, loc.name)}
               className={styles.chip}
             >
               <MapPin className="w-3 h-3" />

@@ -1,150 +1,158 @@
 'use client'
 
-import React from 'react'
-import { X, Building2, Map as MapIcon, Calendar, User, Phone, Layers, CheckCircle2 } from 'lucide-react'
+import React, { useMemo } from 'react'
+import { CheckCircle2, Zap, Droplets, LayoutTemplate, ShieldCheck, MapPin, Bus, School, ShoppingBag, Landmark } from 'lucide-react'
 import { useDashboard } from './page'
-import styles from './Dashboard.module.css'
-
-// 1. Reusable Component for Specs to remove repetitive HTML
-const SpecCard = ({ icon: Icon, label, value }: { icon?: any, label: string, value: string }) => (
-  <div className={styles.specCard}>
-    {Icon ? (
-      <div className="flex items-center gap-2 text-slate-500 mb-1">
-        <Icon className="w-3.5 h-3.5" />
-        <span className="text-[10px] font-bold uppercase">{label}</span>
-      </div>
-    ) : (
-      <div className="text-[10px] text-slate-500 font-bold uppercase mb-1">{label}</div>
-    )}
-    <div className="font-bold text-slate-800 text-sm">{value}</div>
-  </div>
-)
 
 export default function MegaPopup() {
-  const { hoveredListId, properties, setHoveredListId } = useDashboard()
-  
-  const prop = React.useMemo(() => 
-    properties.find(p => p.id === hoveredListId), 
-    [hoveredListId, properties]
+  // Use the new smart handlers to keep the popup alive or close it
+  const { hoveredRecId, properties, cancelHoverLeave, handleCardLeave } = useDashboard()
+
+  const data = useMemo(() => 
+    properties.find(p => p.id === hoveredRecId), 
+    [hoveredRecId, properties]
   )
 
-  if (!prop) return null
+  if (!hoveredRecId || !data) return null
 
-  const unitsMap = prop.units_available || {}
-  const nearbyMap = prop.nearby_locations || {}
-  const amenitiesList = prop.amenities || []
-
-  // 2. Data Definition for the loop (Easy to extend later)
-  const specsList = [
-    { icon: Layers, label: 'Configuration', value: prop.configurations },
-    { icon: Building2, label: 'Floors', value: prop.floor_levels || 'G+12' },
-    { label: 'Facing', value: prop.facing_direction || 'Any' },
-    { label: 'Size Range', value: prop.sq_ft_range || 'N/A' }
-  ]
+  // Helper to safely access dynamic fields if they exist, or fallback
+  const specs = (data as any).specifications || {}
+  const amenitiesDetailed = (data as any).amenities_detailed || {}
+  const socialInfra = (data as any).social_infra || (data.nearby_locations ? transformNearby(data.nearby_locations) : {})
 
   return (
-    <div className={styles.megaPopup} onMouseLeave={() => setHoveredListId(null)}>
-      {/* Header */}
-      <div className={styles.megaHeader}>
-        <div className="flex justify-between items-start">
-          <div>
-            <span className={styles.statusBadgeLight}>
-              {prop.status === 'Ready' ? 'Ready to Move' : 'Under Construction'}
-            </span>
-            <h2 className="text-xl font-bold leading-tight">{prop.name}</h2>
-            <p className="opacity-90 text-xs flex items-center gap-1 mt-1">
-              <MapIcon className="w-3 h-3" /> {prop.location_area}
-            </p>
-          </div>
-          <button onClick={() => setHoveredListId(null)} className={styles.closeBtn}>
-            <X className="w-5 h-5" />
-          </button>
+    <div 
+      className="absolute top-4 left-4 z-[1000] w-[450px] bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in slide-in-from-left-4 duration-200"
+      // --- THE BRIDGE LOGIC ---
+      onMouseEnter={cancelHoverLeave} // Mouse on popup -> Cancel the "leave" timer
+      onMouseLeave={handleCardLeave}  // Mouse leaves popup -> Start the "leave" timer (300ms)
+      // ------------------------
+    >
+      {/* Header Image Area */}
+      <div className="h-32 bg-slate-100 relative bg-[url('https://images.unsplash.com/photo-1600596542815-27b88e365298?auto=format&fit=crop&w=800')] bg-cover bg-center">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+        <div className="absolute bottom-4 left-4 text-white">
+          <h2 className="text-xl font-bold leading-none mb-1">{data.name}</h2>
+          <p className="text-sm opacity-90 flex items-center gap-1">
+            <MapPin className="w-3.5 h-3.5" /> {data.location_area}, {data.zone} Zone
+          </p>
         </div>
-        
-        <div className="mt-4 flex justify-between items-end">
-          <div className="text-2xl font-bold">{prop.price_display}</div>
-          <div className="text-right">
-             <div className="text-[10px] opacity-80 uppercase">Per Sq.Ft</div>
-             <div className="font-semibold text-sm">₹{prop.price_per_sqft}/-</div>
-          </div>
+        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur text-slate-800 px-3 py-1 rounded-full text-xs font-bold shadow-sm">
+          {data.price_display}
         </div>
       </div>
 
       {/* Scrollable Content */}
-      <div className={styles.scrollContent}>
+      <div className="flex-1 overflow-y-auto p-5 space-y-6 scrollbar-thin scrollbar-thumb-slate-200">
         
-        {/* Key Specs Grid - Refactored to Loop */}
+        {/* Key Highlights */}
         <div className="grid grid-cols-2 gap-3">
-          {specsList.map((spec, i) => (
-            <SpecCard key={i} {...spec} />
-          ))}
+          <InfoBadge icon={<ShieldCheck className="w-4 h-4 text-emerald-600"/>} label="RERA ID" value={(data as any).rera_id || "PRM/KA/RERA/..."} />
+          <InfoBadge icon={<LayoutTemplate className="w-4 h-4 text-blue-600"/>} label="Possession" value={data.completion_duration || "Ready"} />
+          <InfoBadge icon={<Zap className="w-4 h-4 text-amber-500"/>} label="Power" value="100% DG Backup" />
+          <InfoBadge icon={<Droplets className="w-4 h-4 text-cyan-500"/>} label="Water" value="Cauvery + Bore" />
         </div>
 
-        {/* Availability Section */}
-        <div>
-          <h4 className={styles.sectionHeader}>Availability</h4>
-          <div className="space-y-2">
-            {Object.entries(unitsMap).length > 0 ? (
-              Object.entries(unitsMap).map(([type, count]) => (
-                <div key={type} className={styles.availabilityItem}>
-                  <span className="font-semibold text-slate-700">{type}</span>
-                  <span className={`font-bold ${Number(count) < 3 ? 'text-red-500' : 'text-emerald-600'}`}>
-                    {String(count)} Units Left
-                  </span>
+        {/* Specifications (Dynamic JSON) */}
+        {Object.keys(specs).length > 0 ? (
+          <div>
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Building Specs</h3>
+            <div className="bg-slate-50 rounded-lg p-3 space-y-2 border border-slate-100">
+              {Object.entries(specs).map(([key, val]) => (
+                <div key={key} className="flex justify-between text-sm">
+                  <span className="text-slate-500 capitalize">{key.replace('_', ' ')}</span>
+                  <span className="font-medium text-slate-800 text-right">{String(val)}</span>
                 </div>
-              ))
-            ) : (
-              <div className="text-xs text-slate-400 italic">Availability data synced with builder</div>
-            )}
+              ))}
+            </div>
           </div>
-        </div>
+        ) : (
+          /* Fallback if specifications JSON is missing */
+          <div className="grid grid-cols-2 gap-3">
+             <InfoBadge icon={null} label="Config" value={data.configurations} />
+             <InfoBadge icon={null} label="Floors" value={data.floor_levels || 'N/A'} />
+          </div>
+        )}
 
-        {/* Amenities Section */}
+        {/* Detailed Amenities Grid */}
         <div>
-          <h4 className={styles.sectionHeader}>Premium Amenities</h4>
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Premium Amenities</h3>
           <div className="flex flex-wrap gap-2">
-            {amenitiesList.map((am) => (
-              <span key={am} className={styles.amenityChip}>
-                <CheckCircle2 className="w-3 h-3 text-blue-500" />
-                {am}
-              </span>
-            ))}
+             {/* Combine all amenity categories for display */}
+             {Object.keys(amenitiesDetailed).length > 0 ? (
+               Object.values(amenitiesDetailed).flat().map((item: any, i) => (
+                 <span key={i} className="px-2.5 py-1 bg-indigo-50 text-indigo-700 text-xs font-medium rounded-md border border-indigo-100 flex items-center gap-1.5">
+                   <CheckCircle2 className="w-3 h-3" /> {item}
+                 </span>
+               ))
+             ) : (
+                /* Fallback to simple amenities array */
+                (data.amenities || []).map((item, i) => (
+                  <span key={i} className="px-2.5 py-1 bg-slate-50 text-slate-600 text-xs font-medium rounded-md border border-slate-100">
+                    {item}
+                  </span>
+                ))
+             )}
           </div>
         </div>
 
-        {/* Nearby Access Section */}
+        {/* Nearby Infrastructure */}
         <div>
-           <h4 className={styles.sectionHeader}>Nearby Access</h4>
-          <div className="grid grid-cols-2 gap-2">
-            {Object.entries(nearbyMap).map(([place, dist]) => (
-              <div key={place} className={styles.nearbyItem}>
-                <span className="text-slate-600 capitalize">{place.replace('_', ' ')}</span>
-                <span className="font-bold text-slate-800">{String(dist)}</span>
-              </div>
-            ))}
-          </div>
+           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Location Advantage</h3>
+           <div className="space-y-3">
+              {Object.keys(socialInfra).length > 0 ? (
+                Object.entries(socialInfra).map(([key, val]) => (
+                   <div key={key} className="flex items-center gap-3 text-sm text-slate-700">
+                      <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                        {getIconForKey(key)}
+                      </div>
+                      <div>
+                        <p className="font-medium capitalize">{key.replace('_', ' ')}</p>
+                        <p className="text-xs text-slate-500">{String(val)}</p>
+                      </div>
+                   </div>
+                ))
+              ) : (
+                <p className="text-xs text-slate-400">Location data loading...</p>
+              )}
+           </div>
         </div>
 
-        {/* Footer */}
-        <div className={styles.contactFooter}>
-           <div className="flex items-center gap-2 mb-1">
-             <User className="w-3 h-3 text-slate-500" />
-             <span className="text-xs font-bold text-slate-700">{prop.contact_person || 'Sales Desk'}</span>
-           </div>
-           <div className="flex items-center gap-2">
-             <Phone className="w-3 h-3 text-slate-500" />
-             <span className="text-xs font-bold text-slate-700">{prop.contact_phone}</span>
-           </div>
-           <div className="mt-2 pt-2 border-t border-slate-200 text-[10px] text-slate-500 flex items-center gap-1">
-             <Calendar className="w-3 h-3" />
-             Completion: <span className="font-bold text-slate-700">{prop.completion_duration}</span>
-           </div>
-        </div>
       </div>
-      
-      <div className={styles.helperText}>
-         Click card to view full details & share
+
+      {/* Footer CTA */}
+      <div className="p-4 border-t border-slate-100 bg-slate-50 flex gap-3">
+        <button className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold transition-colors">
+          Download Brochure
+        </button>
+        <button className="flex-1 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-sm font-bold transition-colors">
+          View Floor Plan
+        </button>
       </div>
     </div>
   )
+}
+
+// Sub-components for cleaner code
+const InfoBadge = ({ icon, label, value }: any) => (
+  <div className="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-100 shadow-sm">
+    <div className="shrink-0">{icon}</div>
+    <div className="min-w-0">
+      <p className="text-[10px] text-slate-400 uppercase font-bold leading-none mb-0.5">{label}</p>
+      <p className="text-xs font-bold text-slate-800 truncate">{value}</p>
+    </div>
+  </div>
+)
+
+const getIconForKey = (key: string) => {
+  if (key.includes('metro') || key.includes('bus')) return <Bus className="w-4 h-4 text-slate-600"/>
+  if (key.includes('school') || key.includes('college')) return <School className="w-4 h-4 text-slate-600"/>
+  if (key.includes('mall') || key.includes('market')) return <ShoppingBag className="w-4 h-4 text-slate-600"/>
+  if (key.includes('temple') || key.includes('worship')) return <Landmark className="w-4 h-4 text-slate-600"/>
+  return <MapPin className="w-4 h-4 text-slate-600"/>
+}
+
+// Fallback helper to convert old nearby_locations format if needed
+function transformNearby(nearby: Record<string, string>) {
+  return nearby;
 }

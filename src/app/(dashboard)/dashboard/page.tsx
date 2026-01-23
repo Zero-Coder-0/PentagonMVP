@@ -1,7 +1,6 @@
 'use client'
-// Add useContext to imports
-import React, { createContext, useState, useMemo, ReactNode, useContext } from 'react'
 
+import React, { createContext, useState, useMemo, useContext, useRef, useEffect } from 'react'
 import { supabaseClient } from '@/core/db/client'
 import styles from './Dashboard.module.css'
 import MapContainer from './MapContainer'
@@ -9,7 +8,7 @@ import PropertyListContainer from './PropertyListContainer'
 import DetailContainer from './DetailContainer'
 import MegaPopup from './MegaPopup'
 
-// Types from your schema
+// --- Types (Kept from your old code) ---
 export interface Property {
   id: string
   name: string
@@ -21,7 +20,7 @@ export interface Property {
   status: 'Ready' | 'Under Construction'
   price_display: string
   price_value: number
-  price_per_sqft:number
+  price_per_sqft: number
   configurations: string
   sq_ft_range?: string
   facing_direction?: string
@@ -44,16 +43,26 @@ export interface FilterCriteria {
 }
 
 interface DashboardContextType {
+  // Data & State
   properties: Property[]
   displayedProperties: Property[]
   filters: FilterCriteria
   setFilters: (filters: FilterCriteria) => void
+  
+  // Selection & Hover
   selectedId: string | null
   setSelectedId: (id: string | null) => void
   hoveredListId: string | null
   setHoveredListId: (id: string | null) => void
   hoveredRecId: string | null
   setHoveredRecId: (id: string | null) => void
+  
+  // "Bridge" Logic (New Additions)
+  handleCardEnter: (id: string) => void
+  handleCardLeave: () => void
+  cancelHoverLeave: () => void
+
+  // Map State
   userLocation: { lat: number; lng: number; displayName: string } | null
   setUserLocation: (location: any) => void
   mapBounds?: [[number, number], [number, number]]
@@ -69,6 +78,7 @@ export function useDashboard() {
 }
 
 export default function DashboardPage() {
+  // State
   const [properties, setProperties] = useState<Property[]>([])
   const [filters, setFilters] = useState<FilterCriteria>({})
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -77,8 +87,11 @@ export default function DashboardPage() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number; displayName: string } | null>(null)
   const [mapBounds, setMapBounds] = useState<[[number, number], [number, number]] | undefined>(undefined)
 
+  // Ref for the "Sticky" bridge logic
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
   // Fetch real Supabase data
-  React.useEffect(() => {
+  useEffect(() => {
     async function fetchProperties() {
       const supabase = supabaseClient()
       const { data, error } = await supabase
@@ -92,11 +105,12 @@ export default function DashboardPage() {
     fetchProperties()
   }, [])
 
+  // Filtering Logic
   const displayedProperties = useMemo(() => {
     let items = properties.filter((item: Property) => {
       // Status
       if (filters.status && item.status !== filters.status) return false
-      // Price (default 10Cr)
+      // Price
       const maxPriceVal = (filters.maxPrice || 10) * 10000000
       if (item.price_value! > maxPriceVal) return false
       // Configurations
@@ -120,6 +134,27 @@ export default function DashboardPage() {
     return items
   }, [properties, userLocation, filters])
 
+  // --- New "Bridge" Handlers ---
+
+  // 1. Enter: Show immediately, clear any hide timers
+  const handleCardEnter = (id: string) => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
+    setHoveredRecId(id)
+  }
+
+  // 2. Leave: Wait 300ms before hiding
+  const handleCardLeave = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredRecId(null)
+    }, 300)
+  }
+
+  // 3. Popup Enter: Cancel the hide timer (keep it open)
+  const cancelHoverLeave = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
+  }
+
   const value: DashboardContextType = {
     properties,
     displayedProperties,
@@ -127,6 +162,12 @@ export default function DashboardPage() {
     selectedId, setSelectedId,
     hoveredListId, setHoveredListId,
     hoveredRecId, setHoveredRecId,
+    
+    // New handlers
+    handleCardEnter, 
+    handleCardLeave, 
+    cancelHoverLeave,
+
     userLocation, setUserLocation,
     mapBounds, setMapBounds
   }
@@ -143,9 +184,9 @@ export default function DashboardPage() {
   )
 }
 
-// Haversine formula (from your geo-calc)
+// Helper: Haversine formula
 function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371 // Earth's radius in km
+  const R = 6371 
   const dLat = (lat2 - lat1) * Math.PI / 180
   const dLon = (lon2 - lon1) * Math.PI / 180
   const a = Math.sin(dLat/2) * Math.sin(dLat/2) +

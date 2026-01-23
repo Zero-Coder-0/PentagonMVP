@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Filter, Home, ArrowUpRight, MapPin } from 'lucide-react'
+import { Filter, ArrowUpRight, MapPin, Bed } from 'lucide-react'
 import { useDashboard, Property } from './page'
 import styles from './Dashboard.module.css'
 import FilterModal from '@/modules/inventory/components/FilterModal'
@@ -11,7 +11,9 @@ export default function PropertyListContainer() {
     displayedProperties, 
     selectedId, 
     setSelectedId, 
-    setHoveredListId,
+    // New smart handlers
+    handleCardEnter,
+    handleCardLeave,
     filters,
     setFilters
   } = useDashboard()
@@ -29,7 +31,7 @@ export default function PropertyListContainer() {
           </span>
         </div>
 
-        {/* Filter Trigger Button */}
+        {/* Filter Trigger Button (Kept from old code) */}
         <button 
           onClick={() => setIsFilterOpen(true)}
           className={styles.filterBtn}
@@ -53,8 +55,10 @@ export default function PropertyListContainer() {
             <div 
               key={prop.id}
               onClick={() => setSelectedId(prop.id)}
-              onMouseEnter={() => setHoveredListId(prop.id)}
-              onMouseLeave={() => setHoveredListId(null)}
+              // --- UPDATED: Using Smart Handlers ---
+              onMouseEnter={() => handleCardEnter(prop.id)}
+              onMouseLeave={handleCardLeave}
+              // -------------------------------------
               className={`${styles.propertyCard} ${selectedId === prop.id ? styles.propertyCardSelected : styles.propertyCardDefault}`}
             >
               {/* Card Content */}
@@ -81,6 +85,7 @@ export default function PropertyListContainer() {
               {/* Bottom Tags */}
               <div className="flex items-center gap-2 mt-3">
                 <span className={styles.configTag}>
+                  <Bed className="w-3 h-3 inline mr-1"/>
                   {prop.configurations}
                 </span>
                 <span className={`${styles.statusTag} ${prop.status === 'Ready' ? styles.statusReady : styles.statusConstruction}`}>
@@ -97,7 +102,7 @@ export default function PropertyListContainer() {
         )}
       </div>
 
-      {/* Filter Modal Injection */}
+      {/* Filter Modal Injection (Kept from old code) */}
       <FilterModal 
         isOpen={isFilterOpen} 
         onClose={() => setIsFilterOpen(false)} 

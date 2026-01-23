@@ -37,7 +37,21 @@ export interface Property {
   distance?: number
   score?: number
   reasons?: string[]
+  
+  // New Rich Fields
+  rera_id?: string
+  specifications?: Record<string, string> // key-value pairs
+  amenities_detailed?: {
+    sports?: string[]
+    leisure?: string[]
+    wellness?: string[]
+    worship?: string[]
+    [key: string]: any
+  }
+  social_infra?: Record<string, string>
+  images?: string[]
 }
+
 
 export interface FilterCriteria {
   status?: string

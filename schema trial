@@ -1,0 +1,102 @@
+-- =====================================================
+-- GEOESTATE V2 SCHEMA - RICH DETAILS & JSONB FLEXIBILITY
+-- =====================================================
+
+-- 1. CLEANUP
+drop table if exists public.site_visits cascade;
+drop table if exists public.properties cascade;
+drop table if exists public.profiles cascade;
+
+-- 2. PROFILES
+create table public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  email text not null,
+  role text check (role in ('admin', 'sales')) default 'sales',
+  created_at timestamptz default now()
+);
+
+-- 3. PROPERTIES (Updated with Rich Fields)
+create table public.properties (
+  id uuid default gen_random_uuid() primary key,
+  created_at timestamptz default now(),
+  
+  -- Basic Info
+  name text not null,
+  developer text,
+  location_area text,
+  zone text check (zone in ('North', 'South', 'East', 'West')),
+  lat float8 not null,
+  lng float8 not null,
+  status text check (status in ('Ready', 'Under Construction')) default 'Under Construction',
+  
+  -- Pricing & Dimensions
+  price_display text,
+  price_value numeric,
+  price_per_sqft int,
+  configurations text, -- e.g., "2BHK, 3BHK"
+  sq_ft_range text,
+  
+  -- Rich Media & Legal
+  rera_id text,
+  images text[], -- Array of image URLs (render 0 as cover)
+  floor_plan_url text,
+  
+  -- Flexible JSONB Columns (The "Updatable" magic)
+  -- Holds: flooring, structure, electricity, water, furnishing
+  specifications jsonb default '{}', 
+  
+  -- Holds: gym, pool, temple, mosque, community_center, etc.
+  amenities_detailed jsonb default '{}',
+  
+  -- Holds: distance to metro, schools, tech parks
+  social_infra jsonb default '{}',
+  
+  units_available jsonb default '{}',
+  contact_person text,
+  contact_phone text,
+  completion_duration text
+);
+
+-- 4. RLS POLICIES
+alter table public.profiles enable row level security;
+alter table public.properties enable row level security;
+
+create policy "Public read properties" on public.properties for select using (true);
+create policy "Admins manage properties" on public.properties using (
+  exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+);
+
+-- 5. SEED DATA (With Rich JSON)
+insert into public.properties 
+(name, developer, location_area, zone, lat, lng, price_display, price_value, configurations, specifications, amenities_detailed, social_infra, completion_duration) 
+values
+(
+  'Sobha Neopolis', 
+  'Sobha Ltd', 
+  'Panathur', 
+  'North', 
+  12.9716, 
+  77.5946, 
+  '1.2 Cr', 
+  12000000, 
+  '2BHK,3BHK',
+  '{
+    "structure": "RCC Framed Seismic Zone II",
+    "flooring": "Vitrified Tiles",
+    "water_supply": "24h Borewell + Cauvery",
+    "electricity": "BESCOM + 100% DG Backup",
+    "walls": "Premium Emulsion"
+  }',
+  '{
+    "sports": ["Cricket Pitch", "Tennis Court", "Half Basketball Court"],
+    "leisure": ["Amphitheatre", "Clubhouse (20,000 sqft)", "Party Hall"],
+    "wellness": ["Gym", "Swimming Pool", "Yoga Deck"],
+    "worship": ["Temple Complex", "Meditation Zone"]
+  }',
+  '{
+    "metro": "Panathur Station (2km)",
+    "school": "Orchids Intl (1.5km)",
+    "mall": "Nexus Whitefield (3km)"
+  }',
+  'Q4 2026'
+);
