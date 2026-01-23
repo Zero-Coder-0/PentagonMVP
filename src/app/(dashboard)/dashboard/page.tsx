@@ -21,6 +21,7 @@ export interface Property {
   status: 'Ready' | 'Under Construction'
   price_display: string
   price_value: number
+  price_per_sqft:number
   configurations: string
   sq_ft_range?: string
   facing_direction?: string

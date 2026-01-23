@@ -5,10 +5,24 @@ import { X, Building2, Map as MapIcon, Calendar, User, Phone, Layers, CheckCircl
 import { useDashboard } from './page'
 import styles from './Dashboard.module.css'
 
+// 1. Reusable Component for Specs to remove repetitive HTML
+const SpecCard = ({ icon: Icon, label, value }: { icon?: any, label: string, value: string }) => (
+  <div className={styles.specCard}>
+    {Icon ? (
+      <div className="flex items-center gap-2 text-slate-500 mb-1">
+        <Icon className="w-3.5 h-3.5" />
+        <span className="text-[10px] font-bold uppercase">{label}</span>
+      </div>
+    ) : (
+      <div className="text-[10px] text-slate-500 font-bold uppercase mb-1">{label}</div>
+    )}
+    <div className="font-bold text-slate-800 text-sm">{value}</div>
+  </div>
+)
+
 export default function MegaPopup() {
   const { hoveredListId, properties, setHoveredListId } = useDashboard()
   
-  // Find property from shared context
   const prop = React.useMemo(() => 
     properties.find(p => p.id === hoveredListId), 
     [hoveredListId, properties]
@@ -16,18 +30,25 @@ export default function MegaPopup() {
 
   if (!prop) return null
 
-  // Safe parsing of JSONB fields (handles nulls)
   const unitsMap = prop.units_available || {}
   const nearbyMap = prop.nearby_locations || {}
   const amenitiesList = prop.amenities || []
 
+  // 2. Data Definition for the loop (Easy to extend later)
+  const specsList = [
+    { icon: Layers, label: 'Configuration', value: prop.configurations },
+    { icon: Building2, label: 'Floors', value: prop.floor_levels || 'G+12' },
+    { label: 'Facing', value: prop.facing_direction || 'Any' },
+    { label: 'Size Range', value: prop.sq_ft_range || 'N/A' }
+  ]
+
   return (
     <div className={styles.megaPopup} onMouseLeave={() => setHoveredListId(null)}>
-      {/* 1. Header with Gradient & Close */}
+      {/* Header */}
       <div className={styles.megaHeader}>
         <div className="flex justify-between items-start">
           <div>
-            <span className="inline-block px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-bold uppercase tracking-wider mb-1">
+            <span className={styles.statusBadgeLight}>
               {prop.status === 'Ready' ? 'Ready to Move' : 'Under Construction'}
             </span>
             <h2 className="text-xl font-bold leading-tight">{prop.name}</h2>
@@ -35,10 +56,7 @@ export default function MegaPopup() {
               <MapIcon className="w-3 h-3" /> {prop.location_area}
             </p>
           </div>
-          <button 
-            onClick={() => setHoveredListId(null)}
-            className="p-1 hover:bg-white/20 rounded transition-colors"
-          >
+          <button onClick={() => setHoveredListId(null)} className={styles.closeBtn}>
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -52,46 +70,24 @@ export default function MegaPopup() {
         </div>
       </div>
 
-      {/* 2. Scrollable Content */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-6 bg-slate-50/50">
+      {/* Scrollable Content */}
+      <div className={styles.scrollContent}>
         
-        {/* Key Specs Grid */}
+        {/* Key Specs Grid - Refactored to Loop */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
-            <div className="flex items-center gap-2 text-slate-500 mb-1">
-              <Layers className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-bold uppercase">Configuration</span>
-            </div>
-            <div className="font-bold text-slate-800 text-sm">{prop.configurations}</div>
-          </div>
-          <div className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
-            <div className="flex items-center gap-2 text-slate-500 mb-1">
-              <Building2 className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-bold uppercase">Floors</span>
-            </div>
-            <div className="font-bold text-slate-800 text-sm">{prop.floor_levels || 'G+12'}</div>
-          </div>
-          <div className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
-             <div className="text-[10px] text-slate-500 font-bold uppercase mb-1">Facing</div>
-             <div className="font-bold text-slate-800 text-sm">{prop.facing_direction || 'Any'}</div>
-          </div>
-          <div className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
-             <div className="text-[10px] text-slate-500 font-bold uppercase mb-1">Size Range</div>
-             <div className="font-bold text-slate-800 text-sm">{prop.sq_ft_range || 'N/A'}</div>
-          </div>
+          {specsList.map((spec, i) => (
+            <SpecCard key={i} {...spec} />
+          ))}
         </div>
 
-        {/* Inventory Breakdown (from JSONB) */}
+        {/* Availability Section */}
         <div>
-          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 border-b border-slate-200 pb-1">
-            Availability
-          </h4>
+          <h4 className={styles.sectionHeader}>Availability</h4>
           <div className="space-y-2">
             {Object.entries(unitsMap).length > 0 ? (
               Object.entries(unitsMap).map(([type, count]) => (
-                <div key={type} className="flex justify-between items-center bg-white p-2 rounded border border-slate-100 text-xs">
+                <div key={type} className={styles.availabilityItem}>
                   <span className="font-semibold text-slate-700">{type}</span>
-                  {/* FIX 1: Explicit String Casting */}
                   <span className={`font-bold ${Number(count) < 3 ? 'text-red-500' : 'text-emerald-600'}`}>
                     {String(count)} Units Left
                   </span>
@@ -103,14 +99,12 @@ export default function MegaPopup() {
           </div>
         </div>
 
-        {/* Amenities Chips */}
+        {/* Amenities Section */}
         <div>
-          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 border-b border-slate-200 pb-1">
-            Premium Amenities
-          </h4>
+          <h4 className={styles.sectionHeader}>Premium Amenities</h4>
           <div className="flex flex-wrap gap-2">
             {amenitiesList.map((am) => (
-              <span key={am} className="inline-flex items-center gap-1 text-[10px] bg-white border border-slate-200 px-2 py-1 rounded-full text-slate-600 font-medium">
+              <span key={am} className={styles.amenityChip}>
                 <CheckCircle2 className="w-3 h-3 text-blue-500" />
                 {am}
               </span>
@@ -118,24 +112,21 @@ export default function MegaPopup() {
           </div>
         </div>
 
-        {/* Nearby Locations (from JSONB) */}
+        {/* Nearby Access Section */}
         <div>
-           <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 border-b border-slate-200 pb-1">
-            Nearby Access
-          </h4>
+           <h4 className={styles.sectionHeader}>Nearby Access</h4>
           <div className="grid grid-cols-2 gap-2">
             {Object.entries(nearbyMap).map(([place, dist]) => (
-              <div key={place} className="flex justify-between text-xs bg-white p-2 rounded border border-slate-100">
+              <div key={place} className={styles.nearbyItem}>
                 <span className="text-slate-600 capitalize">{place.replace('_', ' ')}</span>
-                {/* FIX 2: Explicit String Casting */}
                 <span className="font-bold text-slate-800">{String(dist)}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Contact Info Footer */}
-        <div className="bg-slate-100 p-3 rounded-lg border border-slate-200">
+        {/* Footer */}
+        <div className={styles.contactFooter}>
            <div className="flex items-center gap-2 mb-1">
              <User className="w-3 h-3 text-slate-500" />
              <span className="text-xs font-bold text-slate-700">{prop.contact_person || 'Sales Desk'}</span>
@@ -149,11 +140,9 @@ export default function MegaPopup() {
              Completion: <span className="font-bold text-slate-700">{prop.completion_duration}</span>
            </div>
         </div>
-        
       </div>
       
-      {/* Helper Text */}
-      <div className="p-2 bg-slate-900 text-white text-[10px] text-center font-medium">
+      <div className={styles.helperText}>
          Click card to view full details & share
       </div>
     </div>

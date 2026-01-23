@@ -44,28 +44,28 @@ export default function MapContainer() {
   return (
     <div className={styles.mapContainer}>
       {/* Floating Search Bar */}
-      <div className="absolute top-4 left-4 right-4 z-[1000] flex flex-col gap-2">
-        <div className="bg-white p-2 rounded-lg shadow-lg border border-slate-200 flex gap-2">
+      <div className={styles.searchWrapper}>
+        <div className={styles.searchBar}>
           <Search className="w-5 h-5 text-slate-400 my-auto ml-2" />
           <input 
-            className="flex-1 outline-none text-sm text-slate-700 placeholder:text-slate-400"
+            className={styles.searchInput}
             placeholder="Search location (e.g. Indiranagar)"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && alert('Implement Google Places API here')}
           />
-          <button className="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition-colors">
+          <button className={styles.navButton}>
             <Navigation className="w-4 h-4" />
           </button>
         </div>
 
         {/* Quick Chips */}
-        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+        <div className={styles.chipContainer}>
           {QUICK_LOCATIONS.map(loc => (
             <button 
               key={loc.name}
               onClick={() => handleQuickLoc(loc)}
-              className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-all whitespace-nowrap flex items-center gap-1"
+              className={styles.chip}
             >
               <MapPin className="w-3 h-3" />
               {loc.name}

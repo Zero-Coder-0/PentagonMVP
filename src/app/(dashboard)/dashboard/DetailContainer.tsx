@@ -1,13 +1,20 @@
 'use client'
 
 import React, { useMemo } from 'react'
-// Add Home, MapPin to imports
-import { MessageCircle, Calendar, Share2, Copy, Home, MapPin } from 'lucide-react'
-import { useDashboard, Property } from './page'
+import { MessageCircle, Calendar, Home, MapPin } from 'lucide-react'
+import { useDashboard } from './page'
 import styles from './Dashboard.module.css'
 
+// 1. Reusable Card Component to reduce HTML clutter
+const StatCard = ({ label, value, valueClass = '' }: { label: string, value: string | number, valueClass?: string }) => (
+  <div className={styles.statCard}>
+    <p className={styles.statLabel}>{label}</p>
+    <p className={valueClass || styles.statValue}>{value}</p>
+  </div>
+)
+
 export default function DetailContainer() {
-  const { selectedId, displayedProperties, properties, setHoveredRecId, setSelectedId } = useDashboard()
+  const { selectedId, properties, setHoveredRecId, setSelectedId } = useDashboard()
   
   const selectedProp = useMemo(() => 
     properties.find(p => p.id === selectedId), 
@@ -23,30 +30,17 @@ export default function DetailContainer() {
         let score = 0
         const reasons: string[] = []
         
-        // 1. Price Similarity (30pts)
+        // Scoring Logic
         const priceDiff = Math.abs(p.price_value - selectedProp.price_value)
-        if ((priceDiff / selectedProp.price_value) < 0.15) {
-          score += 30
-          reasons.push('Similar Budget')
-        }
-
-        // 2. Zone Match (20pts)
-        if (p.zone === selectedProp.zone) {
-          score += 20
-          reasons.push('Same Zone')
-        }
-
-        // 3. Config Match (30pts)
-        if (p.configurations === selectedProp.configurations) {
-          score += 30
-          reasons.push('Same Config')
-        }
+        if ((priceDiff / selectedProp.price_value) < 0.15) { score += 30; reasons.push('Similar Budget') }
+        if (p.zone === selectedProp.zone) { score += 20; reasons.push('Same Zone') }
+        if (p.configurations === selectedProp.configurations) { score += 30; reasons.push('Same Config') }
 
         return { ...p, score, reasons }
       })
-      .filter(p => p.score >= 40) // Minimum threshold
+      .filter(p => p.score >= 40)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 3) // Top 3 only
+      .slice(0, 3)
   }, [selectedProp, properties])
 
   const copyToWhatsApp = () => {
@@ -58,68 +52,53 @@ export default function DetailContainer() {
 
   if (!selectedProp) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50/50">
+      <div className={styles.detailEmptyState}>
         <Home className="w-12 h-12 mb-2 opacity-20" />
         <p className="text-sm font-medium">Select a property to view details</p>
       </div>
     )
   }
 
+  // 2. Data Preparation: Define stats here to auto-populate the grid
+  const statsList = [
+    { label: 'Price', value: selectedProp.price_display },
+    { label: 'Configuration', value: selectedProp.configurations },
+    { 
+      label: 'Status', 
+      value: selectedProp.status === 'Ready' ? 'Ready' : 'Under Const.',
+      valueClass: `text-lg font-bold ${selectedProp.status === 'Ready' ? styles.statValueReady : styles.statValueConstruction}`
+    },
+    { label: 'Possession', value: selectedProp.completion_duration || 'N/A' }
+  ]
+
   return (
     <div className={styles.detailContainer}>
       <div className="p-6">
+        
         {/* Header */}
         <div className="mb-6">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-               <span className="text-[10px] font-bold tracking-wider text-blue-600 uppercase mb-1 block">
-                 {selectedProp.zone} Zone
-               </span>
-               <h1 className="text-2xl font-bold text-slate-900 leading-tight mb-2">
-                 {selectedProp.name}
-               </h1>
-               <p className="text-slate-500 text-sm flex items-center gap-1">
-                 <MapPin className="w-4 h-4" /> {selectedProp.location_area}
-               </p>
-            </div>
-          </div>
+          <span className={styles.zoneBadge}>{selectedProp.zone} Zone</span>
+          <h1 className={styles.propertyMainTitle}>{selectedProp.name}</h1>
+          <p className="text-slate-500 text-sm flex items-center gap-1">
+            <MapPin className="w-4 h-4" /> {selectedProp.location_area}
+          </p>
         </div>
 
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-3 mb-8">
-          <button 
-            onClick={copyToWhatsApp}
-            className="flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-lg font-bold text-sm shadow-emerald-200 shadow-lg transition-all active:scale-95"
-          >
-            <MessageCircle className="w-4 h-4" />
-            WhatsApp
+          <button onClick={copyToWhatsApp} className={styles.whatsappBtn}>
+            <MessageCircle className="w-4 h-4" /> WhatsApp
           </button>
-          <button className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-bold text-sm shadow-blue-200 shadow-lg transition-all active:scale-95">
-            <Calendar className="w-4 h-4" />
-            Book Visit
+          <button className={styles.bookVisitBtn}>
+            <Calendar className="w-4 h-4" /> Book Visit
           </button>
         </div>
 
-        {/* Key Stats Grid */}
+        {/* Key Stats Grid - Refactored to Loop */}
         <div className="grid grid-cols-2 gap-4 mb-8">
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-            <p className="text-xs text-slate-500 uppercase font-bold mb-1">Price</p>
-            <p className="text-lg font-bold text-slate-900">{selectedProp.price_display}</p>
-          </div>
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-            <p className="text-xs text-slate-500 uppercase font-bold mb-1">Configuration</p>
-            <p className="text-lg font-bold text-slate-900">{selectedProp.configurations}</p>
-          </div>
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-            <p className="text-xs text-slate-500 uppercase font-bold mb-1">Status</p>
-            <p className={`text-lg font-bold ${selectedProp.status === 'Ready' ? 'text-emerald-600' : 'text-amber-600'}`}>
-              {selectedProp.status === 'Ready' ? 'Ready' : 'Under Const.'}
-            </p>
-          </div>
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-            <p className="text-xs text-slate-500 uppercase font-bold mb-1">Possession</p>
-            <p className="text-lg font-bold text-slate-900">{selectedProp.completion_duration || 'N/A'}</p>
-          </div>
+          {statsList.map((stat, index) => (
+            <StatCard key={index} {...stat} />
+          ))}
         </div>
 
         {/* Smart Suggestions */}
@@ -136,7 +115,7 @@ export default function DetailContainer() {
                 onClick={() => setSelectedId(sim.id)}
                 onMouseEnter={() => setHoveredRecId(sim.id)}
                 onMouseLeave={() => setHoveredRecId(null)}
-                className="group border border-slate-200 rounded-xl p-3 hover:border-blue-400 cursor-pointer transition-all bg-white hover:shadow-md"
+                className={styles.suggestionCard}
               >
                 <div className="flex justify-between items-center mb-2">
                   <span className="font-bold text-slate-800 text-sm">{sim.name}</span>
@@ -144,9 +123,7 @@ export default function DetailContainer() {
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {sim.reasons.map(r => (
-                    <span key={r} className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-medium border border-emerald-100">
-                      {r}
-                    </span>
+                    <span key={r} className={styles.suggestionTag}>{r}</span>
                   ))}
                 </div>
               </div>
