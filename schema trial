@@ -100,3 +100,247 @@ values
   }',
   'Q4 2026'
 );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- =====================================================
+-- GEOESTATE V3: COMPLETE UNIFIED SCHEMA
+-- =====================================================
+
+-- 0. CLEANUP (Wipe everything clean safely)
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+DROP FUNCTION IF EXISTS public.handle_new_user();
+
+DROP TABLE IF EXISTS public.site_visits CASCADE;
+DROP TABLE IF EXISTS public.property_drafts CASCADE;
+DROP TABLE IF EXISTS public.properties CASCADE;
+DROP TABLE IF EXISTS public.attribute_definitions CASCADE;
+DROP TABLE IF EXISTS public.profiles CASCADE;
+
+DROP TYPE IF EXISTS user_role CASCADE;
+DROP TYPE IF EXISTS prop_status CASCADE;
+DROP TYPE IF EXISTS prop_zone CASCADE;
+
+-- 1. ENUMS & ROLES
+create type user_role as enum ('super_admin', 'tenant_admin', 'salesman', 'vendor');
+create type prop_status as enum ('Ready', 'Under Construction');
+create type prop_zone as enum ('North', 'South', 'East', 'West');
+
+-- 2. PROFILES (Identity & Auth)
+create table public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  email text not null,
+  role user_role default 'salesman',
+  is_active boolean default true,
+  created_at timestamptz default now()
+);
+
+-- 3. PROPERTIES (The Master Table)
+create table public.properties (
+  id uuid default gen_random_uuid() primary key,
+  
+  -- Identity
+  name text not null,
+  developer text,
+  rera_id text,
+  
+  -- Location
+  zone prop_zone,
+  location_area text,
+  lat float8 not null,
+  lng float8 not null,
+  
+  -- Pricing & Status
+  price_value numeric,        -- 12000000 (For sorting)
+  price_display text,         -- "1.2 Cr" (For display)
+  price_per_sqft int,
+  status prop_status default 'Under Construction', -- 'Ready' or 'Under Construction'
+  
+  -- Physical Specs
+  configurations text[],      -- ARRAY['2BHK', '3BHK']
+  sq_ft_range text,
+  floor_levels text,          -- "G+15"
+  facing_direction text,
+  balcony_count int,
+  completion_date date,       
+  completion_duration text,   -- "Q4 2026"
+  
+  -- Flexible JSONB Data
+  media jsonb default '{"images": [], "brochure": "", "floor_plan": ""}',
+  amenities_detailed jsonb default '{}', -- {"wellness": ["Pool"], "sports": ["Tennis"]}
+  social_infra jsonb default '{}',       -- {"school": "2km", "metro": "500m"}
+  specs jsonb default '{}',              -- {"flooring": "Marble"}
+  units_available jsonb default '{}',    -- {"2BHK": 5}
+  
+  -- Contact Info
+  contact_person text,
+  contact_phone text,
+
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- Indexes
+create index idx_props_price on public.properties(price_value);
+create index idx_props_zone on public.properties(zone);
+create index idx_props_config on public.properties using gin(configurations);
+
+-- 4. PROPERTY DRAFTS (Vendor Staging)
+create table public.property_drafts (
+  id uuid default gen_random_uuid() primary key,
+  vendor_id uuid references public.profiles(id),
+  submission_data jsonb not null,
+  status text check (status in ('pending', 'approved', 'rejected')) default 'pending',
+  admin_notes text,
+  created_at timestamptz default now()
+);
+
+-- 5. SITE VISITS (CRM)
+create table public.site_visits (
+  id uuid default gen_random_uuid() primary key,
+  property_id uuid references public.properties(id) on delete cascade,
+  sales_agent_id uuid references public.profiles(id) on delete cascade,
+  customer_name text not null,
+  customer_phone text not null,
+  visit_time timestamptz not null,
+  status text check (status in ('Scheduled','Completed','Cancelled')) default 'Scheduled',
+  notes text,
+  created_at timestamptz default now()
+);
+
+-- 6. ATTRIBUTE DEFINITIONS (Schema Builder)
+create table public.attribute_definitions (
+  id serial primary key,
+  label text not null,
+  field_key text not null,
+  input_type text not null,
+  is_active boolean default true
+);
+
+-- 7. SECURITY (RLS Policies)
+alter table public.profiles enable row level security;
+alter table public.properties enable row level security;
+alter table public.property_drafts enable row level security;
+alter table public.site_visits enable row level security;
+
+-- Profiles: View self
+create policy "Users see own profile" on public.profiles 
+  for select using (auth.uid() = id);
+
+-- Properties: Public Read, Admin Write
+create policy "Public read properties" on public.properties 
+  for select using (true);
+create policy "Admins manage properties" on public.properties 
+  for all using (exists (select 1 from public.profiles where id = auth.uid() and role in ('super_admin', 'tenant_admin')));
+
+-- Drafts: Vendor manage own
+create policy "Vendors manage drafts" on public.property_drafts 
+  for all using (auth.uid() = vendor_id);
+
+-- Site Visits: Sales manage own, Admin view all
+create policy "Sales manage visits" on public.site_visits 
+  for all using (auth.uid() = sales_agent_id or exists (select 1 from public.profiles where id = auth.uid() and role in ('super_admin', 'tenant_admin')));
+
+-- 8. AUTH TRIGGER (Auto-create Profile)
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.profiles (id, email, role)
+  values (new.id, new.email, 'salesman')
+  on conflict (id) do nothing;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create trigger on_auth_user_created
+after insert on auth.users
+for each row execute function public.handle_new_user();
+
+-- 9. SEED DATA (Properties with correct Status)
+INSERT INTO public.properties (
+  name, developer, location_area, zone, lat, lng, 
+  price_display, price_value, price_per_sqft, 
+  configurations, sq_ft_range, facing_direction, balcony_count, 
+  floor_levels, completion_duration, status, 
+  units_available, amenities_detailed, social_infra, contact_person, contact_phone
+) VALUES
+(
+  'Sobha Neopolis', 'Sobha Ltd', 'Panathur', 'North', 12.9716, 77.5946, 
+  '1.2 Cr', 12000000, 6500, 
+  ARRAY['2BHK','3BHK'], '1200-1800 sqft', 'East', 2, 
+  'G+15', 'Q4 2026', 'Under Construction',
+  '{"2BHK":8,"3BHK":15}', '{"wellness": ["Pool", "Gym"]}', '{"mall":"2km"}', 'Mr. Rajesh', '9876543210'
+),
+(
+  'Prestige Lakeside Habitat', 'Prestige Group', 'Hebbal', 'North', 13.0384, 77.5701, 
+  '1.8 Cr', 18000000, 7200, 
+  ARRAY['3BHK','4BHK'], '1800-2800 sqft', 'North-East', 3, 
+  'G+20', 'Q2 2027', 'Under Construction',
+  '{"3BHK":12}', '{"sports": ["Tennis"], "wellness": ["Pool"]}', '{"metro":"800m"}', 'Ms. Priya', '8765432109'
+),
+(
+  'Sobha Dream Acres', 'Sobha Ltd', 'Panathur', 'South', 12.9018, 77.7000, 
+  '98 Lac', 9800000, 5800, 
+  ARRAY['2BHK','3BHK'], '1050-1650 sqft', 'South', 1, 
+  'G+12', 'Q3 2026', 'Under Construction',
+  '{"2BHK":20}', '{"wellness": ["Pool"]}', '{"mall":"3km"}', 'Mr. Kumar', '7654321098'
+),
+(
+  'Godrej Woodland', 'Godrej Properties', 'Whitefield', 'East', 12.9698, 77.7630, 
+  '1.1 Cr', 11000000, 6200, 
+  ARRAY['2BHK','3BHK'], '1150-1750 sqft', 'East', 2, 
+  'G+14', 'Q1 2027', 'Under Construction',
+  '{"2BHK":15}', '{"wellness": ["Gym"]}', '{"IT Park":"1km"}', 'Mr. Anil', '6543210987'
+),
+(
+  'Brigade Gateway', 'Brigade Group', 'Mysore Road', 'West', 12.9833, 77.5333, 
+  '1.5 Cr', 15000000, 6800, 
+  ARRAY['3BHK'], '1600-2600 sqft', 'West', 2, 
+  'G+18', 'Ready', 'Ready', 
+  '{"3BHK":6}', '{"leisure": ["Mall"]}', '{"mall":"0km"}', 'Ms. Lakshmi', '5432109876'
+),
+(
+  'Purva Venezia', 'Puravankara', 'Yelahanka', 'North', 13.1000, 77.5833, 
+  '85 Lac', 8500000, 5500, 
+  ARRAY['2BHK'], '950-1500 sqft', 'North', 2, 
+  'G+10', 'Q1 2026', 'Under Construction',
+  '{"2BHK":25}', '{"wellness": ["Gym"]}', '{"school":"1km"}', 'Mr. Singh', '9123456789'
+),
+(
+  'Salarpuria Eligo', 'Salarpuria', 'JP Nagar', 'South', 12.9100, 77.5833, 
+  '1.0 Cr', 10000000, 6000, 
+  ARRAY['3BHK'], '1100-1700 sqft', 'South-East', 2, 
+  'G+16', 'Q4 2026', 'Under Construction',
+  '{"3BHK":18}', '{"leisure": ["Clubhouse"]}', '{"metro":"1km"}', 'Ms. Rao', '9012345678'
+),
+(
+  'Vaswani Menlo Park', 'Vaswani Group', 'KR Puram', 'East', 13.0000, 77.6833, 
+  '75 Lac', 7500000, 5200, 
+  ARRAY['2BHK'], '800-1300 sqft', 'East', 1, 
+  'G+9', 'Q2 2026', 'Under Construction',
+  '{"2BHK":20}', '{"leisure": ["Park"]}', '{"IT Park":"500m"}', 'Mr. Patel', '8901234567'
+);
+
+-- 9b. Seed Attribute Definitions
+INSERT INTO public.attribute_definitions (label, field_key, input_type)
+VALUES 
+  ('Clubhouse Size', 'clubhouse_size', 'number'),
+  ('EV Charging', 'has_ev_charging', 'boolean'),
+  ('Vastu Compliant', 'is_vastu', 'boolean');
+

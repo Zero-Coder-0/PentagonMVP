@@ -115,6 +115,59 @@ insert into public.properties (name, developer, location_area, zone, lat, lng, p
 commit;
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+---bypass to see the data 
+CREATE POLICY "Dev Mode: Public Draft Access" 
+ON public.property_drafts 
+FOR ALL 
+USING (true);
+-- Allow "Guests" to insert/update Live Properties (FOR DEV ONLY)
+CREATE POLICY "Dev Mode: Public Property Write"
+ON public.properties
+FOR INSERT
+WITH CHECK (true);
+
+CREATE POLICY "Dev Mode: Public Property Update"
+ON public.properties
+FOR UPDATE
+USING (true);
+
+
+---to reset the bypass
+DROP POLICY "Dev Mode: Public Draft Access" ON public.property_drafts;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 npx tsc --noEmit && npm run lint
 
 
