@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-// TOGGLE THIS TO TRUE TO SKIP LOGIN
+// TOGGLE THIS TO TRUE TO SKIP LOGIN (Keep false for production!)
 const DEV_BYPASS_AUTH = false 
 
 export async function createClient() {
@@ -21,13 +21,21 @@ export async function createClient() {
               cookieStore.set(name, value, options)
             )
           } catch {
-            // Ignored
+            // Ignored: This happens when calling setAll from a Server Component
           }
         },
       },
+      // [CRITICAL ADDITION] 
+      // This ensures cookies work across Vercel deployments
+      cookieOptions: {
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax', 
+        path: '/',
+      }
     }
   )
 
+  /*
   // MONKEY PATCH: If Dev Mode is ON, we intercept getUser()
   if (DEV_BYPASS_AUTH) {
     const originalGetUser = supabase.auth.getUser
@@ -48,7 +56,7 @@ export async function createClient() {
         error: null
       } as any
     }
-  }
+  }*/
 
   return supabase
 }

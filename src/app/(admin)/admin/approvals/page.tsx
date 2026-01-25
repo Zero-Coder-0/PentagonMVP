@@ -1,9 +1,9 @@
-import { createClient } from '@/core/db/client'; // Assumes you have a server client setup
+import { createClient } from '@/core/db/server'; // Assumes you have a server client setup
 import { CheckCircle, XCircle, Eye } from 'lucide-react';
 import Link from 'next/link';
 
 export default async function ApprovalsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   // Fetch pending drafts
   const { data: drafts } = await supabase

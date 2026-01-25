@@ -1,8 +1,8 @@
-import { createClient } from '@/core/db/client';
+import { createClient } from '@/core/db/server';
 import { Edit2, Trash2, MapPin } from 'lucide-react';
 
 export default async function InventoryPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   // Fetch live properties
   const { data: properties } = await supabase

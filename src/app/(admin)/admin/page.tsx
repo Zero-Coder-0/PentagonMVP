@@ -1,7 +1,7 @@
-import { createClient } from '@/core/db/client';
+import { createClient } from '@/core/db/server';
 
 export default async function AdminDashboard() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Parallel fetching for speed
   const [props, drafts, visits] = await Promise.all([
