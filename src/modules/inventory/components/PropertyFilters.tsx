@@ -1,4 +1,4 @@
-'use client'
+/*'use client'
 
 import React from 'react'
 import { FilterCriteria } from '../types'
@@ -31,8 +31,8 @@ export default function PropertyFilters({ filters, onChange }: PropertyFiltersPr
   return (
     <div style={{ padding: '16px', borderBottom: '1px solid #eee', background: '#f9fafb', display: 'flex', gap: '10px', overflowX: 'auto', whiteSpace: 'nowrap', alignItems: 'center' }}>
       
-      {/* 1. BHK Filter (Multi-select style) */}
-      <div style={{ display: 'flex', gap: '4px' }}>
+      {/* 1. BHK Filter (Multi-select style) *///}
+     /* <div style={{ display: 'flex', gap: '4px' }}>
         {['2BHK', '3BHK', '4BHK'].map(bhk => (
           <button
             key={bhk}
@@ -54,8 +54,8 @@ export default function PropertyFilters({ filters, onChange }: PropertyFiltersPr
 
       <div style={{ width: '1px', height: '20px', background: '#d1d5db', margin: '0 4px' }}></div>
 
-      {/* 2. Budget Filter (Dropdown) */}
-      <select 
+      {/* 2. Budget Filter (Dropdown) *///}
+   /*   <select 
         onChange={handlePriceChange}
         style={{ padding: '4px 8px', fontSize: '12px', border: '1px solid #d1d5db', borderRadius: '4px', cursor: 'pointer' }}
       >
@@ -66,8 +66,8 @@ export default function PropertyFilters({ filters, onChange }: PropertyFiltersPr
         <option value="20000000-100000000">2 Cr+</option>
       </select>
 
-      {/* 3. Facing Filter (Simple Toggle for now) */}
-      <select 
+      /*{/* 3. Facing Filter (Simple Toggle for now) *///}
+  /*    <select 
         onChange={(e) => onChange({ ...filters, facing: e.target.value ? { mainDoor: [e.target.value] } : undefined })}
         style={{ padding: '4px 8px', fontSize: '12px', border: '1px solid #d1d5db', borderRadius: '4px', cursor: 'pointer' }}
       >
@@ -79,3 +79,5 @@ export default function PropertyFilters({ filters, onChange }: PropertyFiltersPr
     </div>
   )
 }
+
+*/

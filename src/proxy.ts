@@ -1,3 +1,10 @@
+
+//testing requirement
+
+
+
+
+
 import { type NextRequest, NextResponse } from 'next/server'
 
 export async function proxy(request: NextRequest) {
@@ -10,3 +17,119 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
+
+/*
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
+
+export async function proxy(request: NextRequest) {
+  // 1. Setup Response & Supabase
+  let response = NextResponse.next({
+    request: { headers: request.headers },
+  })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) { return request.cookies.get(name)?.value },
+        set(name: string, value: string, options: CookieOptions) {
+          request.cookies.set({ name, value, ...options })
+          response = NextResponse.next({ request: { headers: request.headers } })
+          response.cookies.set({ name, value, ...options })
+        },
+        remove(name: string, options: CookieOptions) {
+          request.cookies.set({ name, value: '', ...options })
+          response = NextResponse.next({ request: { headers: request.headers } })
+          response.cookies.set({ name, value: '', ...options })
+        },
+      },
+    }
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+  const url = request.nextUrl.clone()
+  const path = url.pathname
+
+  // 2. PUBLIC PATHS (Allow access without login)
+  const isPublic = 
+    path === '/' || 
+    path.startsWith('/login') || 
+    path.startsWith('/auth') || 
+    path.startsWith('/fake-login') || // The trap page
+    path.startsWith('/approval-pending');
+
+  if (isPublic) {
+    // If already logged in, redirect away from login to their home
+    if (user && path === '/login') {
+      // We will check role below to decide WHERE to send them
+      // But for now, let the flow continue to the role check
+    } else {
+      return response
+    }
+  }
+
+  // 3. FORCE LOGIN
+  if (!user && !isPublic) {
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
+
+  // 4. FETCH ROLE (If user exists)
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    const role = profile?.role || 'salesman' // Default
+
+    // --- NEW: APPROVAL SYSTEM ---
+    // If you haven't assigned a role yet (or if we have a specific 'pending' status)
+    // For now, let's assume 'salesman' is the default for new Google users, 
+    // but you want to hold them. We can check if they are "approved".
+    // simpler approach: All new Google users are 'salesman' but restricted?
+    // Let's stick to your routing request:
+
+    // 5. ROUTING LOGIC (Where should they be?)
+    
+    // A. Super Admin (You) -> Can go anywhere
+    if (role === 'super_admin') {
+       return response 
+    }
+
+    // B. Tenant Admin -> /admin, /dashboard. Blocked from /super
+    if (role === 'tenant_admin') {
+      if (path.startsWith('/super')) {
+        url.pathname = '/admin'
+        return NextResponse.redirect(url)
+      }
+    }
+
+    // C. Sales -> /dashboard. Blocked from /admin, /vendor
+    if (role === 'salesman') {
+      if (path.startsWith('/admin') || path.startsWith('/vendor')) {
+        url.pathname = '/dashboard'
+        return NextResponse.redirect(url)
+      }
+    }
+
+    // D. Vendor -> /vendor. Blocked from /dashboard, /admin
+    if (role === 'vendor') {
+      if (path.startsWith('/dashboard') || path.startsWith('/admin')) {
+        url.pathname = '/vendor'
+        return NextResponse.redirect(url)
+      }
+    }
+  }
+
+  return response
+}
+
+export const config = {
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
+}*/

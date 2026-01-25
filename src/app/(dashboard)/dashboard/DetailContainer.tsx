@@ -5,11 +5,22 @@ import { MessageCircle, Calendar, Home, MapPin } from 'lucide-react'
 import { useDashboard } from './page'
 import styles from './Dashboard.module.css'
 
-// 1. Reusable Card Component to reduce HTML clutter
-const StatCard = ({ label, value, valueClass = '' }: { label: string, value: string | number, valueClass?: string }) => (
+// 1. UPDATED: StatCard now accepts string[] and joins it with commas
+const StatCard = ({ 
+  label, 
+  value, 
+  valueClass = '' 
+}: { 
+  label: string, 
+  value: string | number | string[], // Added string[] here
+  valueClass?: string 
+}) => (
   <div className={styles.statCard}>
     <p className={styles.statLabel}>{label}</p>
-    <p className={valueClass || styles.statValue}>{value}</p>
+    <p className={valueClass || styles.statValue}>
+      {/* Check if value is an array and join it, otherwise render as is */}
+      {Array.isArray(value) ? value.join(', ') : value}
+    </p>
   </div>
 )
 
@@ -34,7 +45,10 @@ export default function DetailContainer() {
         const priceDiff = Math.abs(p.price_value - selectedProp.price_value)
         if ((priceDiff / selectedProp.price_value) < 0.15) { score += 30; reasons.push('Similar Budget') }
         if (p.zone === selectedProp.zone) { score += 20; reasons.push('Same Zone') }
-        if (p.configurations === selectedProp.configurations) { score += 30; reasons.push('Same Config') }
+        // Ensure accurate comparison even if configurations is an array
+        const pConfig = Array.isArray(p.configurations) ? p.configurations.join(',') : p.configurations;
+        const sConfig = Array.isArray(selectedProp.configurations) ? selectedProp.configurations.join(',') : selectedProp.configurations;
+        if (pConfig === sConfig) { score += 30; reasons.push('Same Config') }
 
         return { ...p, score, reasons }
       })
@@ -45,7 +59,10 @@ export default function DetailContainer() {
 
   const copyToWhatsApp = () => {
     if (!selectedProp) return
-    const text = `*Project:* ${selectedProp.name}\n*Location:* ${selectedProp.location_area}\n*Price:* ${selectedProp.price_display}\n*Configs:* ${selectedProp.configurations}\n*Status:* ${selectedProp.status}\n\nBook site visit?`
+    // Handle array for clipboard text
+    const configText = Array.isArray(selectedProp.configurations) ? selectedProp.configurations.join(', ') : selectedProp.configurations;
+    
+    const text = `*Project:* ${selectedProp.name}\n*Location:* ${selectedProp.location_area}\n*Price:* ${selectedProp.price_display}\n*Configs:* ${configText}\n*Status:* ${selectedProp.status}\n\nBook site visit?`
     navigator.clipboard.writeText(text)
     alert('✅ Summary copied to clipboard!')
   }
@@ -59,10 +76,10 @@ export default function DetailContainer() {
     )
   }
 
-  // 2. Data Preparation: Define stats here to auto-populate the grid
+  // 2. Data Preparation
   const statsList = [
     { label: 'Price', value: selectedProp.price_display },
-    { label: 'Configuration', value: selectedProp.configurations },
+    { label: 'Configuration', value: selectedProp.configurations }, // This was causing the error
     { 
       label: 'Status', 
       value: selectedProp.status === 'Ready' ? 'Ready' : 'Under Const.',
@@ -94,7 +111,7 @@ export default function DetailContainer() {
           </button>
         </div>
 
-        {/* Key Stats Grid - Refactored to Loop */}
+        {/* Key Stats Grid */}
         <div className="grid grid-cols-2 gap-4 mb-8">
           {statsList.map((stat, index) => (
             <StatCard key={index} {...stat} />

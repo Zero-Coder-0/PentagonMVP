@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useState, useMemo, useContext, useRef, useEffect } from 'react'
-import { supabaseClient } from '@/core/db/client'
+import { supabaseClient } from '@/core/db/client' // Ensure this path is correct for your project
 import styles from './Dashboard.module.css'
 import MapContainer from './MapContainer'
 import PropertyListContainer from './PropertyListContainer' 
@@ -34,7 +34,7 @@ interface DashboardContextType {
   handleCardEnter: (id: string) => void
   handleCardLeave: () => void
   cancelHoverLeave: () => void
-  handlePinClick: (id: string) => void // <--- ADDED: Map Pin Click Handler
+  handlePinClick: (id: string) => void 
 
   // Map State
   userLocation: { lat: number; lng: number; displayName: string } | null
@@ -82,22 +82,42 @@ export default function DashboardPage() {
   // Ref for the "Sticky" bridge logic
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Fetch real Supabase data
+  // --- 3. Data Fetching (Integrated from Old Code) ---
   useEffect(() => {
     async function fetchProperties() {
-      const supabase = supabaseClient()
+      // Create client (Assuming supabaseClient is a factory function based on your new code)
+      const supabase = supabaseClient() 
+      
       const { data, error } = await supabase
         .from('properties')
         .select('*')
         .order('created_at', { ascending: false })
+
+      if (data) {
+        // MAP DB COLUMNS TO UI TYPES
+        // This fixes the mismatch between DB 'facing_direction' and UI 'facing'
+        const mappedProperties = data.map((item: any) => ({
+          ...item,
+          // DB has 'facing_direction' (string), UI wants 'facing' (string[] for filters)
+          // We wrap the single string in an array so the filter engine works correctly
+          facing: item.facing_direction ? [item.facing_direction] : [],
+          
+          // Ensure other new fields like 'media' or 'amenities_detailed' are passed through
+          media: item.media || { images: [] },
+          amenities_detailed: item.amenities_detailed || {},
+        })) as Property[]
+
+        setProperties(mappedProperties)
+      }
       
-      if (data) setProperties(data as Property[])
       if (error) console.error('Failed to fetch properties:', error)
     }
+
     fetchProperties()
   }, [])
 
-  // --- 3. Refactored Filtering Logic ---
+
+  // --- 4. Refactored Filtering Logic ---
   const displayedProperties = useMemo(() => {
     // Use the imported filter engine
     let items = filterProperties(properties, filters);
@@ -111,6 +131,7 @@ export default function DashboardPage() {
     }
     return items
   }, [properties, userLocation, filters])
+
 
   // --- New "Bridge" Handlers ---
 
@@ -159,7 +180,7 @@ export default function DashboardPage() {
     handleCardEnter, 
     handleCardLeave, 
     cancelHoverLeave,
-    handlePinClick, // <--- Exposed in Context
+    handlePinClick, 
 
     userLocation, setUserLocation,
     mapBounds, setMapBounds

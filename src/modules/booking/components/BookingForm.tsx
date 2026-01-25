@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { X, Calendar, User, Phone, Clock, CheckCircle } from 'lucide-react'
 import { createClient } from '@/core/db/client'
-import { Property } from '@/app/(dashboard)/dashboard/page'
+import { Property } from '@/modules/inventory/types'
 
 interface BookingFormProps {
   property: Property

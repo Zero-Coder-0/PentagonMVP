@@ -1,8 +1,10 @@
 // src/modules/inventory/types.ts
 
+// --- Enums & Unions ---
 export type Zone = 'North' | 'South' | 'East' | 'West';
 export type PropertyStatus = 'Ready' | 'Under Construction';
 
+// --- Main Entity Interface ---
 // 1. Match the DB Schema EXACTLY + UI Extensions
 export interface Property {
   // --- Identifiers & Location ---
@@ -13,6 +15,13 @@ export interface Property {
   zone: Zone;
   lat: number;
   lng: number;
+
+
+
+  totalUnits: number;
+  priceRange: { };
+
+  amenities: string[],
   
   // --- Pricing ---
   price_display: string;
@@ -25,7 +34,10 @@ export interface Property {
   // --- Physical Specs ---
   configurations: string[]; // DB is text[]: ['2BHK', '3BHK']
   sq_ft_range?: string;     // DB is text: "1200-1500 sqft"
-  facing_direction?: string;// DB is text: "East"
+  
+  // UPDATED: Matches 'facing_direction' column in DB (was previously confusingly named 'facing')
+  facing_direction?: string;
+  
   balcony_count?: number;
   floor_levels?: string;
   completion_duration?: string; // DB is text: "Q4 2026"
@@ -68,9 +80,10 @@ export interface Property {
   distance?: number;        // Calculated via Haversine
   score?: number;           // For AI/Sorting logic
   reasons?: string[];       // Explanation for AI recommendation
-  images?: string[];        // Helper accessor for media.images
+  images?: string[];        // Helper accessor for media.images (legacy support)
 }
 
+// --- Filter Interfaces ---
 // 2. Filter State Interface
 export interface FilterCriteria {
   // Basic Filters
@@ -81,8 +94,11 @@ export interface FilterCriteria {
   zones?: Zone[];
   
   // Advanced Filters
-  facing?: string[];        // e.g. ['East', 'North']
+  facing?: string[];        // UI filter often uses 'facing', mapped to 'facing_direction' in query
   sqFtMin?: number;         // Parsed from sq_ft_range
   sqFtMax?: number;
   possessionYear?: string;  // Filter by "2026" inside completion_duration
 }
+
+
+
