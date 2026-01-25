@@ -1,39 +1,40 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient as createSupabaseServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-// TOGGLE THIS TO TRUE TO SKIP LOGIN (Keep false for production!)
-const DEV_BYPASS_AUTH = false 
-
+// We export this as 'createClient' to match what your other files want
 export async function createClient() {
   const cookieStore = await cookies()
 
-  const supabase = createServerClient(
+  return createSupabaseServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return cookieStore.getAll()
+        get(name: string) {
+          return cookieStore.get(name)?.value
         },
-        setAll(cookiesToSet) {
+        set(name: string, value: string, options: any) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {
-            // Ignored: This happens when calling setAll from a Server Component
+            cookieStore.set({ name, value, ...options })
+          } catch (error) {
+            // Handle middleware usage
+          }
+        },
+        remove(name: string, options: any) {
+          try {
+            cookieStore.set({ name, value: '', ...options })
+          } catch (error) {
+            // Handle middleware usage
           }
         },
       },
-      // [CRITICAL ADDITION] 
-      // This ensures cookies work across Vercel deployments
-      cookieOptions: {
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax', 
-        path: '/',
-      }
     }
   )
+}
+
+
+
+
 
   /*
   // MONKEY PATCH: If Dev Mode is ON, we intercept getUser()
@@ -56,7 +57,6 @@ export async function createClient() {
         error: null
       } as any
     }
-  }*/
-
+  }
   return supabase
-}
+}*/
