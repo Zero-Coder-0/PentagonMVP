@@ -1,8 +1,9 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { Filter, ArrowUpRight, MapPin, Bed } from 'lucide-react'
-import { useDashboard, Property } from './page'
+import { useDashboard } from './page' // Ensure this path matches where your context is
+import { Property, FilterCriteria } from '@/modules/inventory/types'
 import styles from './Dashboard.module.css'
 import FilterModal from '@/modules/inventory/components/FilterModal'
 
@@ -11,14 +12,40 @@ export default function PropertyListContainer() {
     displayedProperties, 
     selectedId, 
     setSelectedId, 
-    // New smart handlers
+    // Smart handlers
     handleCardEnter,
     handleCardLeave,
-    filters,
-    setFilters
+    // Filter State from Context
+    filters, // This matches 'criteria'
+    setFilters // This matches 'onUpdateCriteria'
   } = useDashboard()
 
-  const [isFilterOpen, setIsFilterOpen] = React.useState(false)
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+
+  // Helper to reset filters to default state
+  const handleResetFilters = () => {
+    setFilters({
+      status: [],
+      minPrice: 0,
+      maxPrice: 0,
+      configurations: [],
+      zones: [],
+      facing: [],
+      sqFtMin: 0,
+      sqFtMax: 0,
+      possessionYear: '',
+    })
+  }
+
+  // Check if any filter is active for the UI badge
+  const hasActiveFilters = 
+    filters.status?.length > 0 || 
+    filters.minPrice! > 0 || 
+    filters.maxPrice! > 0 ||
+    filters.configurations?.length! > 0 ||
+    filters.zones?.length! > 0 ||
+    filters.facing?.length! > 0 ||
+    filters.possessionYear !== '';
 
   return (
     <div className={styles.listContainer}>
@@ -31,14 +58,14 @@ export default function PropertyListContainer() {
           </span>
         </div>
 
-        {/* Filter Trigger Button (Kept from old code) */}
+        {/* Filter Trigger Button */}
         <button 
           onClick={() => setIsFilterOpen(true)}
           className={styles.filterBtn}
         >
           <Filter className="w-4 h-4 group-hover:scale-110 transition-transform" />
           <span>Advanced Filters</span>
-          {(filters.status || filters.maxPrice) && (
+          {hasActiveFilters && (
              <span className={styles.pulseDot} />
           )}
         </button>
@@ -48,17 +75,17 @@ export default function PropertyListContainer() {
       <div className={styles.scrollList}>
         {displayedProperties.length === 0 ? (
            <div className={styles.listEmptyState}>
-             No properties found in this area.
+             No properties found matching your criteria.
            </div>
         ) : (
           displayedProperties.map((prop: Property) => (
             <div 
               key={prop.id}
               onClick={() => setSelectedId(prop.id)}
-              // --- UPDATED: Using Smart Handlers ---
+              // --- Smart Handlers ---
               onMouseEnter={() => handleCardEnter(prop.id)}
               onMouseLeave={handleCardLeave}
-              // -------------------------------------
+              // ----------------------
               className={`${styles.propertyCard} ${selectedId === prop.id ? styles.propertyCardSelected : styles.propertyCardDefault}`}
             >
               {/* Card Content */}
@@ -86,7 +113,8 @@ export default function PropertyListContainer() {
               <div className="flex items-center gap-2 mt-3">
                 <span className={styles.configTag}>
                   <Bed className="w-3 h-3 inline mr-1"/>
-                  {prop.configurations}
+                  {/* configurations is array, joining for display */}
+                  {Array.isArray(prop.configurations) ? prop.configurations.join(', ') : prop.configurations}
                 </span>
                 <span className={`${styles.statusTag} ${prop.status === 'Ready' ? styles.statusReady : styles.statusConstruction}`}>
                   {prop.status === 'Ready' ? 'Ready to Move' : 'Under Const.'}
@@ -102,12 +130,13 @@ export default function PropertyListContainer() {
         )}
       </div>
 
-      {/* Filter Modal Injection (Kept from old code) */}
+      {/* Filter Modal Injection */}
       <FilterModal 
-        isOpen={isFilterOpen} 
-        onClose={() => setIsFilterOpen(false)} 
-        filters={filters} 
-        onApply={setFilters} 
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        criteria={filters}          // Pass current context state
+        onUpdate={setFilters}       // Pass context setter
+        onReset={handleResetFilters} // Pass reset handler
       />
     </div>
   )

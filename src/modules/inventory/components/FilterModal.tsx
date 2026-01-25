@@ -1,153 +1,222 @@
-'use client'
-
-import React from 'react'
-import { X, Filter } from 'lucide-react'
-import { FilterCriteria } from '@/app/(dashboard)/dashboard/page'
+import React from 'react';
+import { X, RotateCcw } from 'lucide-react';
+import { FilterCriteria, Zone } from '../types';
 
 interface FilterModalProps {
-  isOpen: boolean
-  onClose: () => void
-  filters: FilterCriteria
-  onApply: (f: FilterCriteria) => void
+  isOpen: boolean;
+  onClose: () => void;
+  criteria: FilterCriteria;
+  onUpdate: (c: FilterCriteria) => void;
+  onReset: () => void;
 }
 
-export default function FilterModal({ isOpen, onClose, filters, onApply }: FilterModalProps) {
-  const [localFilters, setLocalFilters] = React.useState<FilterCriteria>(filters)
+export default function FilterModal({ isOpen, onClose, criteria, onUpdate, onReset }: FilterModalProps) {
+  if (!isOpen) return null;
 
-  // Sync when opening
-  React.useEffect(() => {
-    if (isOpen) setLocalFilters(filters)
-  }, [isOpen, filters])
+  // Safe check to prevent "undefined" errors if parent didn't pass criteria
+  const safeCriteria = criteria || {
+    status: [],
+    zones: [],
+    configurations: [],
+    facing: [],
+    minPrice: 0,
+    maxPrice: 0,
+    sqFtMin: 0,
+    sqFtMax: 0,
+    possessionYear: ''
+  };
 
-  if (!isOpen) return null
-
-  const handleApply = () => {
-    onApply(localFilters)
-    onClose()
-  }
-
-  const toggleConfig = (val: string) => {
-    const current = localFilters.configurations || []
-    const next = current.includes(val) 
-      ? current.filter(c => c !== val) 
-      : [...current, val]
-    setLocalFilters({ ...localFilters, configurations: next })
-  }
+  const toggleArray = (field: keyof FilterCriteria, value: string) => {
+    // Force cast to string[] because we know we are only calling this for array fields
+    const current = (safeCriteria[field] as string[]) || [];
+    
+    const updated = current.includes(value)
+      ? current.filter(i => i !== value)
+      : [...current, value];
+      
+    onUpdate({ ...safeCriteria, [field]: updated });
+  };
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
         
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-          <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-            <Filter className="w-5 h-5 text-blue-600" />
-            Advanced Filters
-          </h3>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-            <X className="w-5 h-5 text-slate-500" />
+        <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+          <h3 className="font-bold text-slate-800 text-lg">Filters</h3>
+          <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition">
+            <X size={20} className="text-slate-500" />
           </button>
         </div>
 
         {/* Scrollable Content */}
-        <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
+        <div className="p-6 overflow-y-auto space-y-8 flex-1">
           
-          {/* 1. Status */}
-          <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 block">Project Status</label>
-            <div className="grid grid-cols-2 gap-3">
+          {/* 1. Property Status (WAS MISSING) */}
+          <section>
+            <h4 className="text-sm font-bold text-slate-900 uppercase mb-3">Property Status</h4>
+            <div className="flex flex-wrap gap-2">
               {['Ready', 'Under Construction'].map(status => (
                 <button
                   key={status}
-                  onClick={() => setLocalFilters({ ...localFilters, status: localFilters.status === status ? undefined : status })}
-                  className={`py-2 px-3 rounded-lg text-sm font-semibold border transition-all ${
-                    localFilters.status === status 
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-100' 
-                      : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'
+                  onClick={() => toggleArray('status', status)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition ${
+                    safeCriteria.status?.includes(status)
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400'
                   }`}
                 >
-                  {status === 'Ready' ? 'Ready to Move' : 'Under Construction'}
+                  {status}
                 </button>
               ))}
             </div>
-          </div>
+          </section>
 
-          {/* 2. Budget Slider */}
-          <div>
-            <div className="flex justify-between mb-2">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Max Budget</label>
-              <span className="text-sm font-bold text-blue-600">{localFilters.maxPrice || 10} Cr</span>
-            </div>
-            <input 
-              type="range" 
-              min="0.5" 
-              max="20" 
-              step="0.5"
-              value={localFilters.maxPrice || 10}
-              onChange={(e) => setLocalFilters({ ...localFilters, maxPrice: Number(e.target.value) })}
-              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-            />
-            <div className="flex justify-between text-[10px] text-slate-400 mt-1 font-medium">
-              <span>50L</span>
-              <span>20Cr+</span>
-            </div>
-          </div>
-
-          {/* 3. Configurations */}
-          <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 block">Configurations</label>
+          {/* 2. Zone (WAS MISSING) */}
+          <section>
+            <h4 className="text-sm font-bold text-slate-900 uppercase mb-3">Zone</h4>
             <div className="flex flex-wrap gap-2">
-              {['1BHK', '2BHK', '3BHK', '4BHK', 'Villa'].map(conf => (
+              {['North', 'South', 'East', 'West'].map(zone => (
+                <button
+                  key={zone}
+                  onClick={() => toggleArray('zones', zone)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition ${
+                    safeCriteria.zones?.includes(zone as Zone)
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400'
+                  }`}
+                >
+                  {zone}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* 3. Budget Range */}
+          <section>
+            <h4 className="text-sm font-bold text-slate-900 uppercase mb-3">Budget Range (₹)</h4>
+            <div className="flex gap-4 items-center">
+              <div className="flex-1">
+                <input 
+                  type="number" 
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm"
+                  placeholder="Min Price"
+                  value={safeCriteria.minPrice || ''}
+                  onChange={(e) => onUpdate({...safeCriteria, minPrice: Number(e.target.value)})}
+                />
+              </div>
+              <span className="text-slate-300">-</span>
+              <div className="flex-1">
+                <input 
+                  type="number" 
+                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm"
+                  placeholder="Max Price"
+                  value={safeCriteria.maxPrice || ''}
+                  onChange={(e) => onUpdate({...safeCriteria, maxPrice: Number(e.target.value)})}
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* 4. Possession Year */}
+          <section>
+            <h4 className="text-sm font-bold text-slate-900 uppercase mb-3">Possession By</h4>
+            <div className="flex flex-wrap gap-2">
+              {['2025', '2026', '2027', '2028', 'Ready'].map(year => (
+                <button
+                  key={year}
+                  onClick={() => onUpdate({ ...safeCriteria, possessionYear: safeCriteria.possessionYear === year ? '' : year })}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition ${
+                    safeCriteria.possessionYear === year
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400'
+                  }`}
+                >
+                  {year}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* 5. Configuration */}
+          <section>
+            <h4 className="text-sm font-bold text-slate-900 uppercase mb-3">Bedrooms</h4>
+            <div className="flex flex-wrap gap-2">
+              {['1BHK', '2BHK', '3BHK', '4BHK'].map(conf => (
                 <button
                   key={conf}
-                  onClick={() => toggleConfig(conf)}
-                  className={`px-4 py-2 rounded-full text-xs font-bold border transition-all ${
-                    localFilters.configurations?.includes(conf)
-                      ? 'bg-slate-800 text-white border-slate-800'
-                      : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                  onClick={() => toggleArray('configurations', conf)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition ${
+                    safeCriteria.configurations?.includes(conf)
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400'
                   }`}
                 >
                   {conf}
                 </button>
               ))}
             </div>
-          </div>
-          
-          {/* 4. Facing (New Schema Field) */}
-          <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 block">Facing</label>
-            <select 
-               className="w-full p-2 border border-slate-300 rounded-lg text-sm bg-white"
-               onChange={(e) => setLocalFilters({ ...localFilters, facing: e.target.value ? [e.target.value] : [] })}
-               value={localFilters.facing?.[0] || ''}
-            >
-               <option value="">Any Direction</option>
-               <option value="North">North Facing</option>
-               <option value="East">East Facing</option>
-               <option value="West">West Facing</option>
-               <option value="South">South Facing</option>
-            </select>
-          </div>
+          </section>
+
+          {/* 6. Area */}
+          <section>
+            <h4 className="text-sm font-bold text-slate-900 uppercase mb-3">Area (Sq. Ft)</h4>
+            <div className="flex gap-4 items-center">
+              <input 
+                type="number" 
+                className="flex-1 p-2.5 border border-slate-300 rounded-lg text-sm"
+                placeholder="Min"
+                value={safeCriteria.sqFtMin || ''}
+                onChange={(e) => onUpdate({...safeCriteria, sqFtMin: Number(e.target.value)})}
+              />
+              <span className="text-slate-300">-</span>
+              <input 
+                type="number" 
+                className="flex-1 p-2.5 border border-slate-300 rounded-lg text-sm"
+                placeholder="Max"
+                value={safeCriteria.sqFtMax || ''}
+                onChange={(e) => onUpdate({...safeCriteria, sqFtMax: Number(e.target.value)})}
+              />
+            </div>
+          </section>
+
+          {/* 7. Facing */}
+          <section>
+            <h4 className="text-sm font-bold text-slate-900 uppercase mb-3">Facing</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {['East', 'West', 'North', 'South', 'North-East'].map(face => (
+                <label key={face} className="flex items-center gap-2 p-2 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50">
+                  <input 
+                    type="checkbox"
+                    checked={safeCriteria.facing?.includes(face)}
+                    onChange={() => toggleArray('facing', face)}
+                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-slate-700">{face}</span>
+                </label>
+              ))}
+            </div>
+          </section>
 
         </div>
 
-        {/* Footer Actions */}
-        <div className="p-6 pt-4 border-t border-slate-100 bg-slate-50 flex gap-3">
+        {/* Footer */}
+        <div className="p-5 border-t border-slate-100 bg-slate-50 flex gap-3">
           <button 
-            onClick={() => setLocalFilters({})}
-            className="flex-1 py-3 text-slate-500 font-bold text-sm hover:bg-slate-100 rounded-lg transition-colors"
+            onClick={onReset}
+            className="px-4 py-3 rounded-xl border border-slate-300 text-slate-600 font-bold flex items-center gap-2 hover:bg-white transition"
           >
-            Reset
+            <RotateCcw size={16} /> Reset
           </button>
           <button 
-            onClick={handleApply}
-            className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-lg shadow-lg shadow-blue-200 transition-all active:scale-95"
+            onClick={onClose}
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-200 transition"
           >
-            Apply Filters
+            Show Results
           </button>
         </div>
 
       </div>
     </div>
-  )
+  );
 }

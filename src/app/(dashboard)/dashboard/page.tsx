@@ -8,39 +8,11 @@ import PropertyListContainer from './PropertyListContainer'
 import DetailContainer from './DetailContainer'
 import MegaPopup from './MegaPopup'
 
-// --- Types (Kept from your old code) ---
-export interface Property {
-  id: string
-  name: string
-  developer?: string
-  location_area: string
-  zone: 'North' | 'South' | 'East' | 'West'
-  lat: number
-  lng: number
-  status: 'Ready' | 'Under Construction'
-  price_display: string
-  price_value: number
-  price_per_sqft: number
-  configurations: string
-  sq_ft_range?: string
-  facing_direction?: string
-  balcony_count?: number
-  floor_levels?: string
-  units_available: Record<string, number>
-  amenities?: string[]
-  nearby_locations?: Record<string, string>
-  contact_person?: string
-  contact_phone?: string
-  completion_duration?: string
-}
+// --- 1. Imports from Modules ---
+import { Property, FilterCriteria } from '@/modules/inventory/types';
+import { filterProperties } from '@/modules/inventory/utils/filter-engine';
 
-export interface FilterCriteria {
-  status?: string
-  maxPrice?: number
-  configurations?: string[]
-  facing?: string[]
-  dynamicFilters?: Record<string, boolean>
-}
+// --- 2. Types & Context ---
 
 interface DashboardContextType {
   // Data & State
@@ -48,7 +20,8 @@ interface DashboardContextType {
   displayedProperties: Property[]
   filters: FilterCriteria
   setFilters: (filters: FilterCriteria) => void
-  
+  resetFilters: () => void; // Added reset helper to context
+
   // Selection & Hover
   selectedId: string | null
   setSelectedId: (id: string | null) => void
@@ -57,7 +30,7 @@ interface DashboardContextType {
   hoveredRecId: string | null
   setHoveredRecId: (id: string | null) => void
   
-  // "Bridge" Logic (New Additions)
+  // "Bridge" Logic
   handleCardEnter: (id: string) => void
   handleCardLeave: () => void
   cancelHoverLeave: () => void
@@ -80,7 +53,25 @@ export function useDashboard() {
 export default function DashboardPage() {
   // State
   const [properties, setProperties] = useState<Property[]>([])
-  const [filters, setFilters] = useState<FilterCriteria>({})
+
+  // --- Robust Filter Initialization ---
+  const initialFilters: FilterCriteria = {
+    // Basic Fields
+    status: [],           
+    minPrice: 0,
+    maxPrice: 0,
+    configurations: [],   
+    zones: [],            
+    
+    // Advanced Fields
+    facing: [],           
+    sqFtMin: 0,
+    sqFtMax: 0,
+    possessionYear: '',
+  }
+
+  const [filters, setFilters] = useState<FilterCriteria>(initialFilters)
+
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [hoveredListId, setHoveredListId] = useState<string | null>(null)
   const [hoveredRecId, setHoveredRecId] = useState<string | null>(null)
@@ -105,26 +96,12 @@ export default function DashboardPage() {
     fetchProperties()
   }, [])
 
-  // Filtering Logic
+  // --- 3. Refactored Filtering Logic ---
   const displayedProperties = useMemo(() => {
-    let items = properties.filter((item: Property) => {
-      // Status
-      if (filters.status && item.status !== filters.status) return false
-      // Price
-      const maxPriceVal = (filters.maxPrice || 10) * 10000000
-      if (item.price_value! > maxPriceVal) return false
-      // Configurations
-      if (filters.configurations?.length) {
-        if (!filters.configurations.includes(item.configurations)) return false
-      }
-      // Facing
-      if (Array.isArray(filters.facing) && filters.facing.length) {
-        if (!filters.facing.includes(item.facing_direction || '')) return false
-      }
-      return true
-    })
+    // Use the imported filter engine
+    let items = filterProperties(properties, filters);
 
-    // Distance sort
+    // Keep existing Distance sort logic
     if (userLocation) {
       items = items.map((item: Property) => ({
         ...item,
@@ -155,10 +132,17 @@ export default function DashboardPage() {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
   }
 
+  // Helper to reset filters
+  const resetFilters = () => {
+    setFilters(initialFilters)
+  }
+
   const value: DashboardContextType = {
     properties,
     displayedProperties,
     filters, setFilters,
+    resetFilters, // Expose reset function
+    
     selectedId, setSelectedId,
     hoveredListId, setHoveredListId,
     hoveredRecId, setHoveredRecId,
@@ -176,6 +160,7 @@ export default function DashboardPage() {
     <DashboardContext.Provider value={value}>
       <div className={styles.dashboardGrid}>
         <MapContainer />
+        {/* We don't need to pass props manually since they are in context */}
         <PropertyListContainer />
         <DetailContainer />
         <MegaPopup />

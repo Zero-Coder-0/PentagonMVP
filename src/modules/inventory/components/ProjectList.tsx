@@ -20,7 +20,7 @@ export function ProjectList({ properties, onSelect }: ProjectListProps) {
             <h3 className="font-bold text-gray-900">{prop.name}</h3>
             <span className="text-xs font-semibold px-2 py-1 bg-gray-100 rounded text-gray-600">
               {prop.configuration}
-            </span>
+            </span>z
           </div>
           
           <p className="text-sm text-gray-500 mt-1">{prop.location}</p>

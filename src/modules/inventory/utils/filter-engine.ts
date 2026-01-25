@@ -1,41 +1,80 @@
-import { InventoryItem, FilterCriteria } from '../types';
+// src/modules/inventory/utils/filter-engine.ts
 
-export const FilterEngine = {
-  apply: (items: InventoryItem[], criteria: FilterCriteria): InventoryItem[] => {
-    return items.filter(item => {
-      // 1. Status Check
-      if (criteria.status && item.status !== criteria.status) return false;
+import { Property, FilterCriteria } from '../types';
 
-      // 2. BHK Check
-      if (criteria.configurations && criteria.configurations.length > 0) {
-        if (!criteria.configurations.includes(item.configuration)) return false;
+export function filterProperties(properties: Property[], criteria: FilterCriteria): Property[] {
+  return properties.filter((property) => {
+    
+    // 1. Status (Safe Check)
+    // We check if criteria.status exists AND has length
+    if (criteria.status?.length && !criteria.status.includes(property.status)) {
+      return false;
+    }
+
+    // 2. Zones (Safe Check)
+    if (criteria.zones?.length && !criteria.zones.includes(property.zone)) {
+      return false;
+    }
+
+    // 3. Price Range
+    // Treat undefined as 0
+    const minPrice = criteria.minPrice || 0;
+    const maxPrice = criteria.maxPrice || 0;
+
+    if (minPrice > 0 && property.price_value < minPrice) return false;
+    if (maxPrice > 0 && property.price_value > maxPrice) return false;
+
+    // 4. Configurations (Overlap Check)
+    if (criteria.configurations?.length) {
+      // Check if property.configurations has ANY match with selected filters
+      const hasMatch = property.configurations?.some(config => 
+        criteria.configurations!.includes(config)
+      );
+      if (!hasMatch) return false;
+    }
+
+    // 5. Facing (Exact Match)
+    if (criteria.facing?.length) {
+      // If property has no facing data, or it doesn't match selected, return false
+      if (!property.facing_direction || !criteria.facing.includes(property.facing_direction)) {
+        return false;
       }
+    }
 
-      // 3. Price Range Check
-      if (criteria.priceRange) {
-        if (item.priceValue < criteria.priceRange.min) return false;
-        if (item.priceValue > criteria.priceRange.max) return false;
+    // 6. Possession Year (Substring Match)
+    if (criteria.possessionYear) {
+      if (!property.completion_duration?.includes(criteria.possessionYear)) {
+        return false;
       }
+    }
 
-      // 4. Facing Check - FIXED: Handle both array and object types
-      if (criteria.facing) {
-        const itemFacing = item.facingDir || 'East';
-        
-        // Check if facing is an array (simple string[])
-        if (Array.isArray(criteria.facing)) {
-          if (criteria.facing.length > 0 && !criteria.facing.includes(itemFacing)) {
-            return false;
-          }
-        }
-        // Check if facing is an object with mainDoor property
-        else if (criteria.facing.mainDoor && criteria.facing.mainDoor.length > 0) {
-          if (!criteria.facing.mainDoor.includes(itemFacing)) {
-            return false;
-          }
-        }
-      }
+    // 7. Area (SBA) Range
+    const minSqFt = criteria.sqFtMin || 0;
+    const maxSqFt = criteria.sqFtMax || 0;
 
-      return true;
-    });
-  }
-};
+    if (minSqFt > 0 || maxSqFt > 0) {
+      const { min, max } = parseSba(property.sq_ft_range);
+      
+      // If parsing failed (0,0), exclude the property
+      if (min === 0 && max === 0) return false;
+
+      if (minSqFt > 0 && max < minSqFt) return false; // Too small
+      if (maxSqFt > 0 && min > maxSqFt) return false; // Too big
+    }
+
+    return true;
+  });
+}
+
+// Helper: "1200-1800 sqft" -> { min: 1200, max: 1800 }
+function parseSba(val?: string) {
+  if (!val) return { min: 0, max: 0 };
+  
+  // Remove non-numeric characters except hyphen
+  const nums = val.replace(/[^0-9-]/g, '').split('-').map(Number);
+  
+  if (nums.length === 2) return { min: nums[0], max: nums[1] };
+  if (nums.length === 1) return { min: nums[0], max: nums[0] };
+  
+  return { min: 0, max: 0 };
+}

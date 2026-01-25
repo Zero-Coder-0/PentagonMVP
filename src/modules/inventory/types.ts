@@ -1,68 +1,86 @@
 // src/modules/inventory/types.ts
 
-export type Zone = 'North' | 'South' | 'East' | 'West'
+export type Zone = 'North' | 'South' | 'East' | 'West';
+export type PropertyStatus = 'Ready' | 'Under Construction';
 
+// 1. Match the DB Schema EXACTLY + UI Extensions
 export interface Property {
-  id: string
-  name: string
-  developer?: string
-  location_area: string
-  zone: Zone
-  lat: number
-  lng: number
+  // --- Identifiers & Location ---
+  id: string;
+  name: string;
+  developer?: string;
+  location_area: string;
+  zone: Zone;
+  lat: number;
+  lng: number;
   
-  status: 'Ready' | 'Under Construction'
-  
-  price_display: string
-  price_value: number
-  price_per_sqft?: number // <--- ADDED THIS FIELD
-  
-  configurations: string
-  sq_ft_range?: string
-  facing_direction?: string
-  balcony_count?: number
-  floor_levels?: string
-  
-  // JSONB / Complex
-  units_available: Record<string, number>
-  amenities?: string[]
-  nearby_locations?: Record<string, string>
-  
-  // Contact
-  contact_person?: string
-  contact_phone?: string
-  completion_duration?: string
+  // --- Pricing ---
+  price_display: string;
+  price_value: number;     // Numeric for sorting/filtering
+  price_per_sqft?: number; // DB column: price_per_sqft
 
-  // UI Calculated
-  distance?: number
-  score?: number
-  reasons?: string[]
+  // --- Status ---
+  status: PropertyStatus;
   
-  // New Rich Fields
-  rera_id?: string
-  specifications?: Record<string, string> // key-value pairs
+  // --- Physical Specs ---
+  configurations: string[]; // DB is text[]: ['2BHK', '3BHK']
+  sq_ft_range?: string;     // DB is text: "1200-1500 sqft"
+  facing_direction?: string;// DB is text: "East"
+  balcony_count?: number;
+  floor_levels?: string;
+  completion_duration?: string; // DB is text: "Q4 2026"
+  rera_id?: string;
+
+  // --- Rich Data (JSONB mappings) ---
+  
+  // Mapped from DB 'media' jsonb column
+  media?: {
+    images: string[];
+    brochure?: string;
+    floor_plan?: string;
+  }; 
+  
+  // Mapped from DB 'specs' jsonb column
+  specs?: Record<string, string>; 
+  
+  // Mapped from DB 'amenities_detailed' jsonb column
   amenities_detailed?: {
-    sports?: string[]
-    leisure?: string[]
-    wellness?: string[]
-    worship?: string[]
-    [key: string]: any
-  }
-  social_infra?: Record<string, string>
-  images?: string[]
+    sports?: string[];
+    leisure?: string[];
+    wellness?: string[];
+    worship?: string[];
+    [key: string]: any;
+  };
+  
+  // Mapped from DB 'social_infra' jsonb column
+  social_infra?: Record<string, string>;
+
+  // Mapped from DB 'units_available' jsonb column
+  units_available?: Record<string, number>;
+  
+  // --- Contact ---
+  contact_person?: string;
+  contact_phone?: string;
+
+  // --- UI Only (Calculated on frontend, not in DB) ---
+  distance?: number;        // Calculated via Haversine
+  score?: number;           // For AI/Sorting logic
+  reasons?: string[];       // Explanation for AI recommendation
+  images?: string[];        // Helper accessor for media.images
 }
 
-
+// 2. Filter State Interface
 export interface FilterCriteria {
-  status?: string
-  maxPrice?: number
-  configurations?: string[]
-  facing?: string[]
-  dynamicFilters?: Record<string, boolean>
+  // Basic Filters
+  status?: string[];        // Array for multi-select (e.g. ['Ready', 'Under Construction'])
+  minPrice?: number;
+  maxPrice?: number;
+  configurations?: string[];
+  zones?: Zone[];
   
-  // Legacy/Future support
-  minPrice?: number
-  zones?: string[]
-  sqFtMin?: number
-  sqFtMax?: number
+  // Advanced Filters
+  facing?: string[];        // e.g. ['East', 'North']
+  sqFtMin?: number;         // Parsed from sq_ft_range
+  sqFtMax?: number;
+  possessionYear?: string;  // Filter by "2026" inside completion_duration
 }
