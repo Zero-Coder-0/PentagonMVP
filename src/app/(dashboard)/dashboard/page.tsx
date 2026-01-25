@@ -20,7 +20,7 @@ interface DashboardContextType {
   displayedProperties: Property[]
   filters: FilterCriteria
   setFilters: (filters: FilterCriteria) => void
-  resetFilters: () => void; // Added reset helper to context
+  resetFilters: () => void;
 
   // Selection & Hover
   selectedId: string | null
@@ -34,6 +34,7 @@ interface DashboardContextType {
   handleCardEnter: (id: string) => void
   handleCardLeave: () => void
   cancelHoverLeave: () => void
+  handlePinClick: (id: string) => void // <--- ADDED: Map Pin Click Handler
 
   // Map State
   userLocation: { lat: number; lng: number; displayName: string } | null
@@ -132,6 +133,13 @@ export default function DashboardPage() {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
   }
 
+  // 4. Map Pin Click: Highlight and Open Popup immediately
+  const handlePinClick = (id: string) => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
+    setSelectedId(id)      // Highlights the list item
+    setHoveredRecId(id)    // Opens the MegaPopup
+  }
+
   // Helper to reset filters
   const resetFilters = () => {
     setFilters(initialFilters)
@@ -141,16 +149,17 @@ export default function DashboardPage() {
     properties,
     displayedProperties,
     filters, setFilters,
-    resetFilters, // Expose reset function
+    resetFilters,
     
     selectedId, setSelectedId,
     hoveredListId, setHoveredListId,
     hoveredRecId, setHoveredRecId,
     
-    // New handlers
+    // Handlers
     handleCardEnter, 
     handleCardLeave, 
     cancelHoverLeave,
+    handlePinClick, // <--- Exposed in Context
 
     userLocation, setUserLocation,
     mapBounds, setMapBounds
@@ -160,7 +169,6 @@ export default function DashboardPage() {
     <DashboardContext.Provider value={value}>
       <div className={styles.dashboardGrid}>
         <MapContainer />
-        {/* We don't need to pass props manually since they are in context */}
         <PropertyListContainer />
         <DetailContainer />
         <MegaPopup />

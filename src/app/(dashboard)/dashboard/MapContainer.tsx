@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { MapPin, Navigation } from 'lucide-react' // Search is now inside LocationSearch
+import { MapPin, Navigation } from 'lucide-react' 
 import { useDashboard } from './page'
 import styles from './Dashboard.module.css'
 import LocationSearch from '@/modules/map-engine/components/LocationSearch'
@@ -24,7 +24,7 @@ export default function MapContainer() {
   const { 
     displayedProperties, 
     selectedId, 
-    setSelectedId, 
+    handlePinClick, // <--- Using the dedicated handler from Context
     userLocation, 
     setUserLocation,
     mapBounds,
@@ -72,7 +72,7 @@ export default function MapContainer() {
       <LeafletMap 
         items={displayedProperties}
         selectedId={selectedId}
-        onSelect={setSelectedId}
+        onSelect={handlePinClick} // <--- Pass the new handler here
         center={userLocation ? [userLocation.lat, userLocation.lng] : undefined}
         bounds={mapBounds}
       />

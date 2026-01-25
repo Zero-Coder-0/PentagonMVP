@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Filter, ArrowUpRight, MapPin, Bed } from 'lucide-react'
 import { useDashboard } from './page' // Ensure this path matches where your context is
 import { Property, FilterCriteria } from '@/modules/inventory/types'
@@ -21,6 +21,19 @@ export default function PropertyListContainer() {
   } = useDashboard()
 
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+
+  // <--- NEW: SCROLL REFS FOR AUTO-SCROLLING --->
+  const itemRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
+
+  // Effect to auto-scroll when selectedId changes (e.g., from Map Pin click)
+  useEffect(() => {
+    if (selectedId && itemRefs.current[selectedId]) {
+      itemRefs.current[selectedId]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      })
+    }
+  }, [selectedId])
 
   // Helper to reset filters to default state
   const handleResetFilters = () => {
@@ -81,6 +94,8 @@ export default function PropertyListContainer() {
           displayedProperties.map((prop: Property) => (
             <div 
               key={prop.id}
+              // <--- NEW: ATTACH REF --->
+              ref={(el) => { itemRefs.current[prop.id] = el }} 
               onClick={() => setSelectedId(prop.id)}
               // --- Smart Handlers ---
               onMouseEnter={() => handleCardEnter(prop.id)}
