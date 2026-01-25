@@ -1,10 +1,11 @@
 'use client'
 
-import React, { useState, use } from 'react' // Import use
+import React, { useState, use } from 'react' 
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/core/db/client'
 import NearbyInfraForm from '@/components/vendor/NearbyInfraForm'
+import MediaManager from '@/components/vendor/MediaManager'
 import { Save, CheckCircle2 } from 'lucide-react'
 
 // Load map dynamically to avoid SSR issues
@@ -19,7 +20,6 @@ const AMENITIES_LIST = [
   "24/7 Security", "Power Backup", "CCTV", "Amphitheatre"
 ];
 
-// --- 1. Property Form Component (Extracted Logic) ---
 function PropertyForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -38,13 +38,21 @@ function PropertyForm() {
     contact_person: '',
     contact_phone: '',
     
-    // Complex Fields
+    // Arrays & Objects
     amenities: [] as string[],
+    
+    // Media Object matching Schema
+    media: {
+      images: [] as string[],
+      floor_plan: ''
+    },
+
+    // Infra Object matching Schema
     nearby_locations: {
-      transport: [],
-      education: [],
-      food: [],
-      health: []
+      transport: [] as any[],
+      education: [] as any[],
+      food: [] as any[],
+      health: [] as any[]
     }
   });
 
@@ -70,6 +78,7 @@ function PropertyForm() {
 
     const supabase = createClient();
     
+    // We submit to 'property_drafts'
     const { error } = await supabase.from('property_drafts').insert({
       submission_data: formData,
       status: 'pending'
@@ -79,7 +88,6 @@ function PropertyForm() {
       alert('Error submitting property: ' + error.message);
       setLoading(false);
     } else {
-      // Navigate to success state
       router.push('?success=true');
     }
   };
@@ -87,7 +95,7 @@ function PropertyForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       
-      {/* Basic Info */}
+      {/* 1. Basic Info */}
       <section className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
         <h2 className="text-lg font-bold border-b pb-2">Basic Details</h2>
         <div className="grid grid-cols-2 gap-4">
@@ -130,7 +138,7 @@ function PropertyForm() {
         </div>
       </section>
 
-      {/* Location & Zone */}
+      {/* 2. Location & Zone */}
       <section className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
         <div className="flex justify-between items-center border-b pb-2">
           <h2 className="text-lg font-bold">Location</h2>
@@ -147,7 +155,7 @@ function PropertyForm() {
         </div>
       </section>
 
-      {/* Amenities */}
+      {/* 3. Amenities (On-Site) */}
       <section className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
         <h2 className="text-lg font-bold border-b pb-2">Property Amenities</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -165,13 +173,21 @@ function PropertyForm() {
         </div>
       </section>
 
-      {/* Nearby Infra */}
+      {/* 4. Media Manager (Images & Floor Plan) */}
+      <MediaManager 
+        images={formData.media.images}
+        floorPlan={formData.media.floor_plan}
+        onImagesChange={(imgs) => setFormData({...formData, media: {...formData.media, images: imgs}})}
+        onFloorPlanChange={(fp) => setFormData({...formData, media: {...formData.media, floor_plan: fp}})}
+      />
+
+      {/* 5. Nearby Infra (Off-Site) */}
       <NearbyInfraForm 
         value={formData.nearby_locations}
         onChange={(val) => setFormData({...formData, nearby_locations: val})}
       />
 
-      {/* Contact Info */}
+      {/* 6. Contact Info */}
       <section className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
         <h2 className="text-lg font-bold border-b pb-2">Contact Info</h2>
         <div className="grid grid-cols-2 gap-4">
@@ -203,14 +219,12 @@ function PropertyForm() {
   )
 }
 
-// --- 2. Main Page Wrapper ---
-// Note the type change: searchParams is now a Promise<...>
+// --- Main Page Wrapper ---
 export default function VendorPage({ 
   searchParams 
 }: { 
   searchParams: Promise<{ success?: string }> 
 }) {
-  // Unwrap the promise using React.use()
   const params = use(searchParams);
   const isSuccess = params.success === 'true';
   const router = useRouter(); 
@@ -227,7 +241,7 @@ export default function VendorPage({
             Your property draft has been sent to the Tenant Admin. You will be notified once it is approved and live.
           </p>
           <button 
-            onClick={() => router.push('?')} 
+            onClick={() => router.push('/vendor')} 
             className="block w-full bg-slate-900 text-white py-3 rounded-lg font-medium hover:bg-slate-800 transition-colors"
           >
             Submit Another
