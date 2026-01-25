@@ -36,12 +36,13 @@ export interface Property {
   // Mapped from DB 'media' jsonb column
   media?: {
     images: string[];
-    brochure?: string;
-    floor_plan?: string;
+    brochure?: string;   // URL to PDF
+    floor_plan?: string; // URL to Image/PDF
   }; 
   
   // Mapped from DB 'specs' jsonb column
-  specs?: Record<string, string>; 
+  // Keeping string | number to be safe with existing data
+  specs?: Record<string, string | number>; 
   
   // Mapped from DB 'amenities_detailed' jsonb column
   amenities_detailed?: {
@@ -49,6 +50,7 @@ export interface Property {
     leisure?: string[];
     wellness?: string[];
     worship?: string[];
+    security?: string[];
     [key: string]: any;
   };
   

@@ -52,7 +52,7 @@ export default function FilterModal({ isOpen, onClose, criteria, onUpdate, onRes
         {/* Scrollable Content */}
         <div className="p-6 overflow-y-auto space-y-8 flex-1">
           
-          {/* 1. Property Status (WAS MISSING) */}
+          {/* 1. Property Status */}
           <section>
             <h4 className="text-sm font-bold text-slate-900 uppercase mb-3">Property Status</h4>
             <div className="flex flex-wrap gap-2">
@@ -72,7 +72,7 @@ export default function FilterModal({ isOpen, onClose, criteria, onUpdate, onRes
             </div>
           </section>
 
-          {/* 2. Zone (WAS MISSING) */}
+          {/* 2. Zone */}
           <section>
             <h4 className="text-sm font-bold text-slate-900 uppercase mb-3">Zone</h4>
             <div className="flex flex-wrap gap-2">
@@ -138,11 +138,11 @@ export default function FilterModal({ isOpen, onClose, criteria, onUpdate, onRes
             </div>
           </section>
 
-          {/* 5. Configuration */}
+          {/* 5. Configuration (UPDATED LIST) */}
           <section>
-            <h4 className="text-sm font-bold text-slate-900 uppercase mb-3">Bedrooms</h4>
+            <h4 className="text-sm font-bold text-slate-900 uppercase mb-3">Configuration</h4>
             <div className="flex flex-wrap gap-2">
-              {['1BHK', '2BHK', '3BHK', '4BHK'].map(conf => (
+              {['1BHK', '2BHK', '3BHK', '4BHK', '5BHK', 'Duplex', 'Penthouse'].map(conf => (
                 <button
                   key={conf}
                   onClick={() => toggleArray('configurations', conf)}
