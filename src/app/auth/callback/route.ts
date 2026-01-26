@@ -13,7 +13,34 @@ export async function GET(request: Request) {
       console.error('Auth error:', error)
       return NextResponse.redirect(`${origin}/login?error=auth_code_error`)
     }
-  }
 
-  return NextResponse.redirect(`${origin}/dashboard`)
+    // Fetch user profile with role
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, is_active')
+        .eq('id', user.id)
+        .single()
+      
+      // Route based on role and approval status
+      if (!profile || !profile.is_active) {
+        return NextResponse.redirect(`${origin}/approval-pending`)
+      }
+      
+      // Role-based routing
+      if (profile.role === 'super_admin') {
+        return NextResponse.redirect(`${origin}/super`)
+      } else if (profile.role === 'tenant_admin') {
+        return NextResponse.redirect(`${origin}/admin`)
+      } else if (profile.role === 'salesman') {
+        return NextResponse.redirect(`${origin}/dashboard`)
+      } else if (profile.role === 'vendor') {
+        return NextResponse.redirect(`${origin}/vendor`)
+      }
+    }
+  }
+  
+  return NextResponse.redirect(`${origin}/login?error=no_code`)
 }

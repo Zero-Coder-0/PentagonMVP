@@ -3,14 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/core/db/client' // Ensure this points to your Client Supabase helper
-import { loginWithGoogle } from '@/modules/auth/actions' // Your server action for Google
-
-// THE VIP LIST
-const ALLOWED_ADMIN_EMAILS = [
-  'arsh.affiliate.1st@gmail.com',
-  'admin1@pentagon-properties.com', 
-  'admin2@pentagon-properties.com'
-]
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -18,35 +10,49 @@ export default function LoginPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  // 1. Handle Magic Link (Strict VIP Only)
+  // 1. UPDATED: Handle Magic Link with RPC Check
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-
-    // A. The Trap
-    if (!ALLOWED_ADMIN_EMAILS.includes(email)) {
-      // Fake loading to look real
-      setTimeout(() => {
-        router.push('/fake-login') // Send them to the void
-      }, 1500)
-      return
-    }
-
-    // B. Real Login for VIPs
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${location.origin}/auth/callback`,
-      },
+    
+    // Check if this email is an Admin using new RPC function
+    const { data: isAdmin } = await supabase.rpc('check_is_admin_email', { 
+      check_email: email 
     })
-
-    if (error) {
-      alert(error.message)
+    
+    if (isAdmin) {
+      // Send magic link only to admins
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${location.origin}/auth/callback`,
+        },
+      })
+      
+      if (error) {
+        alert('Error sending magic link: ' + error.message)
+      } else {
+        alert('Magik Link sent! Check your VIP email.')
+      }
     } else {
-      alert('Check your VIP email for the login link!')
+      // Redirect to fake login for non-admins (The Trap)
+      setTimeout(() => {
+        router.push('/fake-login')
+      }, 1500)
     }
+    
     setLoading(false)
   }
+
+  // 2. NEW: Client-side Google Login Handler
+  const handleGoogleLogin = async () => {
+    await supabase.auth.signInWithOAuth({
+     provider: 'google',
+     options: {
+       redirectTo: `${window.location.origin}/auth/callback`,
+     },
+   })
+ }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
@@ -90,16 +96,16 @@ export default function LoginPage() {
           <div className="flex-grow border-t border-gray-300"></div>
         </div>
 
-        {/* --- GOOGLE LOGIN (SERVER ACTION) --- */}
-        <form action={loginWithGoogle}>
-          <button
-            type="submit"
-            className="group relative flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition"
-          >
-            <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="Google" />
-            Sign in with Google
-          </button>
-        </form>
+        {/* --- GOOGLE LOGIN (UPDATED TO CLIENT-SIDE) --- */}
+        {/* Replaced <form> with direct button to use new client-side logic */}
+        <button
+          onClick={handleGoogleLogin}
+          type="button"
+          className="group relative flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition"
+        >
+          <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="Google" />
+          Sign in with Google
+        </button>
       </div>
     </div>
   )

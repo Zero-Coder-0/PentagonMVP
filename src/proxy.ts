@@ -5,28 +5,37 @@
 
 
 
+
 import { type NextRequest, NextResponse } from 'next/server'
+
 
 export async function proxy(request: NextRequest) {
   // 1. ALLOW EVERYTHING. Do not check cookies.
   return NextResponse.next()
 }
 
+
 export const config = {
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
-}*/
+}
+*/
+
+
+
 
 
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+
 
 export async function proxy(request: NextRequest) {
   // 1. Setup Response & Supabase
   let response = NextResponse.next({
     request: { headers: request.headers },
   })
+
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -48,9 +57,11 @@ export async function proxy(request: NextRequest) {
     }
   )
 
+
   const { data: { user } } = await supabase.auth.getUser()
   const url = request.nextUrl.clone()
   const path = url.pathname
+
 
   // 2. PUBLIC PATHS (Allow access without login)
   const isPublic = 
@@ -59,6 +70,7 @@ export async function proxy(request: NextRequest) {
     path.startsWith('/auth') || 
     path.startsWith('/fake-login') || // The trap page
     path.startsWith('/approval-pending');
+
 
   if (isPublic) {
     // If already logged in, redirect away from login to their home
@@ -70,37 +82,41 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+
   // 3. FORCE LOGIN
   if (!user && !isPublic) {
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  // 4. FETCH ROLE (If user exists)
+
+  // 4. FETCH ROLE & CHECK STATUS (If user exists)
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, is_active')
       .eq('id', user.id)
       .single()
 
-    const role = profile?.role || 'salesman' // Default
+    // Block inactive users
+    if (!profile || !profile.is_active) {
+      if (!path.startsWith('/approval-pending')) {
+        url.pathname = '/approval-pending'
+        return NextResponse.redirect(url)
+      }
+      return response
+    }
 
-    // --- NEW: APPROVAL SYSTEM ---
-    // If you haven't assigned a role yet (or if we have a specific 'pending' status)
-    // For now, let's assume 'salesman' is the default for new Google users, 
-    // but you want to hold them. We can check if they are "approved".
-    // simpler approach: All new Google users are 'salesman' but restricted?
-    // Let's stick to your routing request:
+    const role = profile.role
 
-    // 5. ROUTING LOGIC (Where should they be?)
+    // 5. ROUTING LOGIC (Role-based access control)
     
     // A. Super Admin (You) -> Can go anywhere
     if (role === 'super_admin') {
-       return response 
+      return response
     }
 
-    // B. Tenant Admin -> /admin, /dashboard. Blocked from /super
+    // B. Tenant Admin -> /admin. Blocked from /super
     if (role === 'tenant_admin') {
       if (path.startsWith('/super')) {
         url.pathname = '/admin'
@@ -108,25 +124,27 @@ export async function proxy(request: NextRequest) {
       }
     }
 
-    // C. Sales -> /dashboard. Blocked from /admin, /vendor
+    // C. Sales -> /dashboard. Blocked from /admin, /vendor, /super
     if (role === 'salesman') {
-      if (path.startsWith('/admin') || path.startsWith('/vendor')) {
+      if (path.startsWith('/admin') || path.startsWith('/vendor') || path.startsWith('/super')) {
         url.pathname = '/dashboard'
         return NextResponse.redirect(url)
       }
     }
 
-    // D. Vendor -> /vendor. Blocked from /dashboard, /admin
+    // D. Vendor -> /vendor. Blocked from /dashboard, /admin, /super
     if (role === 'vendor') {
-      if (path.startsWith('/dashboard') || path.startsWith('/admin')) {
+      if (path.startsWith('/dashboard') || path.startsWith('/admin') || path.startsWith('/super')) {
         url.pathname = '/vendor'
         return NextResponse.redirect(url)
       }
     }
   }
 
+
   return response
 }
+
 
 export const config = {
   matcher: [
@@ -138,6 +156,6 @@ export const config = {
      * - auth (Exclude auth routes entirely from middleware!)
      * - public (Any public assets)
      */
-    '/((?!_next/static|_next/image|favicon.ico|auth|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+   '/((?!_next/static|_next/image|favicon.ico|auth|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
