@@ -6,13 +6,16 @@
 
 
 
+
 import { type NextRequest, NextResponse } from 'next/server'
+
 
 
 export async function proxy(request: NextRequest) {
   // 1. ALLOW EVERYTHING. Do not check cookies.
   return NextResponse.next()
 }
+
 
 
 export const config = {
@@ -26,8 +29,10 @@ export const config = {
 
 
 
+
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+
 
 
 export async function proxy(request: NextRequest) {
@@ -35,6 +40,7 @@ export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
     request: { headers: request.headers },
   })
+
 
 
   const supabase = createServerClient(
@@ -58,9 +64,12 @@ export async function proxy(request: NextRequest) {
   )
 
 
+
+  // 1. Get the User (Fresh Fetch)
   const { data: { user } } = await supabase.auth.getUser()
   const url = request.nextUrl.clone()
   const path = url.pathname
+
 
 
   // 2. PUBLIC PATHS (Allow access without login)
@@ -70,6 +79,7 @@ export async function proxy(request: NextRequest) {
     path.startsWith('/auth') || 
     path.startsWith('/fake-login') || // The trap page
     path.startsWith('/approval-pending');
+
 
 
   if (isPublic) {
@@ -83,11 +93,13 @@ export async function proxy(request: NextRequest) {
   }
 
 
+
   // 3. FORCE LOGIN
   if (!user && !isPublic) {
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
+
 
 
   // 4. FETCH ROLE & CHECK STATUS (If user exists)
@@ -98,16 +110,35 @@ export async function proxy(request: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    // Block inactive users
-    if (!profile || !profile.is_active) {
-      if (!path.startsWith('/approval-pending')) {
-        url.pathname = '/approval-pending'
-        return NextResponse.redirect(url)
-      }
-      return response
+
+    // A. Block inactive users (Send to Approval Pending)
+    if ((!profile || !profile.is_active) && !path.startsWith('/approval-pending') && !path.startsWith('/auth/signout')) {
+      url.pathname = '/approval-pending'
+      return NextResponse.redirect(url)
     }
 
-    const role = profile.role
+    // B. ESCAPE HATCH: If Active but stuck on Approval Page -> Redirect to Home
+    if (profile?.is_active && path.startsWith('/approval-pending')) {
+       if (profile.role === 'super_admin') {
+         url.pathname = '/super'
+         return NextResponse.redirect(url)
+       }
+       if (profile.role === 'tenant_admin') {
+         url.pathname = '/admin'
+         return NextResponse.redirect(url)
+       }
+       if (profile.role === 'vendor') {
+         url.pathname = '/vendor'
+         return NextResponse.redirect(url)
+       }
+       // Default fallback
+       url.pathname = '/dashboard'
+       return NextResponse.redirect(url)
+    }
+
+
+    const role = profile?.role
+
 
     // 5. ROUTING LOGIC (Role-based access control)
     
@@ -115,6 +146,7 @@ export async function proxy(request: NextRequest) {
     if (role === 'super_admin') {
       return response
     }
+
 
     // B. Tenant Admin -> /admin. Blocked from /super
     if (role === 'tenant_admin') {
@@ -124,6 +156,7 @@ export async function proxy(request: NextRequest) {
       }
     }
 
+
     // C. Sales -> /dashboard. Blocked from /admin, /vendor, /super
     if (role === 'salesman') {
       if (path.startsWith('/admin') || path.startsWith('/vendor') || path.startsWith('/super')) {
@@ -131,6 +164,7 @@ export async function proxy(request: NextRequest) {
         return NextResponse.redirect(url)
       }
     }
+
 
     // D. Vendor -> /vendor. Blocked from /dashboard, /admin, /super
     if (role === 'vendor') {
@@ -142,8 +176,10 @@ export async function proxy(request: NextRequest) {
   }
 
 
+
   return response
 }
+
 
 
 export const config = {
