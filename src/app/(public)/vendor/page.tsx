@@ -7,6 +7,7 @@ import { createClient } from '@/core/db/client'
 import NearbyInfraForm from '@/components/vendor/NearbyInfraForm'
 import MediaManager from '@/components/vendor/MediaManager'
 import { Save, CheckCircle2 } from 'lucide-react'
+import { parsePropertyInput } from '@/modules/inventory/utils/data-parser' // Imported utility
 
 // Load map dynamically to avoid SSR issues
 const LocationPicker = dynamic(() => import('@/components/vendor/LocationPicker'), {
@@ -76,19 +77,25 @@ function PropertyForm() {
     e.preventDefault();
     setLoading(true);
 
-    const supabase = createClient();
-    
-    // We submit to 'property_drafts'
-    const { error } = await supabase.from('property_drafts').insert({
-      submission_data: formData,
-      status: 'pending'
-    });
+    try {
+      // 1. VALIDATE & TRANSFORM using the Master Parser (Added Logic)
+      const cleanData = parsePropertyInput(formData);
 
-    if (error) {
-      alert('Error submitting property: ' + error.message);
-      setLoading(false);
-    } else {
+      const supabase = createClient();
+      
+      // We submit to 'property_drafts'
+      const { error } = await supabase.from('property_drafts').insert({
+        submission_data: cleanData, // Submit the transformed data
+        status: 'pending'
+      });
+
+      if (error) throw error;
       router.push('?success=true');
+
+    } catch (err: any) {
+      alert('Error submitting property: ' + err.message);
+    } finally {
+      setLoading(false);
     }
   };
 

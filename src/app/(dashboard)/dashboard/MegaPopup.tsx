@@ -4,18 +4,10 @@ import React, { useMemo } from 'react'
 import { 
   CheckCircle2, Zap, Droplets, LayoutTemplate, ShieldCheck, 
   MapPin, Download, FileText, ExternalLink, 
-  Dumbbell, TreePine, Waves, Landmark, ShoppingBag, GraduationCap
+  Dumbbell, TreePine, Waves, Landmark, ShoppingBag, GraduationCap,
+  Building2, Ruler, Compass
 } from 'lucide-react'
 import { useDashboard } from './page'
-
-// Icon mapper for amenities
-const AMENITY_ICONS: any = {
-  wellness: <Waves className="w-4 h-4 text-blue-500"/>,
-  sports: <Dumbbell className="w-4 h-4 text-orange-500"/>,
-  leisure: <TreePine className="w-4 h-4 text-green-500"/>,
-  worship: <Landmark className="w-4 h-4 text-amber-500"/>,
-  default: <CheckCircle2 className="w-4 h-4 text-slate-400"/>
-}
 
 // Icon mapper for social infra
 const INFRA_ICONS: any = {
@@ -35,8 +27,12 @@ export default function MegaPopup() {
 
   if (!hoveredRecId || !data) return null
 
-  // Safely access JSONB fields with fallbacks
-  const amenities = data.amenities_detailed || {}
+  // --- DATA NORMALIZATION ---
+  
+  // 1. Amenities: Flatten all categories (wellness, sports, list, etc.) into one array
+  const rawAmenities = data.amenities_detailed || {}
+  const amenitiesList = Object.values(rawAmenities).flat().filter(item => typeof item === 'string')
+
   const infra = data.social_infra || {}
   const units = data.units_available || {}
   const media = data.media || { images: [], brochure: '', floor_plan: '' }
@@ -48,7 +44,7 @@ export default function MegaPopup() {
   }
 
   const handleMoreDetails = () => {
-    setSelectedId(data.id); // Opens the Right Panel
+    setSelectedId(data.id); 
   }
 
   return (
@@ -86,7 +82,7 @@ export default function MegaPopup() {
       {/* 2. Scrollable Content */}
       <div className="flex-1 overflow-y-auto p-5 space-y-6 scrollbar-thin scrollbar-thumb-slate-200">
         
-        {/* A. Inventory Grid (Sales Pitch Critical) */}
+        {/* A. Inventory Grid */}
         <section>
           <div className="flex items-center justify-between mb-3">
              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Inventory Status</h3>
@@ -95,17 +91,19 @@ export default function MegaPopup() {
           {Object.keys(units).length > 0 ? (
             <div className="grid grid-cols-3 gap-2">
               {Object.entries(units).map(([type, count]) => (
-                <div key={type} className={`p-2 rounded border text-center ${count < 3 ? 'bg-red-50 border-red-100' : 'bg-slate-50 border-slate-100'}`}>
+                <div key={type} className={`p-2 rounded border text-center ${Number(count) < 3 ? 'bg-red-50 border-red-100' : 'bg-slate-50 border-slate-100'}`}>
                   <div className="text-xs font-bold text-slate-700">{type}</div>
-                  <div className={`text-sm font-bold ${count < 3 ? 'text-red-600' : 'text-slate-900'}`}>
+                  <div className={`text-sm font-bold ${Number(count) < 3 ? 'text-red-600' : 'text-slate-900'}`}>
                     {count} Units
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-sm text-slate-400 italic bg-slate-50 p-3 rounded text-center">
-              Inventory data currently unavailable.
+            <div className="flex gap-2">
+               {data.configurations?.map((conf: string) => (
+                 <span key={conf} className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-full">{conf}</span>
+               ))}
             </div>
           )}
         </section>
@@ -113,25 +111,25 @@ export default function MegaPopup() {
         {/* B. Key Highlights */}
         <div className="grid grid-cols-2 gap-3">
           <InfoBadge icon={<ShieldCheck className="w-4 h-4 text-emerald-600"/>} label="RERA ID" value={data.rera_id || "Pending"} />
-          <InfoBadge icon={<LayoutTemplate className="w-4 h-4 text-blue-600"/>} label="Possession" value={data.completion_duration || "Ready"} />
-          <InfoBadge icon={<Zap className="w-4 h-4 text-amber-500"/>} label="Power" value="100% Backup" />
-          <InfoBadge icon={<Droplets className="w-4 h-4 text-cyan-500"/>} label="Water" value="Cauvery + Bore" />
+          <InfoBadge icon={<Building2 className="w-4 h-4 text-blue-600"/>} label="Floors" value={data.floor_levels || "G+?"} />
+          <InfoBadge icon={<Ruler className="w-4 h-4 text-amber-500"/>} label="Size Range" value={data.sq_ft_range || "N/A"} />
+          <InfoBadge icon={<Compass className="w-4 h-4 text-purple-500"/>} label="Facing" value={data.facing_direction || "Various"} />
+          <InfoBadge icon={<LayoutTemplate className="w-4 h-4 text-cyan-500"/>} label="Possession" value={data.completion_duration || "Ready"} />
         </div>
 
-        {/* C. Amenities & Infra (Tabs Style) */}
+        {/* C. Amenities & Infra */}
         <div className="space-y-4">
-           {/* Amenities */}
-           {Object.keys(amenities).length > 0 && (
+           {/* Amenities Section */}
+           {amenitiesList.length > 0 && (
              <div>
                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Amenities</h3>
                <div className="flex flex-wrap gap-2">
-                 {Object.entries(amenities).map(([category, items]: [string, any]) => (
-                   items && items.length > 0 && (
-                     <div key={category} className="flex items-center gap-1 bg-slate-50 border border-slate-100 px-2 py-1 rounded text-xs text-slate-600 capitalize">
-                       {AMENITY_ICONS[category] || AMENITY_ICONS.default}
-                       <span>{items.join(', ')}</span>
-                     </div>
-                   )
+                 {/* Map over the flattened list */}
+                 {amenitiesList.map((item: any, idx: number) => (
+                   <div key={idx} className="flex items-center gap-1 bg-slate-50 border border-slate-100 px-2 py-1 rounded text-xs text-slate-600 capitalize">
+                     <CheckCircle2 className="w-3 h-3 text-green-500"/>
+                     <span>{String(item)}</span>
+                   </div>
                  ))}
                </div>
              </div>
@@ -140,7 +138,7 @@ export default function MegaPopup() {
            {/* Location / Infra */}
            {Object.keys(infra).length > 0 && (
              <div>
-               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Nearby (Social Infra)</h3>
+               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Nearby</h3>
                <div className="grid grid-cols-2 gap-2">
                   {Object.entries(infra).map(([key, val]) => (
                     <div key={key} className="flex items-center justify-between text-xs text-slate-600 border-b border-slate-100 pb-1">
@@ -186,7 +184,6 @@ export default function MegaPopup() {
   )
 }
 
-// Helper Sub-component for badges
 const InfoBadge = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) => (
   <div className="flex items-center gap-3 p-2 bg-slate-50 rounded-lg border border-slate-100">
     <div className="shrink-0">{icon}</div>

@@ -1,4 +1,4 @@
-/*
+
 //testing requirement
 
 
@@ -23,12 +23,12 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
-*/
 
 
 
 
 
+/*
 
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
@@ -192,6 +192,7 @@ export const config = {
      * - auth (Exclude auth routes entirely from middleware!)
      * - public (Any public assets)
      */
-   '/((?!_next/static|_next/image|favicon.ico|auth|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+ /*  '/((?!_next/static|_next/image|favicon.ico|auth|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
+*/

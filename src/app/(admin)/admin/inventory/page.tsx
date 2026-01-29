@@ -1,5 +1,6 @@
 import { createClient } from '@/core/db/server';
 import { Edit2, Trash2, MapPin } from 'lucide-react';
+import BulkPropertyUpload from '@/components/admin/BulkPropertyUpload';
 
 export default async function InventoryPage() {
   const supabase = await createClient();
@@ -14,13 +15,29 @@ export default async function InventoryPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Live Inventory</h2>
+          <h2 className="text-2xl font-bold text-slate-900">Inventory Management</h2>
           <p className="text-slate-500">Manage all {properties?.length || 0} active properties visible to sales.</p>
         </div>
         <button className="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors">
           + Add Manually
         </button>
       </div>
+
+       {/* The Bulk Upload Section */}
+       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-1">
+             <BulkPropertyUpload />
+          </div>
+          <div className="md:col-span-2">
+             <div className="bg-blue-50 p-6 rounded-xl border border-blue-100 text-blue-800 h-full">
+                <h4 className="font-bold mb-2">CSV Format Guide</h4>
+                <p className="text-sm">
+                  <strong>Required:</strong> Property Name, Price, Location<br/>
+                  <strong>Smart Import:</strong> Any extra columns (e.g., "Roof Type", "Facing") will be automatically saved to the "specs" JSON field.
+                </p>
+             </div>
+          </div>
+       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {properties?.map((prop) => (
