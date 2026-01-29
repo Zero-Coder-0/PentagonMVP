@@ -24,14 +24,14 @@ export default function MapContainer() {
   const { 
     displayedProperties, 
     selectedId, 
-    handlePinClick, // <--- Using the dedicated handler from Context
+    handlePinClick, 
     userLocation, 
     setUserLocation,
     mapBounds,
     setMapBounds
   } = useDashboard()
 
-  // Handle Location Selection (from Search or Chips)
+  // Handle Location Selection (from Search, Chips, or Double Click)
   const handleLocationUpdate = (lat: number, lng: number, name: string) => {
     setUserLocation({ lat, lng, displayName: name })
     // Zoom in slightly when a specific location is chosen
@@ -40,6 +40,12 @@ export default function MapContainer() {
       [lat + 0.03, lng + 0.03]
     ])
   }
+
+  // NEW: Reset seed location (called on right-click)
+  const handleSeedReset = () => {
+    setUserLocation(null);
+    setMapBounds(undefined);
+  };
 
   return (
     <div className={styles.mapContainer}>
@@ -72,7 +78,9 @@ export default function MapContainer() {
       <LeafletMap 
         items={displayedProperties}
         selectedId={selectedId}
-        onSelect={handlePinClick} // <--- Pass the new handler here
+        onSelect={handlePinClick} 
+        onMarkerDbClick={handleLocationUpdate} // Double-click sets new seed
+        onSeedReset={handleSeedReset} // Right-click resets seed
         center={userLocation ? [userLocation.lat, userLocation.lng] : undefined}
         bounds={mapBounds}
       />

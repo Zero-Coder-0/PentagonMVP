@@ -43,19 +43,37 @@ const SearchIcon = new L.Icon({
 });
 
 // ==========================================
-// 2. CONTROLLER (Supports Bounds & Center)
+// 2. CONTROLLER (Supports Bounds, Center, & FlyTo)
 // ==========================================
-const MapController = ({ 
+const InteractionController = ({ 
+  selectedId, 
+  items, 
   center, 
   zoom, 
   bounds 
 }: { 
+  selectedId: string | null,
+  items: Property[],
   center: [number, number] | null, 
   zoom: number,
   bounds?: [[number, number], [number, number]] | undefined
 }) => {
   const map = useMap();
 
+  // Handle "Fly To Selected" (Single Click behavior)
+  useEffect(() => {
+    if (selectedId && items) {
+      const selectedItem = items.find((i) => i.id === selectedId);
+      if (selectedItem) {
+        map.flyTo([selectedItem.lat, selectedItem.lng], 16, {
+          animate: true,
+          duration: 1.0 // Smooth fly
+        });
+      }
+    }
+  }, [selectedId, items, map]);
+
+  // Handle Initial Center / Bounds Update
   useEffect(() => {
     // Priority 1: Fit Bounds (e.g., when a search location is selected)
     if (bounds) {
@@ -85,11 +103,22 @@ interface LeafletMapProps {
   items: Property[]; // Using Property type
   selectedId: string | null;
   onSelect: (id: string) => void;
+  // NEW Prop for Double Click
+  onMarkerDbClick?: (lat: number, lng: number, name: string) => void;
+  onSeedReset?: () => void; // Restored Right-Click Reset
   center?: [number, number]; 
   bounds?: [[number, number], [number, number]]; 
 }
 
-const LeafletMap: React.FC<LeafletMapProps> = ({ items, selectedId, onSelect, center, bounds }) => {
+const LeafletMap: React.FC<LeafletMapProps> = ({ 
+  items, 
+  selectedId, 
+  onSelect, 
+  onMarkerDbClick, 
+  onSeedReset,
+  center, 
+  bounds 
+}) => {
   const mapCenter: [number, number] = center || [12.9716, 77.5946];
 
   return (
@@ -100,7 +129,15 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ items, selectedId, onSelect, ce
       zoomControl={false} // Disable default top-left controls if you want
     >
       <ResizeMap />
-      <MapController center={center ? mapCenter : null} zoom={12} bounds={bounds} />
+      
+      {/* Logic for FlyTo and Bounds */}
+      <InteractionController 
+        selectedId={selectedId} 
+        items={items} 
+        center={center ? mapCenter : null} 
+        zoom={12} 
+        bounds={bounds} 
+      />
 
       <TileLayer
         attribution='&copy; OpenStreetMap contributors'
@@ -110,13 +147,27 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ items, selectedId, onSelect, ce
       {/* User Search Location Marker */}
       {center && (
         <>
-          <Marker position={center} icon={SearchIcon}>
-            <Popup>📍 <strong>Your Search Location</strong></Popup>
+          <Marker 
+            position={center} 
+            icon={SearchIcon}
+            eventHandlers={{
+              // Right-click resets the seed location (from old code)
+              contextmenu: () => {
+                if (onSeedReset) {
+                  onSeedReset();
+                }
+              }
+            }}
+          >
+            <Popup>
+              📍 <strong>Seed Location</strong><br />
+              <span className="text-xs text-slate-500">Right-click to reset</span>
+            </Popup>
           </Marker>
           <Circle 
             center={center}
             radius={3000} 
-            pathOptions={{ color: 'black', fillColor: 'black', fillOpacity: 0.1, weight: 1 }} 
+            pathOptions={{ color: 'black', fillColor: 'black', fillOpacity: 0.1, weight: 1, dashArray: '5, 10' }} 
           />
         </>
       )}
@@ -129,22 +180,22 @@ const LeafletMap: React.FC<LeafletMapProps> = ({ items, selectedId, onSelect, ce
             key={item.id} 
             position={[item.lat, item.lng]}
             icon={getIconForZone(item.zone, isSelected)}
-            eventHandlers={{ 
-              click: () => onSelect(item.id) 
-            }}
-            opacity={selectedId === item.id ? 1.0 : 0.8}
             zIndexOffset={isSelected ? 1000 : 0} // Selected pin always on top
+            opacity={selectedId === item.id ? 1.0 : 0.8}
+            eventHandlers={{ 
+              click: () => {
+                // Just Select (Controller handles the zoom)
+                onSelect(item.id);
+              },
+              dblclick: () => {
+                // Set as Seed Location
+                if (onMarkerDbClick) {
+                  onMarkerDbClick(item.lat, item.lng, item.name);
+                }
+              }
+            }}
           >
-            {/* Optional: Remove Popup if you rely solely on MegaPopup */}
-            {/* 
-            <Popup>
-              <div className="text-center">
-                <strong>{item.name}</strong><br/>
-                {item.location_area}<br/>
-                <span className="text-blue-600 font-bold">{item.price_display}</span>
-              </div>
-            </Popup> 
-            */}
+           {/* Popup removed to rely on sidebar/flyto */}
           </Marker>
         )
       })}
