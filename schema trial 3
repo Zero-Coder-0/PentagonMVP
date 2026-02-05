@@ -1,0 +1,161 @@
+-- =====================================================
+-- GEOESTATE V7: THE "NO-REGRETS" SCHEMA + DUMMY DATA
+-- =====================================================
+
+-- 1. CLEANUP (Destructive - resets everything for a clean start)
+DROP TABLE IF EXISTS public.project_cost_extras CASCADE;
+DROP TABLE IF EXISTS public.project_analysis CASCADE;
+DROP TABLE IF EXISTS public.project_landmarks CASCADE;
+DROP TABLE IF EXISTS public.project_amenities CASCADE;
+DROP TABLE IF EXISTS public.project_units CASCADE;
+DROP TABLE IF EXISTS public.projects CASCADE;
+
+-- 2. THE MASTER: PROJECTS
+CREATE TABLE public.projects (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    name TEXT NOT NULL,
+    developer TEXT NOT NULL,
+    rera_id TEXT,
+    status TEXT CHECK (status IN ('Pre-Launch', 'Under Construction', 'Ready')),
+    zone TEXT CHECK (zone IN ('North', 'South', 'East', 'West')),
+    region TEXT,
+    address_line TEXT,
+    lat FLOAT8,
+    lng FLOAT8,
+    price_min NUMERIC,
+    price_display TEXT,
+    configurations TEXT[],
+    total_land_area TEXT,
+    total_units INT,
+    possession_date DATE,
+    construction_technology TEXT,
+    open_space_percent INT,
+    structure_details TEXT,
+    hero_image_url TEXT,
+    brochure_url TEXT,
+    marketing_kit_url TEXT
+);
+
+-- 3. THE SALES BRAIN: ANALYSIS
+CREATE TABLE public.project_analysis (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id UUID REFERENCES public.projects(id) ON DELETE CASCADE,
+    overall_rating NUMERIC(3,1),
+    pros TEXT[],
+    cons TEXT[],
+    target_customer_profile TEXT,
+    closing_pitch TEXT,
+    objection_handling TEXT,
+    competitor_names TEXT[]
+);
+
+-- 4. INVENTORY: UNITS
+CREATE TABLE public.project_units (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id UUID REFERENCES public.projects(id) ON DELETE CASCADE,
+    type TEXT,
+    facing TEXT,
+    sba_sqft INT,
+    carpet_sqft INT,
+    uds_sqft INT,
+    base_price NUMERIC,
+    flooring_type TEXT,
+    power_load_kw NUMERIC,
+    is_available BOOLEAN DEFAULT true
+);
+
+-- 5. COST SHEET EXTRAS
+CREATE TABLE public.project_cost_extras (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id UUID REFERENCES public.projects(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    cost_type TEXT,
+    amount NUMERIC,
+    payment_milestone TEXT
+);
+
+-- 6. CONNECTIVITY: LANDMARKS
+CREATE TABLE public.project_landmarks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id UUID REFERENCES public.projects(id) ON DELETE CASCADE,
+    category TEXT,
+    name TEXT,
+    distance_km NUMERIC,
+    travel_time_mins INT
+);
+
+-- 7. AMENITIES
+CREATE TABLE public.project_amenities (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id UUID REFERENCES public.projects(id) ON DELETE CASCADE,
+    category TEXT,
+    name TEXT,
+    size_specs TEXT
+);
+
+-- 8. AUTOMATION TRIGGER (Syncs Summary to Projects table)
+CREATE OR REPLACE FUNCTION public.sync_project_summary()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE public.projects
+    SET 
+        price_min = (SELECT MIN(base_price) FROM public.project_units WHERE project_id = COALESCE(NEW.project_id, OLD.project_id)),
+        price_display = (
+            SELECT CASE 
+                WHEN MIN(base_price) >= 10000000 THEN '₹' || ROUND(MIN(base_price)/10000000, 2) || ' Cr'
+                WHEN MIN(base_price) > 0 THEN '₹' || ROUND(MIN(base_price)/100000, 2) || ' L'
+                ELSE 'Price on Request'
+            END
+            FROM public.project_units WHERE project_id = COALESCE(NEW.project_id, OLD.project_id)
+        ),
+        configurations = ARRAY(
+            SELECT DISTINCT type 
+            FROM public.project_units 
+            WHERE project_id = COALESCE(NEW.project_id, OLD.project_id)
+        )
+    WHERE id = COALESCE(NEW.project_id, OLD.project_id);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER on_unit_update
+AFTER INSERT OR UPDATE OR DELETE ON public.project_units
+FOR EACH ROW EXECUTE FUNCTION public.sync_project_summary();
+
+-- 9. DUMMY DATA INJECTION
+DO $$ 
+DECLARE
+    p_north_id UUID; p_south_id UUID; p_east_id UUID; p_west_id UUID;
+BEGIN
+    -- Insert Projects (One per Zone)
+    INSERT INTO public.projects (name, developer, status, zone, region, open_space_percent, structure_details)
+    VALUES 
+        ('Skyline Heights', 'Elite Builders', 'Ready', 'North', 'Hebbal', 70, 'G+25 Floors') RETURNING id INTO p_north_id;
+    INSERT INTO public.projects (name, developer, status, zone, region, open_space_percent, structure_details)
+    VALUES 
+        ('Green Valley Villas', 'EcoHomes', 'Under Construction', 'South', 'Kanakapura', 78, 'G+1 Floors') RETURNING id INTO p_south_id;
+    INSERT INTO public.projects (name, developer, status, zone, region, open_space_percent, structure_details)
+    VALUES 
+        ('Cyber Point', 'TechCorp Properties', 'Pre-Launch', 'East', 'Whitefield', 65, '2B+G+18 Floors') RETURNING id INTO p_east_id;
+    INSERT INTO public.projects (name, developer, status, zone, region, open_space_percent, structure_details)
+    VALUES 
+        ('Ocean Breeze', 'Coastal Living', 'Ready', 'West', 'Yeshwanthpur', 60, 'G+12 Floors') RETURNING id INTO p_west_id;
+
+    -- Insert Units (Triggers the price_display automation)
+    INSERT INTO public.project_units (project_id, type, base_price, uds_sqft, power_load_kw)
+    VALUES 
+        (p_north_id, '3BHK Luxury', 18500000, 600, 8),
+        (p_south_id, '4BHK Villa', 45000000, 2400, 12),
+        (p_east_id, '2BHK Studio', 8500000, 350, 5),
+        (p_west_id, '3BHK Premium', 12500000, 550, 7);
+
+    -- Insert Analysis
+    INSERT INTO public.project_analysis (project_id, overall_rating, pros, cons, closing_pitch)
+    VALUES (p_south_id, 4.8, '{"High UDS", "Luxury Finishes"}', '{"Distance from Metro"}', 'Own the land, not just the roof.');
+
+    -- Insert Cost Extras
+    INSERT INTO public.project_cost_extras (project_id, name, cost_type, amount)
+    VALUES (p_south_id, 'Clubhouse Membership', 'Fixed', 500000), (p_south_id, 'GST', 'Percentage', 5);
+
+END $$;
