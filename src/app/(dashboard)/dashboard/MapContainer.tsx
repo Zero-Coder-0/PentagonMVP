@@ -20,6 +20,9 @@ const QUICK_LOCATIONS = [
   { name: 'Sarjapur', lat: 12.9237, lng: 77.6547 },
 ]
 
+
+
+
 export default function MapContainer() {
   const { 
     displayedProperties, 

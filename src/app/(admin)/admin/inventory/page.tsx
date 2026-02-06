@@ -1,6 +1,7 @@
 import { createClient } from '@/core/db/server';
 import { Edit2, Trash2, MapPin } from 'lucide-react';
 import BulkPropertyUpload from '@/components/admin/BulkPropertyUpload';
+import Link from 'next/link'; // UPDATED: Added import
 
 export default async function InventoryPage() {
   const supabase = await createClient();
@@ -18,9 +19,13 @@ export default async function InventoryPage() {
           <h2 className="text-2xl font-bold text-slate-900">Inventory Management</h2>
           <p className="text-slate-500">Manage all {properties?.length || 0} active properties visible to sales.</p>
         </div>
-        <button className="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors">
-          + Add Manually
-        </button>
+        {/* UPDATED: Replaced static button with Link to Wizard */}
+        <Link 
+          href="/admin/inventory/new" 
+          className="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors flex items-center gap-2"
+        >
+          <span>+ Add Manually</span>
+        </Link>
       </div>
 
        {/* The Bulk Upload Section */}

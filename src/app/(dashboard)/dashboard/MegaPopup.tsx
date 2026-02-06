@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useDashboard } from './page'
 
+
 // Icon mapper for social infra
 const INFRA_ICONS: any = {
   school: <GraduationCap className="w-4 h-4 text-indigo-500"/>,
@@ -17,9 +18,11 @@ const INFRA_ICONS: any = {
   default: <MapPin className="w-4 h-4 text-slate-400"/>
 }
 
+
 export default function MegaPopup() {
   const { hoveredRecId, properties, cancelHoverLeave, handleCardLeave, setSelectedId } = useDashboard()
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+
 
   const data = useMemo(() => 
     properties.find(p => p.id === hoveredRecId), 
@@ -31,7 +34,9 @@ export default function MegaPopup() {
     setCurrentImageIndex(0)
   }, [hoveredRecId])
 
+
   if (!hoveredRecId || !data) return null
+
 
   // --- DATA NORMALIZATION ---
   
@@ -39,10 +44,21 @@ export default function MegaPopup() {
   const rawAmenities = data.amenities_detailed || {}
   const amenitiesList = Object.values(rawAmenities).flat().filter(item => typeof item === 'string')
 
+
   const infra = data.social_infra || {}
   const units = data.units_available || {}
   const media = data.media || { images: [], brochure: '', floor_plan: '' }
   const images = media.images && media.images.length > 0 ? media.images : []
+  
+  // Access V7 Raw Data safely (casted to any to avoid strict TS issues if types aren't fully merged yet)
+  // This assumes your Adapter or Fetch logic attaches _raw_v7 or you are accessing the V7 fields directly if mapped.
+  // Based on your snippet, it seems you might be expecting a `_raw_v7` property. 
+  // However, since we just updated the Adapter to NOT attach _raw_v7, 
+  // we will map the V7 fields directly from the `data` object if they exist (assuming you update the Property type to include them).
+  // FOR NOW: I will render the V7 section using the props if they are available on the `data` object, 
+  // or checks if `_raw_v7` exists as a fallback.
+  const v7Data = (data as any)._raw_v7 || (data as any); 
+
 
   // Action Handlers (Preserved from Old Code)
   const handleDownload = (url?: string, type?: string) => {
@@ -50,9 +66,11 @@ export default function MegaPopup() {
     else alert(`${type} not available for this property yet.`);
   }
 
+
   const handleMoreDetails = () => {
     setSelectedId(data.id); 
   }
+
 
   // Carousel Logic (New)
   const handleNextImage = (e: React.MouseEvent) => {
@@ -62,12 +80,14 @@ export default function MegaPopup() {
     }
   }
 
+
   const handlePrevImage = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (images.length > 1) {
       setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length)
     }
   }
+
 
   return (
     <div 
@@ -137,6 +157,7 @@ export default function MegaPopup() {
         </div>
       </div>
 
+
       {/* 2. Scrollable Content */}
       <div className="flex-1 overflow-y-auto p-5 space-y-6 scrollbar-thin scrollbar-thumb-slate-200">
         
@@ -166,6 +187,7 @@ export default function MegaPopup() {
           )}
         </section>
 
+
         {/* B. Key Highlights - UPDATED TO 3 COLUMNS */}
         <div className="grid grid-cols-3 gap-3">
           <InfoBadge icon={<ShieldCheck className="w-4 h-4 text-emerald-600"/>} label="RERA ID" value={data.rera_id || "Pending"} />
@@ -175,7 +197,83 @@ export default function MegaPopup() {
           <InfoBadge icon={<LayoutTemplate className="w-4 h-4 text-cyan-500"/>} label="Ready In" value={data.completion_duration || "Ready"} />
         </div>
 
-        {/* C. Amenities & Infra */}
+        {/* --- C. SALES INTELLIGENCE (V7 INJECTION) --- */}
+        {/* Renders safely only if V7 data is present */}
+        {v7Data && (v7Data.analysis || (v7Data.units && v7Data.units.length > 0) || (v7Data.cost_extras && v7Data.cost_extras.length > 0)) && (
+          <div className="mt-4 border-t border-slate-100 pt-4 bg-slate-50/50 -mx-5 px-5 pb-4">
+            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">⭐ Sales Intelligence (V7)</h3>
+            
+            {/* 1. The Analysis / Pitch */}
+            {v7Data.analysis && (
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {v7Data.analysis.closing_pitch && (
+                    <div className="bg-green-50 border border-green-100 p-3 rounded-lg">
+                    <h4 className="font-bold text-xs text-green-800 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3"/> Closing Pitch
+                    </h4>
+                    <p className="text-[11px] leading-tight text-green-900 mt-1">{v7Data.analysis.closing_pitch}</p>
+                    </div>
+                )}
+                {v7Data.analysis.objection_handling && (
+                    <div className="bg-red-50 border border-red-100 p-3 rounded-lg">
+                    <h4 className="font-bold text-xs text-red-800 flex items-center gap-1">
+                        <ShieldCheck className="w-3 h-3"/> Objection Handling
+                    </h4>
+                    <p className="text-[11px] leading-tight text-red-900 mt-1">{v7Data.analysis.objection_handling}</p>
+                    </div>
+                )}
+              </div>
+            )}
+
+            {/* 2. Unit Specs Table (With UDS!) */}
+            {v7Data.units && v7Data.units.length > 0 && (
+              <div className="mb-4 overflow-hidden rounded border border-slate-200">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                    <tr>
+                      <th className="p-2">Type</th>
+                      <th className="p-2">SBA</th>
+                      <th className="p-2 bg-yellow-50 text-amber-700">UDS (Land)</th>
+                      <th className="p-2 hidden sm:table-cell">Carpet</th>
+                      <th className="p-2 text-right">Price</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {v7Data.units.slice(0, 5).map((u: any, i: number) => (
+                      <tr key={i}>
+                        <td className="p-2 font-medium text-slate-900">{u.type}</td>
+                        <td className="p-2 text-slate-600">{u.sba_sqft}</td>
+                        <td className="p-2 bg-yellow-50/50 font-bold text-amber-800">{u.uds_sqft || '-'}</td>
+                        <td className="p-2 hidden sm:table-cell text-slate-500">{u.carpet_sqft || '-'}</td>
+                        <td className="p-2 text-right font-bold text-slate-900">
+                            {u.base_price ? `₹${(u.base_price / 10000000).toFixed(2)} Cr` : 'Call'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* 3. Cost Sheet Extras */}
+            {v7Data.cost_extras && v7Data.cost_extras.length > 0 && (
+              <div>
+                <h4 className="text-[10px] font-bold text-slate-500 uppercase mb-2">💰 Extra Charges (Hidden Costs)</h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {v7Data.cost_extras.map((c: any, i: number) => (
+                    <span key={i} className="px-2 py-1 bg-white border border-slate-200 rounded text-[10px] font-medium text-slate-700 shadow-sm">
+                      {c.name}: <span className="font-bold">{c.cost_type === 'Fixed' ? `₹${(c.amount/1000).toFixed(0)}k` : `${c.amount}%`}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        {/* --- END V7 INJECTION --- */}
+
+
+        {/* D. Amenities & Infra (Existing) */}
         <div className="space-y-4">
            {/* Amenities Section */}
            {amenitiesList.length > 0 && (
@@ -191,6 +289,7 @@ export default function MegaPopup() {
                </div>
              </div>
            )}
+
 
            {/* Location / Infra - UPDATED TO 3 COLUMNS */}
            {Object.keys(infra).length > 0 && (
@@ -210,6 +309,7 @@ export default function MegaPopup() {
            )}
         </div>
       </div>
+
 
       {/* 3. Footer Actions (Preserved from Old Code) */}
       <div className="p-4 border-t border-slate-100 bg-slate-50 grid grid-cols-2 gap-3">
@@ -240,6 +340,7 @@ export default function MegaPopup() {
     </div>
   )
 }
+
 
 // Compact Info Badge for 3-Column Layout
 function InfoBadge({ icon, label, value }: { icon: React.ReactNode, label: string, value: string | number }) {

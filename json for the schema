@@ -1,0 +1,78 @@
+[
+  {
+    "name": "Rainbow Mayfair",
+    "developer": "Rainbow Properties",
+    "rera_id": "PRM/KA/RERA/1251/308/PR/190325/007593",
+    "status": "Under Construction",
+    "zone": "South",
+    "region": "Hullahalli",
+    "address_line": "SY NO 41/4, Hullahalli Village, Jigani Hobli, Anekal",
+    "lat": 12.8250,
+    "lng": 77.6200,
+    
+    "total_land_area": "4 Acres",
+    "total_units": 64,
+    "possession_date": "2028-12-01",
+    "construction_technology": "RCC Framed Structure",
+    "open_space_percent": 60,
+    "structure_details": "G+2 Floors (Triplex Villas)",
+    
+    "hero_image_url": "https://images.unsplash.com/photo-1600596542815-27b88e31e62e?auto=format&fit=crop&w=1200&q=80",
+    "brochure_url": "https://example.com/brochure.pdf",
+    "marketing_kit_url": "https://drive.google.com/drive/folders/xyz",
+
+    "analysis": {
+      "overall_rating": 8.5,
+      "pros": ["Low Density", "High UDS (2400 sqft)", "Lake Facing Serenity", "Vehicle-Free Podium"],
+      "cons": ["Distance from Metro (8km)", "Emerging Locality"],
+      "target_customer_profile": "Senior Tech Professionals in Electronic City looking for retirement/peace.",
+      "closing_pitch": "Own 2400 sqft of land (UDS) for the price of a 3BHK apartment. Unmatched appreciation potential.",
+      "objection_handling": "Metro is far? Yes, but the road connectivity to E-City is signal-free.",
+      "competitor_names": ["Sobha Neopolis", "Prestige City", "Assetz Canvas"]
+    },
+
+    "units": [
+      {
+        "type": "4BHK Villa",
+        "facing": "East",
+        "sba_sqft": 3923,
+        "carpet_sqft": 3200,
+        "uds_sqft": 2400,
+        "base_price": 45000000,
+        "flooring_type": "Imported Marble",
+        "power_load_kw": 12,
+        "is_available": true
+      },
+      {
+        "type": "5BHK Villa",
+        "facing": "West",
+        "sba_sqft": 4836,
+        "carpet_sqft": 4000,
+        "uds_sqft": 2400,
+        "base_price": 52000000,
+        "flooring_type": "Imported Marble",
+        "power_load_kw": 14,
+        "is_available": true
+      }
+    ],
+
+    "amenities": [
+      { "category": "Wellness", "name": "Clubhouse", "size_specs": "11,000 sqft" },
+      { "category": "Nature", "name": "Perfume Garden", "size_specs": "Aromatic Plants" },
+      { "category": "Sports", "name": "Badminton Court", "size_specs": "Standard" },
+      { "category": "Convenience", "name": "Underground Parking", "size_specs": "No vehicle movement on ground" }
+    ],
+
+    "landmarks": [
+      { "category": "School", "name": "Candor International", "distance_km": 2.0, "travel_time_mins": 10 },
+      { "category": "Work", "name": "Electronic City", "distance_km": 12.0, "travel_time_mins": 25 },
+      { "category": "Shopping", "name": "DMart", "distance_km": 10.0, "travel_time_mins": 20 }
+    ],
+
+    "cost_extras": [
+      { "name": "Clubhouse Membership", "cost_type": "Fixed", "amount": 500000, "payment_milestone": "On Possession" },
+      { "name": "GST", "cost_type": "Percentage", "amount": 5.0, "payment_milestone": "Per Milestone" },
+      { "name": "BESCOM & BWSSB", "cost_type": "Fixed", "amount": 350000, "payment_milestone": "On Possession" }
+    ]
+  }
+]

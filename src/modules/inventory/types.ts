@@ -4,27 +4,28 @@
 export type Zone = 'North' | 'South' | 'East' | 'West';
 export type PropertyStatus = 'Ready' | 'Under Construction';
 
+
 // --- Main Entity Interface ---
 // 1. Match the DB Schema EXACTLY + UI Extensions
 export interface Property {
   // --- Identifiers & Location ---
   id: string;
   name: string;
-  developer?: string;
-  location_area: string;
+  developer?: string; // Now populated from V7 Project
+  rera_id?: string;   // Now populated from V7 Project
+  
+  location_area: string; // Mapped from 'region'
   zone: Zone;
   lat: number;
   lng: number;
 
-
-
   totalUnits: number;
-  priceRange: { };
+  priceRange: { }; // Placeholder for detailed range object if needed
 
-  amenities: string[],
+  amenities: string[];
   
   // --- Pricing ---
-  price_display: string;
+  price_display: string;  // "1.5 Cr" for display
   price_value: number;     // Numeric for sorting/filtering
   price_per_sqft?: number; // DB column: price_per_sqft
 
@@ -39,9 +40,10 @@ export interface Property {
   facing_direction?: string;
   
   balcony_count?: number;
-  floor_levels?: string;
+  floor_levels?: string;    // "G+18"
+
+  completion_date?: string;    // ISO Date
   completion_duration?: string; // DB is text: "Q4 2026"
-  rera_id?: string;
 
   // --- Rich Data (JSONB mappings) ---
   
@@ -81,7 +83,18 @@ export interface Property {
   score?: number;           // For AI/Sorting logic
   reasons?: string[];       // Explanation for AI recommendation
   images?: string[];        // Helper accessor for media.images (legacy support)
+  
+  // Metadata (FIX: Added these to solve your error)
+  created_at?: string;
+  updated_at?: string;
+
+
+
+  // The "Backdoor" to access full V7 data in the UI
+  _raw_v7?: any; // We use 'any' or import ProjectFullV7 to avoid circular deps
+ 
 }
+
 
 // --- Filter Interfaces ---
 // 2. Filter State Interface
@@ -99,6 +112,3 @@ export interface FilterCriteria {
   sqFtMax?: number;
   possessionYear?: string;  // Filter by "2026" inside completion_duration
 }
-
-
-

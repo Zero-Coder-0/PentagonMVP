@@ -159,3 +159,13 @@ BEGIN
     VALUES (p_south_id, 'Clubhouse Membership', 'Fixed', 500000), (p_south_id, 'GST', 'Percentage', 5);
 
 END $$;
+
+
+
+-- ADD FLEXIBLE SPECIFICATIONS TO V7
+ALTER TABLE public.projects ADD COLUMN specifications JSONB DEFAULT '{}';
+ALTER TABLE public.project_units ADD COLUMN unit_specs JSONB DEFAULT '{}';
+
+-- Example Data for these columns:
+-- projects.specifications = {"water_source": "Cauvery + Borewell", "stp_capacity": "500 KLD"}
+-- project_units.unit_specs = {"door_type": "Teak Wood", "window_brand": "Fenesta"}

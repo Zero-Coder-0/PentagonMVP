@@ -1,18 +1,22 @@
 'use client'
 
 import React, { createContext, useState, useMemo, useContext, useRef, useEffect } from 'react'
-import { supabaseClient } from '@/core/db/client' // Ensure this path is correct for your project
+// import { supabaseClient } from '@/core/db/client' // REMOVED: Replaced by Server Action
 import styles from './Dashboard.module.css'
 import MapContainer from './MapContainer'
 import PropertyListContainer from './PropertyListContainer' 
 import DetailContainer from './DetailContainer'
 import MegaPopup from './MegaPopup'
 
+
 // --- 1. Imports from Modules ---
 import { Property, FilterCriteria } from '@/modules/inventory/types';
 import { filterProperties } from '@/modules/inventory/utils/filter-engine';
+import { getProjectsV7 } from '@/modules/inventory/actions-v7'; // UPDATED: New V7 Action
+
 
 // --- 2. Types & Context ---
+
 
 interface DashboardContextType {
   // Data & State
@@ -21,6 +25,7 @@ interface DashboardContextType {
   filters: FilterCriteria
   setFilters: (filters: FilterCriteria) => void
   resetFilters: () => void;
+
 
   // Selection & Hover
   selectedId: string | null
@@ -36,6 +41,7 @@ interface DashboardContextType {
   cancelHoverLeave: () => void
   handlePinClick: (id: string) => void 
 
+
   // Map State
   userLocation: { lat: number; lng: number; displayName: string } | null
   setUserLocation: (location: any) => void
@@ -43,7 +49,9 @@ interface DashboardContextType {
   setMapBounds: (bounds?: [[number, number], [number, number]]) => void
 }
 
+
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined)
+
 
 export function useDashboard() {
   const context = useContext(DashboardContext)
@@ -51,9 +59,11 @@ export function useDashboard() {
   return context
 }
 
+
 export default function DashboardPage() {
   // State
   const [properties, setProperties] = useState<Property[]>([])
+
 
   // --- Robust Filter Initialization ---
   const initialFilters: FilterCriteria = {
@@ -71,7 +81,9 @@ export default function DashboardPage() {
     possessionYear: '',
   }
 
+
   const [filters, setFilters] = useState<FilterCriteria>(initialFilters)
+
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [hoveredListId, setHoveredListId] = useState<string | null>(null)
@@ -79,48 +91,37 @@ export default function DashboardPage() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number; displayName: string } | null>(null)
   const [mapBounds, setMapBounds] = useState<[[number, number], [number, number]] | undefined>(undefined)
 
+
   // Ref for the "Sticky" bridge logic
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // --- 3. Data Fetching (Integrated from Old Code) ---
+
+  // --- 3. Data Fetching (Integrated V7 Logic) ---
   useEffect(() => {
     async function fetchProperties() {
-      // Create client (Assuming supabaseClient is a factory function based on your new code)
-      const supabase = supabaseClient() 
-      
-      const { data, error } = await supabase
-        .from('properties')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (data) {
-        // MAP DB COLUMNS TO UI TYPES
-        // This fixes the mismatch between DB 'facing_direction' and UI 'facing'
-        const mappedProperties = data.map((item: any) => ({
-          ...item,
-          // DB has 'facing_direction' (string), UI wants 'facing' (string[] for filters)
-          // We wrap the single string in an array so the filter engine works correctly
-          facing: item.facing_direction ? [item.facing_direction] : [],
-          
-          // Ensure other new fields like 'media' or 'amenities_detailed' are passed through
-          media: item.media || { images: [] },
-          amenities_detailed: item.amenities_detailed || {},
-        })) as Property[]
-
-        setProperties(mappedProperties)
+      try {
+        // UPDATED: Now calling the V7 Server Action directly
+        // The action returns data already formatted for the UI, so no manual mapping is needed.
+        const data = await getProjectsV7();
+        
+        if (data) {
+          setProperties(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch properties via V7:', error);
       }
-      
-      if (error) console.error('Failed to fetch properties:', error)
     }
 
-    fetchProperties()
+    fetchProperties();
   }, [])
+
 
 
   // --- 4. Refactored Filtering Logic ---
   const displayedProperties = useMemo(() => {
     // Use the imported filter engine
     let items = filterProperties(properties, filters);
+
 
     // Keep existing Distance sort logic
     if (userLocation) {
@@ -133,13 +134,16 @@ export default function DashboardPage() {
   }, [properties, userLocation, filters])
 
 
+
   // --- New "Bridge" Handlers ---
+
 
   // 1. Enter: Show immediately, clear any hide timers
   const handleCardEnter = (id: string) => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
     setHoveredRecId(id)
   }
+
 
   // 2. Leave: Wait 300ms before hiding
   const handleCardLeave = () => {
@@ -149,10 +153,12 @@ export default function DashboardPage() {
     }, 300)
   }
 
+
   // 3. Popup Enter: Cancel the hide timer (keep it open)
   const cancelHoverLeave = () => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
   }
+
 
   // 4. Map Pin Click: Highlight and Open Popup immediately
   const handlePinClick = (id: string) => {
@@ -161,10 +167,12 @@ export default function DashboardPage() {
     setHoveredRecId(id)    // Opens the MegaPopup
   }
 
+
   // Helper to reset filters
   const resetFilters = () => {
     setFilters(initialFilters)
   }
+
 
   const value: DashboardContextType = {
     properties,
@@ -182,9 +190,11 @@ export default function DashboardPage() {
     cancelHoverLeave,
     handlePinClick, 
 
+
     userLocation, setUserLocation,
     mapBounds, setMapBounds
   }
+
 
   return (
     <DashboardContext.Provider value={value}>
@@ -197,6 +207,7 @@ export default function DashboardPage() {
     </DashboardContext.Provider>
   )
 }
+
 
 // Helper: Haversine formula
 function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {

@@ -5,11 +5,13 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { getZoneFromCoordinates } from '@/modules/map-engine/utils/geo-zone'
 
+
 // Fix for default markers
 const icon = L.icon({
   iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
   iconAnchor: [12, 41]
 });
+
 
 // Component to handle map clicks
 function MapEvents({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) {
@@ -21,6 +23,7 @@ function MapEvents({ onLocationSelect }: { onLocationSelect: (lat: number, lng: 
   return null;
 }
 
+
 // Component to update map center programmatically
 function MapUpdater({ center }: { center: [number, number] }) {
   const map = useMap();
@@ -30,20 +33,38 @@ function MapUpdater({ center }: { center: [number, number] }) {
   return null;
 }
 
-interface LocationPickerProps {
+
+export interface LocationPickerProps {
   onLocationChange: (lat: number, lng: number, zone: string) => void;
+  // ADD THESE TWO LINES:
+  lat?: number;
+  lng?: number;
 }
 
-export default function LocationPicker({ onLocationChange }: LocationPickerProps) {
-  const [position, setPosition] = useState<[number, number]>([12.9716, 77.5946]);
+
+export default function LocationPicker({ onLocationChange, lat, lng }: LocationPickerProps) {
+  // Use passed lat/lng if available, otherwise default to Bangalore center
+  const initialLat = lat || 12.9716;
+  const initialLng = lng || 77.5946;
+  
+  const [position, setPosition] = useState<[number, number]>([initialLat, initialLng]);
   const [pincode, setPincode] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Effect to update internal state if props change (Controlled Component behavior)
+  useEffect(() => {
+    if (lat && lng) {
+      setPosition([lat, lng]);
+    }
+  }, [lat, lng]);
+
 
   const handleSelect = (lat: number, lng: number) => {
     setPosition([lat, lng]);
     const zone = getZoneFromCoordinates(lat, lng);
     onLocationChange(lat, lng, zone);
   };
+
 
   const searchPincode = async () => {
     if (!pincode) return;
@@ -65,6 +86,7 @@ export default function LocationPicker({ onLocationChange }: LocationPickerProps
     setLoading(false);
   };
 
+
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
@@ -83,6 +105,7 @@ export default function LocationPicker({ onLocationChange }: LocationPickerProps
           {loading ? 'Searching...' : 'Find Location'}
         </button>
       </div>
+
 
       <div className="h-[300px] border rounded overflow-hidden relative z-0">
         <MapContainer center={position} zoom={12} style={{ height: '100%', width: '100%' }}>

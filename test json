@@ -1,0 +1,56 @@
+[
+  {
+    "name": "Rainbow Mayfair",
+    "developer": "Rainbow Properties",
+    "status": "Under Construction",
+    "zone": "South",
+    "region": "Hullahalli",
+    "address_line": "SY NO 41/4, Hullahalli Village, Jigani Hobli, Anekal",
+    "lat": 12.8250,
+    "lng": 77.6200,
+    
+    "total_land_area": "4 Acres",
+    "total_units": 64,
+    "possession_date": "2028-12-01",
+    "construction_technology": "RCC Framed",
+    "open_space_percent": 60,
+    "structure_details": "G+2 Floors",
+    "hero_image_url": "https://images.unsplash.com/photo-1600596542815-27b88e31e62e?auto=format&fit=crop&w=1200&q=80",
+
+    "specifications": {
+      "maintenance_cost": "Rs 3.5 per sqft",
+      "legal_authority": "BMRDA Approved",
+      "banks_approved": ["SBI", "HDFC", "ICICI"],
+      "payment_plan": "10:90 Construction Linked Plan",
+      "water_source": "Borewell + Cauvery (Future)"
+    },
+
+    "analysis": {
+      "overall_rating": 8.5,
+      "pros": ["High UDS (2400 sqft)", "Lake Facing", "Vehicle-Free Podium"],
+      "cons": ["Distance from Metro", "Developing Area"],
+      "target_customer_profile": "Senior Tech Professionals",
+      "closing_pitch": "Own land (UDS) for the price of an apartment.",
+      "objection_handling": "Roads are being widened; appreciation is guaranteed."
+    },
+
+    "units": [
+      {
+        "type": "4BHK Villa",
+        "facing": "East",
+        "sba_sqft": 3923,
+        "uds_sqft": 2400,
+        "base_price": 45000000,
+        "is_available": true
+      }
+    ],
+
+    "amenities": [
+      { "category": "Wellness", "name": "Clubhouse", "size_specs": "11,000 sqft" }
+    ],
+
+    "cost_extras": [
+      { "name": "Clubhouse", "cost_type": "Fixed", "amount": 500000, "payment_milestone": "Possession" }
+    ]
+  }
+]
