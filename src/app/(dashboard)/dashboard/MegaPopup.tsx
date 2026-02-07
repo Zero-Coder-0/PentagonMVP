@@ -1,356 +1,372 @@
 'use client'
 
-import React, { useMemo, useState, useEffect } from 'react'
-import { 
-  CheckCircle2, Zap, Droplets, LayoutTemplate, ShieldCheck, 
-  MapPin, Download, FileText, ExternalLink, 
-  Dumbbell, TreePine, Waves, Landmark, ShoppingBag, GraduationCap,
-  Building2, Ruler, Compass, ChevronLeft, ChevronRight
-} from 'lucide-react'
-import { useDashboard } from './page'
-
-
-// Icon mapper for social infra
-const INFRA_ICONS: any = {
-  school: <GraduationCap className="w-4 h-4 text-indigo-500"/>,
-  mall: <ShoppingBag className="w-4 h-4 text-pink-500"/>,
-  metro: <Zap className="w-4 h-4 text-yellow-500"/>,
-  default: <MapPin className="w-4 h-4 text-slate-400"/>
-}
-
+import React from 'react';
+import { useDashboard } from './page';
+import { X, MapPin, FileText, MessageCircle, CalendarCheck, Star, Users, Building2, Home, TrendingUp, Target } from 'lucide-react';
 
 export default function MegaPopup() {
-  const { hoveredRecId, properties, cancelHoverLeave, handleCardLeave, setSelectedId } = useDashboard()
-  const [currentImageIndex, setCurrentImageIndex] = useState(0)
-
-
-  const data = useMemo(() => 
-    properties.find(p => p.id === hoveredRecId), 
-    [hoveredRecId, properties]
-  )
+  const { hoveredRecId, displayedProperties, setHoveredRecId, cancelHoverLeave, properties } = useDashboard();
   
-  // Reset carousel when property changes
-  useEffect(() => {
-    setCurrentImageIndex(0)
-  }, [hoveredRecId])
-
-
-  if (!hoveredRecId || !data) return null
-
-
-  // --- DATA NORMALIZATION ---
+  if (!hoveredRecId) return null;
   
-  // 1. Amenities: Flatten all categories
-  const rawAmenities = data.amenities_detailed || {}
-  const amenitiesList = Object.values(rawAmenities).flat().filter(item => typeof item === 'string')
+  const property = displayedProperties.find(p => p.id === hoveredRecId);
+  if (!property) return null;
 
-
-  const infra = data.social_infra || {}
-  const units = data.units_available || {}
-  const media = data.media || { images: [], brochure: '', floor_plan: '' }
-  const images = media.images && media.images.length > 0 ? media.images : []
-  
-  // Access V7 Raw Data safely (casted to any to avoid strict TS issues if types aren't fully merged yet)
-  // This assumes your Adapter or Fetch logic attaches _raw_v7 or you are accessing the V7 fields directly if mapped.
-  // Based on your snippet, it seems you might be expecting a `_raw_v7` property. 
-  // However, since we just updated the Adapter to NOT attach _raw_v7, 
-  // we will map the V7 fields directly from the `data` object if they exist (assuming you update the Property type to include them).
-  // FOR NOW: I will render the V7 section using the props if they are available on the `data` object, 
-  // or checks if `_raw_v7` exists as a fallback.
-  const v7Data = (data as any)._raw_v7 || (data as any); 
-
-
-  // Action Handlers (Preserved from Old Code)
-  const handleDownload = (url?: string, type?: string) => {
-    if (url) window.open(url, '_blank');
-    else alert(`${type} not available for this property yet.`);
+  let analysis, costExtras, analysisString;
+  try {
+    const salesAnalysisData = property.specs?.sales_analysis;
+    analysisString = typeof salesAnalysisData === 'string' ? salesAnalysisData : JSON.stringify(salesAnalysisData);
+    analysis = salesAnalysisData ? JSON.parse(analysisString) : null;
+    
+    const costExtrasData = property.specs?.cost_extras;
+    const costExtrasString = typeof costExtrasData === 'string' ? costExtrasData : JSON.stringify(costExtrasData);
+    costExtras = costExtrasData ? JSON.parse(costExtrasString) : [];
+  } catch (e) {
+    analysis = null;
+    costExtras = [];
+    analysisString = undefined;
   }
 
-
-  const handleMoreDetails = () => {
-    setSelectedId(data.id); 
-  }
-
-
-  // Carousel Logic (New)
-  const handleNextImage = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (images.length > 1) {
-      setCurrentImageIndex((prev) => (prev + 1) % images.length)
-    }
-  }
-
-
-  const handlePrevImage = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (images.length > 1) {
-      setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length)
-    }
-  }
-
+  // Smart Alternatives: Find similar properties in same zone
+  const alternatives = properties
+    .filter(p => 
+      p.id !== property.id && 
+      p.zone === property.zone &&
+      p.configurations?.some(config => property.configurations?.includes(config))
+    )
+    .slice(0, 3);
 
   return (
-    <div 
-      className="absolute top-4 left-4 z-[1000] w-[480px] bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in slide-in-from-left-4 duration-200"
-      onMouseEnter={cancelHoverLeave}
-      onMouseLeave={handleCardLeave}
-    >
-      {/* 1. Header Image Area (Carousel) */}
-      <div className="h-40 relative bg-slate-200 group">
-        {images.length > 0 ? (
-          <>
-            <img 
-              src={images[currentImageIndex]} 
-              alt={data.name} 
-              className="w-full h-full object-cover transition-opacity duration-300" 
-            />
-            {/* Carousel Controls */}
-            {images.length > 1 && (
-              <>
-                <button 
-                  onClick={handlePrevImage}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/50 hover:bg-black/70 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button 
-                  onClick={handleNextImage}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-black/50 hover:bg-black/70 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-                {/* Dots Indicator */}
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
-                  {images.map((_, idx) => (
-                    <div 
-                      key={idx} 
-                      className={`w-1.5 h-1.5 rounded-full shadow-sm ${idx === currentImageIndex ? 'bg-white scale-125' : 'bg-white/60'}`} 
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-          </>
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-slate-400">No Image</div>
-        )}
+    <>
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/20 z-[998] animate-in fade-in duration-200"
+        onClick={() => setHoveredRecId(null)}
+      />
+      
+      {/* Wide 2-Column Popup from LEFT */}
+      <div 
+        className="absolute left-4 top-4 bottom-4 w-[850px] bg-white rounded-2xl shadow-2xl z-[999] flex flex-col overflow-hidden animate-in slide-in-from-left duration-300 border border-slate-200"
+        onMouseEnter={cancelHoverLeave}
+        onClick={(e) => e.stopPropagation()}
+      >
         
-        {/* Overlay Gradients */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
-        
-        {/* Title & Location */}
-        <div className="absolute bottom-4 left-5 text-white pointer-events-none">
-          <h2 className="text-2xl font-bold leading-none mb-1 shadow-black/50 drop-shadow-md">{data.name}</h2>
-          <p className="text-sm opacity-95 flex items-center gap-1 font-medium">
-            <MapPin className="w-3.5 h-3.5 text-yellow-400" /> {data.location_area}, {data.zone} Zone
-          </p>
-        </div>
-        
-        {/* Price & Status */}
-        <div className="absolute bottom-4 right-5 flex flex-col items-end pointer-events-none">
-           <span className="bg-white text-slate-900 px-3 py-1 rounded-lg text-sm font-bold shadow-md mb-1 border border-slate-100">
-            {data.price_display}
-           </span>
-           <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider shadow-sm ${data.status === 'Ready' ? 'bg-green-500 text-white' : 'bg-blue-500 text-white'}`}>
-             {data.status}
-           </span>
-        </div>
-      </div>
-
-
-      {/* 2. Scrollable Content */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-6 scrollbar-thin scrollbar-thumb-slate-200">
-        
-        {/* A. Inventory Grid */}
-        <section>
-          <div className="flex items-center justify-between mb-3">
-             <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Inventory Status</h3>
-             <span className="text-[10px] text-slate-500 font-medium">Live Updates</span>
+        {/* Header */}
+        <div className="flex-shrink-0 flex justify-between items-start p-4 border-b border-slate-200 bg-white">
+          <div className="flex-1 min-w-0 mr-3">
+            <div className="flex items-center gap-2">
+               <h2 className="text-lg font-bold text-slate-900 truncate">{property.name}</h2>
+               <span className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase ${
+                 property.status === 'Ready' ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-amber-100 text-amber-700 border border-amber-300'
+               }`}>
+                 {property.status}
+               </span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-slate-600 mt-1">
+              <MapPin size={11} />
+              <span className="truncate">{property.location_area}, {property.zone} Zone</span>
+            </div>
+            <div className="text-xs text-slate-500 mt-0.5">by {property.developer}</div>
           </div>
-          {Object.keys(units).length > 0 ? (
-            <div className="grid grid-cols-3 gap-2">
-              {Object.entries(units).map(([type, count]) => (
-                <div key={type} className={`p-2 rounded border text-center ${Number(count) < 3 ? 'bg-red-50 border-red-100' : 'bg-slate-50 border-slate-100'}`}>
-                  <div className="text-xs font-bold text-slate-700">{type}</div>
-                  <div className={`text-sm font-bold ${Number(count) < 3 ? 'text-red-700' : 'text-slate-900'}`}>
-                    {count} Units
+          
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <div className="text-right">
+               <div className="text-xl font-bold text-green-700">{property.price_display}</div>
+               <div className="text-xs text-slate-500">Base Price</div>
+            </div>
+            <button 
+              onClick={() => setHoveredRecId(null)}
+              className="p-1.5 hover:bg-slate-100 rounded-full transition"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* 2-Column Body */}
+        <div className="flex-1 overflow-hidden">
+          <div className="flex h-full">
+            
+            {/* ========== LEFT COLUMN: Property Details (55%) ========== */}
+            <div className="w-[55%] overflow-y-auto p-4 space-y-3 border-r border-slate-200 bg-slate-50">
+              
+              {/* 1. RERA ID */}
+              <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
+                <div className="text-xs text-slate-600 font-semibold mb-1">RERA ID</div>
+                <div className="font-mono text-xs font-bold text-slate-900 break-all">{property.rera_id || 'Not Available'}</div>
+              </div>
+
+              {/* 2. Type of Development */}
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+                <div className="text-xs text-blue-700 font-semibold mb-1">Type of Development</div>
+                <div className="font-bold text-sm text-blue-900">{property.specs?.['Type of Development'] || property.property_type || 'Residential Apartments'}</div>
+              </div>
+
+              {/* 3. Configuration Table */}
+              <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
+                <h3 className="font-bold text-sm text-slate-800 mb-2 flex items-center gap-1.5">
+                  <Building2 size={14} className="text-slate-600" /> Configuration
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs border-collapse">
+                    <thead className="bg-slate-100">
+                      <tr>
+                        <th className="p-2 text-left font-bold border border-slate-200 text-slate-700">BHK</th>
+                        <th className="p-2 text-left font-bold border border-slate-200 text-slate-700">WC</th>
+                        <th className="p-2 text-left font-bold border border-slate-200 text-slate-700">BL</th>
+                        <th className="p-2 text-left font-bold border border-slate-200 text-slate-700">SBA</th>
+                        <th className="p-2 text-left font-bold border border-slate-200 text-slate-700">Facing</th>
+                        <th className="p-2 text-left font-bold border border-slate-200 text-slate-700">UDS</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {property.configurations?.map((config, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50">
+                          <td className="p-2 font-semibold border border-slate-200">{config}</td>
+                          <td className="p-2 border border-slate-200">{property.specs?.['WC'] || '2'}</td>
+                          <td className="p-2 border border-slate-200">{property.specs?.['Balconies'] || '2'}</td>
+                          <td className="p-2 border border-slate-200 font-medium">{property.sq_ft_range}</td>
+                          <td className="p-2 border border-slate-200">{property.facing_direction || 'East, West'}</td>
+                          <td className="p-2 border border-slate-200">{property.specs?.['UDS'] || 'N/A'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* 4. Maintenance & Pricing */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-purple-50 border border-purple-200 rounded-xl p-3">
+                  <div className="text-xs text-purple-700 font-semibold mb-1">Maintenance (per sq ft)</div>
+                  <div className="font-bold text-sm text-purple-900">{property.specs?.Maintenance || 'Rs 3.5/sqft'}</div>
+                </div>
+                <div className="bg-green-50 border border-green-200 rounded-xl p-3">
+                  <div className="text-xs text-green-700 font-semibold mb-1">Price per sqft</div>
+                  <div className="font-bold text-sm text-green-900">₹{property.price_per_sqft || 'N/A'}</div>
+                </div>
+              </div>
+
+              {/* 5. Onwards Pricing */}
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-3">
+                <div className="text-xs text-green-700 font-bold mb-1">Onwards Pricing</div>
+                <div className="text-lg font-bold text-green-900">{property.price_display}</div>
+                <div className="text-xs text-green-700 mt-1">Starting price for {property.configurations?.[0]}</div>
+              </div>
+
+              {/* 6. Society Info Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                  <div className="text-xs text-amber-700 font-semibold mb-1">Land Parcel</div>
+                  <div className="font-bold text-sm text-amber-900">{property.specs?.['Total Land Area'] || 'N/A'}</div>
+                </div>
+                <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3">
+                  <div className="text-xs text-indigo-700 font-semibold mb-1">Total Units</div>
+                  <div className="font-bold text-sm text-indigo-900">{property.specs?.['Total Units'] || '558'}</div>
+                </div>
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                  <div className="text-xs text-slate-600 font-semibold mb-1">Structure</div>
+                  <div className="font-bold text-sm text-slate-900">{property.floor_levels || 'G+18'}</div>
+                </div>
+                <div className="bg-teal-50 border border-teal-200 rounded-xl p-3">
+                  <div className="text-xs text-teal-700 font-semibold mb-1">Clubhouse</div>
+                  <div className="font-bold text-sm text-teal-900">{property.specs?.['Clubhouse Size'] || '17,760 Sq.Ft'}</div>
+                </div>
+              </div>
+
+              {/* 7. Society Highlights */}
+              <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
+                <h3 className="font-bold text-sm text-slate-800 mb-2">Society Highlights</h3>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-slate-50 rounded-lg p-2 flex justify-between border border-slate-200">
+                    <span className="text-slate-600 font-medium">Builder Grade:</span>
+                    <span className="font-bold text-slate-900">{property.specs?.['Builder Grade'] || 'Premium'}</span>
+                  </div>
+                  <div className="bg-slate-50 rounded-lg p-2 flex justify-between border border-slate-200">
+                    <span className="text-slate-600 font-medium">Open Space:</span>
+                    <span className="font-bold text-slate-900">{property.specs?.['Open Space %'] || '76%'}</span>
+                  </div>
+                  <div className="bg-slate-50 rounded-lg p-2 flex justify-between col-span-2 border border-slate-200">
+                    <span className="text-slate-600 font-medium">Construction:</span>
+                    <span className="font-bold text-slate-900">{property.specs?.['Construction Type'] || 'RCC Framed'}</span>
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex gap-2">
-               {data.configurations?.map((conf: string) => (
-                 <span key={conf} className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-full">{conf}</span>
-               ))}
-            </div>
-          )}
-        </section>
-
-
-        {/* B. Key Highlights - UPDATED TO 3 COLUMNS */}
-        <div className="grid grid-cols-3 gap-3">
-          <InfoBadge icon={<ShieldCheck className="w-4 h-4 text-emerald-600"/>} label="RERA ID" value={data.rera_id || "Pending"} />
-          <InfoBadge icon={<Building2 className="w-4 h-4 text-blue-600"/>} label="Floors" value={data.floor_levels || "G+?"} />
-          <InfoBadge icon={<Ruler className="w-4 h-4 text-amber-500"/>} label="Size" value={data.sq_ft_range || "N/A"} />
-          <InfoBadge icon={<Compass className="w-4 h-4 text-purple-500"/>} label="Facing" value={data.facing_direction || "Various"} />
-          <InfoBadge icon={<LayoutTemplate className="w-4 h-4 text-cyan-500"/>} label="Ready In" value={data.completion_duration || "Ready"} />
-        </div>
-
-        {/* --- C. SALES INTELLIGENCE (V7 INJECTION) --- */}
-        {/* Renders safely only if V7 data is present */}
-        {v7Data && (v7Data.analysis || (v7Data.units && v7Data.units.length > 0) || (v7Data.cost_extras && v7Data.cost_extras.length > 0)) && (
-          <div className="mt-4 border-t border-slate-100 pt-4 bg-slate-50/50 -mx-5 px-5 pb-4">
-            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">⭐ Sales Intelligence (V7)</h3>
-            
-            {/* 1. The Analysis / Pitch */}
-            {v7Data.analysis && (
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                {v7Data.analysis.closing_pitch && (
-                    <div className="bg-green-50 border border-green-100 p-3 rounded-lg">
-                    <h4 className="font-bold text-xs text-green-800 flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3"/> Closing Pitch
-                    </h4>
-                    <p className="text-[11px] leading-tight text-green-900 mt-1">{v7Data.analysis.closing_pitch}</p>
-                    </div>
-                )}
-                {v7Data.analysis.objection_handling && (
-                    <div className="bg-red-50 border border-red-100 p-3 rounded-lg">
-                    <h4 className="font-bold text-xs text-red-800 flex items-center gap-1">
-                        <ShieldCheck className="w-3 h-3"/> Objection Handling
-                    </h4>
-                    <p className="text-[11px] leading-tight text-red-900 mt-1">{v7Data.analysis.objection_handling}</p>
-                    </div>
-                )}
               </div>
-            )}
 
-            {/* 2. Unit Specs Table (With UDS!) */}
-            {v7Data.units && v7Data.units.length > 0 && (
-              <div className="mb-4 overflow-hidden rounded border border-slate-200">
-                <table className="w-full text-xs text-left">
-                  <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
-                    <tr>
-                      <th className="p-2">Type</th>
-                      <th className="p-2">SBA</th>
-                      <th className="p-2 bg-yellow-50 text-amber-700">UDS (Land)</th>
-                      <th className="p-2 hidden sm:table-cell">Carpet</th>
-                      <th className="p-2 text-right">Price</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
-                    {v7Data.units.slice(0, 5).map((u: any, i: number) => (
-                      <tr key={i}>
-                        <td className="p-2 font-medium text-slate-900">{u.type}</td>
-                        <td className="p-2 text-slate-600">{u.sba_sqft}</td>
-                        <td className="p-2 bg-yellow-50/50 font-bold text-amber-800">{u.uds_sqft || '-'}</td>
-                        <td className="p-2 hidden sm:table-cell text-slate-500">{u.carpet_sqft || '-'}</td>
-                        <td className="p-2 text-right font-bold text-slate-900">
-                            {u.base_price ? `₹${(u.base_price / 10000000).toFixed(2)} Cr` : 'Call'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* 3. Cost Sheet Extras */}
-            {v7Data.cost_extras && v7Data.cost_extras.length > 0 && (
-              <div>
-                <h4 className="text-[10px] font-bold text-slate-500 uppercase mb-2">💰 Extra Charges (Hidden Costs)</h4>
-                <div className="flex flex-wrap gap-1.5">
-                  {v7Data.cost_extras.map((c: any, i: number) => (
-                    <span key={i} className="px-2 py-1 bg-white border border-slate-200 rounded text-[10px] font-medium text-slate-700 shadow-sm">
-                      {c.name}: <span className="font-bold">{c.cost_type === 'Fixed' ? `₹${(c.amount/1000).toFixed(0)}k` : `${c.amount}%`}</span>
-                    </span>
-                  ))}
+              {/* 8. Location Advantages */}
+              <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
+                <h3 className="font-bold text-sm text-slate-800 mb-2 flex items-center gap-1.5">
+                  <MapPin size={14} className="text-slate-600" /> Location Advantages
+                </h3>
+                <div className="space-y-2 text-xs">
+                  {property.social_infra && Object.keys(property.social_infra).length > 0 ? (
+                    Object.entries(property.social_infra).map(([key, value], idx) => (
+                      <div key={key} className="flex items-start gap-2 bg-slate-50 rounded-lg p-2 border border-slate-200">
+                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
+                          {idx + 1}
+                        </span>
+                        <div className="flex-1">
+                          <span className="text-slate-700 font-semibold capitalize">{key}:</span>
+                          <span className="ml-1 text-slate-900">{value as string}</span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-slate-500 text-center py-2">No location data available</div>
+                  )}
                 </div>
               </div>
-            )}
+
+            </div>
+
+            {/* ========== RIGHT COLUMN: Actions & Intelligence (45%) ========== */}
+            <div className="w-[45%] overflow-y-auto bg-white p-4 space-y-3">
+              
+              {/* Action Buttons */}
+              <div className="space-y-2">
+                 <button className="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 shadow-md transition border border-green-700">
+                   <MessageCircle size={18} /> WhatsApp
+                 </button>
+                 <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 shadow-md transition border border-blue-700">
+                   <CalendarCheck size={18} /> Book Visit
+                 </button>
+              </div>
+
+              {/* Visitor Notes (Sales Intelligence) */}
+              {analysis && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 shadow-sm">
+                  <h3 className="font-bold text-sm text-amber-900 mb-3 flex items-center gap-1.5">
+                    <Users size={14} /> Visitor Notes
+                  </h3>
+                  <div className="space-y-2 text-xs">
+                    
+                    {/* Target Customer */}
+                    {analysis.whom_to_target && (
+                      <div className="bg-white rounded-lg p-3 border border-amber-200">
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <span className="text-lg">🎯</span>
+                          <span className="font-bold text-amber-800">Target Customer</span>
+                        </div>
+                        <p className="text-amber-900 leading-relaxed">{analysis.whom_to_target}</p>
+                      </div>
+                    )}
+
+                    {/* Pitch Angle */}
+                    {analysis.pitch_angle && (
+                      <div className="bg-white rounded-lg p-3 border border-amber-200">
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <span className="text-lg">💬</span>
+                          <span className="font-bold text-amber-800">Pitch Angle</span>
+                        </div>
+                        <p className="text-amber-900 leading-relaxed">{analysis.pitch_angle}</p>
+                      </div>
+                    )}
+
+                    {/* USP */}
+                    {analysis.usp && (
+                      <div className="bg-white rounded-lg p-3 border border-amber-200">
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <span className="text-lg">⭐</span>
+                          <span className="font-bold text-amber-800">Unique Selling Points</span>
+                        </div>
+                        <p className="text-amber-900 leading-relaxed">{analysis.usp}</p>
+                      </div>
+                    )}
+
+                    {/* Objection Handling */}
+                    {analysis.objection_handling && (
+                      <div className="bg-white rounded-lg p-3 border border-amber-200">
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <span className="text-lg">🛡️</span>
+                          <span className="font-bold text-amber-800">Objection Handling</span>
+                        </div>
+                        <p className="text-amber-900 leading-relaxed">{analysis.objection_handling}</p>
+                      </div>
+                    )}
+
+                  </div>
+                </div>
+              )}
+
+              {/* Elevators */}
+              <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-3">
+                <div className="text-xs text-cyan-700 font-semibold mb-1">Elevators Per Tower</div>
+                <div className="font-bold text-sm text-cyan-900">{property.specs?.['Elevators per Tower'] || '2 Passenger + 1 Service'}</div>
+              </div>
+
+              {/* Pricing Section */}
+              <div className="bg-green-50 border border-green-200 rounded-xl p-3 shadow-sm">
+                <h3 className="font-bold text-sm text-green-900 mb-2 flex items-center gap-1.5">
+                  <FileText size={14} /> Pricing
+                </h3>
+                <div className="bg-white rounded-lg p-2.5 mb-2 border border-green-200">
+                  <div className="text-xs text-green-700 font-semibold mb-1">Base</div>
+                  <div className="font-bold text-base text-green-900">{property.price_display}</div>
+                  <div className="text-xs text-green-700 mt-0.5">₹{property.price_per_sqft}/sqft</div>
+                </div>
+                <div className="bg-white rounded-lg p-2.5 border border-green-200">
+                  <div className="text-xs text-green-700 font-semibold mb-1">Payment Plan</div>
+                  <div className="text-xs text-green-900">{property.specs?.['Payment Plan'] || '10-90 Construction Linked'}</div>
+                </div>
+              </div>
+
+              {/* Floor Plan */}
+              <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
+                <h3 className="font-bold text-sm text-slate-700 mb-2 flex items-center gap-1.5">
+                  <FileText size={14} className="text-slate-600" /> Floor Plan
+                </h3>
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-center hover:bg-slate-100 cursor-pointer transition">
+                  {property.media?.floor_plan ? (
+                     <img src={property.media.floor_plan} alt="Floor Plan" className="max-h-28 mx-auto rounded" />
+                  ) : (
+                     <>
+                       <FileText size={32} className="text-slate-300 mx-auto mb-2" />
+                       <div className="text-xs text-slate-600 font-medium">Request Floor Plans</div>
+                     </>
+                  )}
+                </div>
+              </div>
+
+              {/* Smart Alternatives */}
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 shadow-sm">
+                <h3 className="font-bold text-sm text-blue-900 mb-2 flex items-center gap-1.5">
+                  <Star size={14} className="text-blue-700" /> Smart Alternatives
+                </h3>
+                {alternatives.length > 0 ? (
+                  <div className="space-y-2">
+                    {alternatives.map(alt => (
+                      <div 
+                        key={alt.id} 
+                        onClick={() => setHoveredRecId(alt.id)}
+                        className="flex items-center gap-2 p-2 bg-white rounded-lg hover:bg-blue-100 cursor-pointer transition border border-blue-200"
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex-shrink-0 overflow-hidden border border-slate-200">
+                          {alt.media?.images?.[0] ? (
+                            <img src={alt.media.images[0]} alt={alt.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-slate-400">
+                              <Home size={14} />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-xs text-slate-900 truncate">{alt.name}</div>
+                          <div className="text-xs text-slate-500 truncate">{alt.location_area}</div>
+                        </div>
+                        <div className="text-xs font-bold text-green-700 flex-shrink-0">{alt.price_display}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 italic text-center py-2">Similar properties in zone</p>
+                )}
+              </div>
+
+            </div>
+
           </div>
-        )}
-        {/* --- END V7 INJECTION --- */}
-
-
-        {/* D. Amenities & Infra (Existing) */}
-        <div className="space-y-4">
-           {/* Amenities Section */}
-           {amenitiesList.length > 0 && (
-             <div>
-               <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Amenities</h3>
-               <div className="flex flex-wrap gap-2">
-                 {amenitiesList.map((item: any, idx: number) => (
-                   <div key={idx} className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 px-2.5 py-1.5 rounded text-xs text-slate-700 capitalize font-medium">
-                     <CheckCircle2 className="w-3.5 h-3.5 text-green-600"/>
-                     <span>{String(item)}</span>
-                   </div>
-                 ))}
-               </div>
-             </div>
-           )}
-
-
-           {/* Location / Infra - UPDATED TO 3 COLUMNS */}
-           {Object.keys(infra).length > 0 && (
-             <div>
-               <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Nearby</h3>
-               <div className="grid grid-cols-3 gap-2">
-                  {Object.entries(infra).map(([key, val]) => (
-                    <div key={key} className="flex flex-col p-2 bg-slate-50 rounded border border-slate-100">
-                      <span className="flex items-center gap-1.5 capitalize text-[10px] text-slate-500 mb-1 font-bold">
-                        {INFRA_ICONS[key.toLowerCase()] || INFRA_ICONS.default} {key}
-                      </span>
-                      <span className="font-bold text-xs text-slate-900 truncate" title={String(val)}>{String(val)}</span>
-                    </div>
-                  ))}
-               </div>
-             </div>
-           )}
         </div>
       </div>
-
-
-      {/* 3. Footer Actions (Preserved from Old Code) */}
-      <div className="p-4 border-t border-slate-100 bg-slate-50 grid grid-cols-2 gap-3">
-         <div className="flex gap-2">
-           <button 
-             onClick={() => handleDownload(media.brochure, 'Brochure')}
-             className="flex-1 flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 py-2 rounded-lg text-xs font-bold hover:bg-slate-50 transition"
-             title="Download Brochure"
-           >
-             <Download className="w-3.5 h-3.5" /> Brochure
-           </button>
-           <button 
-             onClick={() => handleDownload(media.floor_plan, 'Floor Plan')}
-             className="flex-1 flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 py-2 rounded-lg text-xs font-bold hover:bg-slate-50 transition"
-             title="View Floor Plan"
-           >
-             <FileText className="w-3.5 h-3.5" /> Plans
-           </button>
-         </div>
-         
-         <button 
-           onClick={handleMoreDetails}
-           className="flex items-center justify-center gap-2 bg-slate-900 text-white py-2 rounded-lg text-xs font-bold hover:bg-slate-800 transition shadow-lg shadow-slate-200"
-         >
-           More Details <ExternalLink className="w-3.5 h-3.5" />
-         </button>
-      </div>
-    </div>
-  )
-}
-
-
-// Compact Info Badge for 3-Column Layout
-function InfoBadge({ icon, label, value }: { icon: React.ReactNode, label: string, value: string | number }) {
-  return (
-    <div className="flex flex-col p-2 bg-slate-50 rounded border border-slate-100 h-full justify-center">
-        <div className="flex items-center gap-1.5 mb-1">
-            {icon}
-            <span className="text-[10px] text-slate-500 font-bold uppercase truncate">{label}</span>
-        </div>
-        <div className="text-sm font-bold text-slate-900 pl-0.5 truncate" title={String(value)}>{value}</div>
-    </div>
-  )
+    </>
+  );
 }

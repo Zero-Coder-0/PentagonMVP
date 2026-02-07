@@ -1,0 +1,355 @@
+-- =====================================================
+-- PROJECT ORANGE: Complete Property with ALL Fields
+-- Location: Doddaballapur, North Bengaluru
+-- =====================================================
+
+DO $$ 
+DECLARE
+    project_orange_id UUID;
+BEGIN
+    -- ========== 1. INSERT PROJECT (Master Table) ==========
+    INSERT INTO public.projects (
+        -- Basic Info
+        name,
+        developer,
+        rera_id,
+        status,
+        
+        -- Location
+        zone,
+        region,
+        address_line,
+        lat,
+        lng,
+        
+        -- Marketing (Auto-calculated but we'll set initial values)
+        price_min,
+        price_display,
+        configurations,
+        
+        -- Tech Specs
+        total_land_area,
+        total_units,
+        possession_date,
+        construction_technology,
+        open_space_percent,
+        structure_details,
+        
+        -- NEW FIELDS FROM PDF
+        property_type,
+        floor_levels,
+        clubhouse_size,
+        builder_grade,
+        construction_type,
+        elevators_per_tower,
+        payment_plan,
+        floor_rise_charges,
+        car_parking_cost,
+        clubhouse_charges,
+        infrastructure_charges,
+        sinking_fund,
+        onwards_pricing,
+        price_per_sqft,
+        facing_direction,
+        completion_duration,
+        
+        -- Assets
+        hero_image_url,
+        brochure_url,
+        marketing_kit_url,
+        
+        -- Flexible Specs (JSONB)
+        specifications
+    )
+    VALUES (
+        -- Basic Info
+        'Project Orange',
+        'Orange Developers & Builders',
+        'PRM/KA/RERA/1251/309/PR/200924/007890',
+        'Under Construction',
+        
+        -- Location
+        'North',
+        'Doddaballapur',
+        'Survey No. 45/2, Doddaballapur Main Road, Near Aerospace Park, Doddaballapur, Bengaluru - 561203',
+        13.2257, -- Latitude
+        77.5647, -- Longitude
+        
+        -- Marketing
+        11000000, -- 1.10 Cr
+        '₹1.10 Cr',
+        ARRAY['2BHK', '3BHK', '3BHK Premium', '4BHK'],
+        
+        -- Tech Specs
+        '12 Acres',
+        864,
+        '2027-12-31',
+        'Mivan Technology with Aluminium Formwork',
+        72,
+        '2B+G+18 (2 Basements, Ground + 18 Floors)',
+        
+        -- NEW FIELDS
+        'Premium Residential Apartments',
+        '2B+G+18 Floors across 6 Towers',
+        '25,000 Sq.Ft',
+        'Premium Tier-1',
+        'Mivan Technology + RCC Framed Structure',
+        '3 High-speed Lifts (2 Passenger + 1 Service)',
+        '20:40:40 Construction Linked Payment Plan',
+        '₹35-50 per sq ft per floor above 8th floor',
+        '₹3.5 Lakhs per covered parking (2 slots included in 3BHK+)',
+        '₹1.5 Lakhs one-time (Lifetime membership)',
+        '₹150 per sq ft (included in base price)',
+        '₹25,000 one-time',
+        'Starting from ₹1.10 Cr for 2BHK',
+        '₹6,250',
+        'East, West, North, South (All directions available)',
+        '36 months from booking date',
+        
+        -- Assets
+        'https://example.com/project-orange-hero.jpg',
+        'https://example.com/project-orange-brochure.pdf',
+        'https://example.com/project-orange-kit.zip',
+        
+        -- Specifications (JSONB)
+        '{
+            "WC": "2-4 based on BHK",
+            "Balconies": "2-3 based on configuration",
+            "UDS": "650-1800 sq ft based on unit size",
+            "UDS Highlight": "High land ownership value",
+            "Maintenance": "Rs 2.5 per sq ft",
+            "Total Land Area": "12 Acres",
+            "Total Units": "864",
+            "Land Area": "12 Acres with 72% open space",
+            "Open Space %": "72%",
+            "Open Space": "72% open green area",
+            "Builder Grade": "Premium Tier-1",
+            "Construction Type": "Mivan Technology + RCC Framed",
+            "Club House": "25,000 Sq.Ft with Olympic size pool",
+            "Clubhouse Size": "25,000 sq ft",
+            "Type of Development": "Premium Residential Apartments",
+            "Payment Plan": "20:40:40 Construction Linked",
+            "Elevators per Tower": "3 High-speed (2 Passenger + 1 Service)",
+            "Water Source": "Cauvery + Borewell + 100% Water Recycling",
+            "Power Backup": "100% DG Backup for common areas, Lifts priority",
+            "Security": "24x7 Manned Security + CCTV + Biometric Access"
+        }'::jsonb
+    )
+    RETURNING id INTO project_orange_id;
+    
+    RAISE NOTICE 'Project Orange created with ID: %', project_orange_id;
+
+
+    -- ========== 2. INSERT UNITS (All Configurations) ==========
+    
+    -- 2BHK Units
+    INSERT INTO public.project_units (
+        project_id, type, facing, sba_sqft, carpet_sqft, uds_sqft, base_price,
+        flooring_type, power_load_kw, is_available,
+        wc_count, balcony_count, facing_available, plc_charges,
+        unit_specs
+    ) VALUES 
+    (
+        project_orange_id, '2BHK', 'East', 1150, 820, 650, 11000000,
+        'Vitrified tiles in living/dining, Wooden laminate in bedrooms', 7, true,
+        2, 2, ARRAY['East', 'West', 'North'], 150000,
+        '{"kitchen": "Modular with chimney provision", "bathroom": "Kohler fittings", "windows": "UPVC with mosquito mesh", "doors": "Teak wood main door", "balcony_size": "80 sq ft"}'::jsonb
+    ),
+    (
+        project_orange_id, '2BHK', 'West', 1180, 840, 650, 11200000,
+        'Vitrified tiles in living/dining, Wooden laminate in bedrooms', 7, true,
+        2, 2, ARRAY['East', 'West', 'South'], 100000,
+        '{"kitchen": "Modular with chimney provision", "bathroom": "Kohler fittings", "windows": "UPVC with mosquito mesh", "doors": "Teak wood main door", "balcony_size": "85 sq ft"}'::jsonb
+    ),
+    
+    -- 3BHK Units
+    (
+        project_orange_id, '3BHK', 'East', 1650, 1180, 950, 16500000,
+        'Italian marble in living/dining, Wooden laminate in bedrooms', 10, true,
+        3, 3, ARRAY['East', 'North', 'South'], 250000,
+        '{"kitchen": "Premium modular with granite platform", "bathroom": "Jaquar premium fittings", "windows": "UPVC double glazed", "doors": "Designer teak main door", "balcony_size": "120 sq ft", "utility_area": "Separate utility with washing machine space"}'::jsonb
+    ),
+    (
+        project_orange_id, '3BHK', 'North', 1680, 1200, 950, 16800000,
+        'Italian marble in living/dining, Wooden laminate in bedrooms', 10, true,
+        3, 3, ARRAY['North', 'East', 'West'], 200000,
+        '{"kitchen": "Premium modular with granite platform", "bathroom": "Jaquar premium fittings", "windows": "UPVC double glazed", "doors": "Designer teak main door", "balcony_size": "130 sq ft", "utility_area": "Separate utility with washing machine space"}'::jsonb
+    ),
+    
+    -- 3BHK Premium Units
+    (
+        project_orange_id, '3BHK Premium', 'East', 1920, 1380, 1200, 19200000,
+        'Italian marble throughout, Premium wooden flooring in master bedroom', 12, true,
+        3, 3, ARRAY['East', 'South'], 350000,
+        '{"kitchen": "Luxury modular with built-in appliances", "bathroom": "Kohler/Hansgrohe luxury fittings", "windows": "UPVC double glazed with European hardware", "doors": "Premium designer main door with digital lock", "balcony_size": "150 sq ft", "utility_area": "Large utility with storage", "study_room": "Dedicated study space", "powder_room": "Guest powder room included"}'::jsonb
+    ),
+    
+    -- 4BHK Units
+    (
+        project_orange_id, '4BHK', 'North', 2450, 1760, 1800, 24500000,
+        'Italian marble throughout, Premium wooden flooring in all bedrooms', 14, true,
+        4, 4, ARRAY['North', 'East', 'West'], 500000,
+        '{"kitchen": "Ultra-luxury modular with island", "bathroom": "Grohe luxury fittings with bathtub in master", "windows": "UPVC double glazed premium", "doors": "Luxury main door with biometric lock", "balcony_size": "200 sq ft", "utility_area": "Large utility with maid room", "study_room": "Spacious study room", "powder_room": "Elegant guest powder room", "foyer": "Grand entrance foyer", "private_terrace": "Optional private terrace (limited units)"}'::jsonb
+    );
+
+
+    -- ========== 3. INSERT ANALYSIS (Sales Intelligence) ==========
+    INSERT INTO public.project_analysis (
+        project_id,
+        overall_rating,
+        pros,
+        cons,
+        target_customer_profile,
+        closing_pitch,
+        objection_handling,
+        competitor_names
+    ) VALUES (
+        project_orange_id,
+        4.7,
+        ARRAY[
+            'Strategic location near Aerospace Park and upcoming IT corridor',
+            'Excellent connectivity to Bangalore International Airport (18 mins)',
+            'Premium Mivan construction with superior build quality',
+            '72% open space with 12 acres of lush greenery',
+            'High UDS (land ownership) compared to competitors',
+            'Tier-1 developer with proven track record',
+            'Olympic-size swimming pool and 25,000 sq ft clubhouse',
+            'Strong appreciation potential due to infrastructure development',
+            'Flexible 20:40:40 payment plan with construction-linked benefits',
+            'All modern amenities including EV charging stations'
+        ],
+        ARRAY[
+            'Distance from central Bangalore (30 km from MG Road)',
+            'Public transport connectivity still developing',
+            'Limited commercial establishments nearby (improving rapidly)',
+            'Project still under construction (36 months timeline)'
+        ],
+        'IT Professionals working in North Bangalore (Manyata, Hebbal IT Parks), Aerospace employees, Investors looking for high-appreciation properties, First-time homebuyers seeking spacious apartments, Families wanting peaceful suburban living with city connectivity, NRIs investing in Bangalore North corridor',
+        'Own a premium home in Bangalore''s fastest-growing corridor! Project Orange offers the perfect blend of luxury, space, and location. With the Aerospace Park, upcoming metro connectivity, and airport proximity, your investment will appreciate 40-50% in 3-5 years. Book now with just 20% and move into your dream home by 2027. Limited units available!',
+        'Price concerns: "While our pricing is premium, consider the UDS value and Mivan construction quality. Compare the land ownership and build quality with competitors—you''re getting 30% more value." | Location distance: "Yes, it''s 30 km from MG Road, but you''re 18 mins from the airport and adjacent to the Aerospace Park. Plus, the upcoming metro and PRR will cut travel time by 50%." | Construction delay fears: "We have a proven track record with 15+ completed projects. Our Mivan technology ensures faster, stronger construction. We''re committed to Dec 2027 handover with contractual penalties for delays." | Resale concerns: "North Bangalore has shown 60% appreciation in the last 5 years. With infrastructure projects worth ₹50,000 Cr planned, this location will be a hotspot. You''re buying before the boom!"',
+        ARRAY[
+            'Prestige Lakeside Habitat',
+            'Brigade Orchards',
+            'Sobha Dream Gardens',
+            'Godrej Aqua',
+            'Purva Palm Beach'
+        ]
+    );
+
+
+    -- ========== 4. INSERT AMENITIES (Comprehensive List) ==========
+    INSERT INTO public.project_amenities (project_id, category, name, size_specs) VALUES
+    -- Sports & Fitness
+    (project_orange_id, 'Sports', 'Olympic Size Swimming Pool', '50m x 25m with separate kids pool'),
+    (project_orange_id, 'Sports', 'Fully Equipped Gymnasium', '3,000 sq ft with modern equipment'),
+    (project_orange_id, 'Sports', 'Indoor Badminton Courts', '2 Courts with wooden flooring'),
+    (project_orange_id, 'Sports', 'Tennis Court', 'Full-size synthetic court'),
+    (project_orange_id, 'Sports', 'Basketball Court', 'Half court with floodlights'),
+    (project_orange_id, 'Sports', 'Cricket Practice Nets', '2 Nets with artificial turf'),
+    (project_orange_id, 'Sports', 'Yoga & Meditation Hall', '1,500 sq ft peaceful space'),
+    (project_orange_id, 'Sports', 'Jogging Track', '1.2 km landscaped track'),
+    
+    -- Leisure & Entertainment
+    (project_orange_id, 'Leisure', 'Clubhouse with Banquet Hall', '25,000 sq ft multi-purpose space'),
+    (project_orange_id, 'Leisure', 'Indoor Games Room', 'Table tennis, carrom, chess, cards'),
+    (project_orange_id, 'Leisure', 'Multi-Purpose Hall', '2,000 sq ft for events'),
+    (project_orange_id, 'Leisure', 'Library & Reading Room', 'Well-stocked with seating for 30'),
+    (project_orange_id, 'Leisure', 'Home Theatre', '20-seater with Dolby sound'),
+    (project_orange_id, 'Leisure', 'Music & Dance Room', 'Soundproof practice space'),
+    
+    -- Kids & Family
+    (project_orange_id, 'Kids', 'Children Play Area', '5,000 sq ft with modern equipment'),
+    (project_orange_id, 'Kids', 'Kids Pool', 'Separate splash pool with water features'),
+    (project_orange_id, 'Kids', 'Daycare Center', 'Professional childcare facility'),
+    (project_orange_id, 'Kids', 'Skating Rink', '1,000 sq ft smooth surface'),
+    
+    -- Utilities & Services
+    (project_orange_id, 'Utilities', 'Visitor Parking', '200+ slots'),
+    (project_orange_id, 'Utilities', 'EV Charging Stations', '50 charging points'),
+    (project_orange_id, 'Utilities', 'Convenience Store', '24x7 mini supermarket'),
+    (project_orange_id, 'Utilities', 'Laundry Service', 'Professional laundry facility'),
+    (project_orange_id, 'Utilities', 'Salon & Spa', 'Premium wellness center'),
+    
+    -- Green & Outdoor
+    (project_orange_id, 'Green', 'Landscaped Gardens', '8+ acres themed gardens'),
+    (project_orange_id, 'Green', 'Organic Terrace Garden', 'Community farming space'),
+    (project_orange_id, 'Green', 'Amphitheater', '200-seater outdoor venue'),
+    (project_orange_id, 'Green', 'Reflexology Path', 'Natural stone wellness path'),
+    (project_orange_id, 'Green', 'Pet Park', 'Dedicated space for pets'),
+    (project_orange_id, 'Green', 'Senior Citizens Seating Area', 'Shaded rest zones'),
+    
+    -- Security & Technology
+    (project_orange_id, 'Security', '24x7 Manned Security', '3-tier security with CCTV'),
+    (project_orange_id, 'Security', 'Video Door Phone', 'All units equipped'),
+    (project_orange_id, 'Security', 'Biometric Access Control', 'Main gate and towers'),
+    (project_orange_id, 'Technology', 'High-Speed Internet', 'Fiber optic infrastructure'),
+    (project_orange_id, 'Technology', 'Smart Home Ready', 'IoT infrastructure in all units'),
+    (project_orange_id, 'Technology', 'Home Automation', 'Optional upgrade available');
+
+
+    -- ========== 5. INSERT LANDMARKS (Connectivity) ==========
+    INSERT INTO public.project_landmarks (project_id, category, name, distance_km, travel_time_mins) VALUES
+    -- IT Parks & Business Hubs
+    (project_orange_id, 'IT Park', 'Manyata Tech Park', 12, 20),
+    (project_orange_id, 'IT Park', 'Aerospace Park', 3, 7),
+    (project_orange_id, 'IT Park', 'KIADB Aerospace SEZ', 5, 10),
+    (project_orange_id, 'IT Park', 'Devanahalli Business Park', 8, 15),
+    
+    -- Schools
+    (project_orange_id, 'School', 'DPS North Bangalore', 4, 10),
+    (project_orange_id, 'School', 'Ryan International School', 6, 12),
+    (project_orange_id, 'School', 'Trio World Academy', 10, 18),
+    (project_orange_id, 'School', 'Canadian International School', 14, 25),
+    
+    -- Hospitals
+    (project_orange_id, 'Hospital', 'Columbia Asia Hospital - Yelahanka', 10, 18),
+    (project_orange_id, 'Hospital', 'Aster CMI Hospital', 15, 25),
+    (project_orange_id, 'Hospital', 'Manipal Hospital Hebbal', 13, 22),
+    
+    -- Shopping & Entertainment
+    (project_orange_id, 'Shopping', 'Elements Mall', 16, 28),
+    (project_orange_id, 'Shopping', 'Bhartiya Mall', 14, 24),
+    (project_orange_id, 'Shopping', 'Phoenix Market City', 22, 40),
+    
+    -- Transport
+    (project_orange_id, 'Transport', 'Kempegowda International Airport', 12, 18),
+    (project_orange_id, 'Transport', 'Yelahanka Railway Station', 8, 15),
+    (project_orange_id, 'Transport', 'Upcoming Metro Station (Nagawara-Hebbal)', 10, 20);
+
+
+    -- ========== 6. INSERT LOCATION ADVANTAGES (Numbered Categories) ==========
+    INSERT INTO public.project_location_advantages (project_id, category_number, category_name, details, distance_km, travel_time_mins) VALUES
+    (project_orange_id, 1, 'Metro Stations', 'Upcoming Nagawara-Hebbal Metro (Blue Line Phase 2) - 10 km, Airport Metro Line (Phase 2B) - 8 km', 10, 20),
+    (project_orange_id, 2, 'Hospitals', 'Columbia Asia Yelahanka - 10 km (18 mins), Aster CMI - 15 km (25 mins), Manipal Hebbal - 13 km (22 mins)', 10, 18),
+    (project_orange_id, 3, 'Schools', 'DPS North - 4 km (10 mins), Ryan International - 6 km (12 mins), Canadian International - 14 km (25 mins)', 4, 10),
+    (project_orange_id, 4, 'Shopping & Entertainment', 'Elements Mall - 16 km (28 mins), Bhartiya Mall - 14 km (24 mins), Local markets in Doddaballapur town', 14, 24),
+    (project_orange_id, 5, 'Business Hub (IT Parks)', 'Aerospace Park - 3 km (7 mins), Manyata Tech Park - 12 km (20 mins), KIADB Aerospace SEZ - 5 km (10 mins)', 3, 7),
+    (project_orange_id, 6, 'Connectivity', 'Bangalore Airport - 12 km (18 mins via NH 44), Yelahanka Junction - 8 km (15 mins), Direct access to NH 44 and Bellary Road', 12, 18),
+    (project_orange_id, 7, 'Road Connectivity', 'NH 44 (Bangalore-Hyderabad Highway) - 2 km, Peripheral Ring Road (PRR) under construction - 6 km, 40-meter wide internal roads', 2, 5);
+
+
+    -- ========== 7. INSERT COMPETITORS ==========
+    INSERT INTO public.project_competitors (project_id, competitor_name, competitor_price_range, distance_km, similar_configs, notes) VALUES
+    (project_orange_id, 'Prestige Lakeside Habitat', '₹95 L - ₹1.8 Cr', 8, ARRAY['2BHK', '3BHK', '4BHK'], 'Premium project but lower UDS and older construction tech'),
+    (project_orange_id, 'Brigade Orchards', '₹1.2 Cr - ₹2.5 Cr', 12, ARRAY['2BHK', '3BHK', '4BHK'], 'Established project, ready units available, higher pricing'),
+    (project_orange_id, 'Sobha Dream Gardens', '₹1.05 Cr - ₹2.2 Cr', 10, ARRAY['2BHK', '3BHK'], 'Similar pricing but smaller land parcel and less open space'),
+    (project_orange_id, 'Godrej Aqua', '₹90 L - ₹1.6 Cr', 15, ARRAY['2BHK', '3BHK'], 'Good brand but farther from airport and Aerospace Park'),
+    (project_orange_id, 'Purva Palm Beach', '₹1.15 Cr - ₹2.3 Cr', 9, ARRAY['2BHK', '3BHK', '4BHK'], 'Premium amenities but standard construction technology');
+
+
+    -- ========== 8. INSERT COST EXTRAS ==========
+    INSERT INTO public.project_cost_extras (project_id, name, cost_type, amount, payment_milestone) VALUES
+    (project_orange_id, 'GST', 'Percentage', 5, 'As per government norms on construction value'),
+    (project_orange_id, 'Registration Charges', 'Percentage', 1, 'At time of registration'),
+    (project_orange_id, 'Stamp Duty', 'Percentage', 5, 'At time of registration'),
+    (project_orange_id, 'Clubhouse Membership', 'Fixed', 150000, 'At 50% construction stage'),
+    (project_orange_id, 'Covered Car Parking (Additional)', 'Fixed', 350000, 'At time of booking'),
+    (project_orange_id, 'Sinking Fund', 'Fixed', 25000, 'Before possession'),
+    (project_orange_id, 'Infrastructure Development Charges', 'Fixed', 150, 'Included in base price (per sq ft)'),
+    (project_orange_id, 'Electricity & Water Connection', 'Fixed', 50000, 'Before possession'),
+    (project_orange_id, 'Legal Charges', 'Fixed', 75000, 'At time of agreement'),
+    (project_orange_id, 'Corpus Fund', 'Fixed', 35000, 'Before possession');
+
+    RAISE NOTICE '✅ Project Orange created successfully with all data!';
+    
+END $$;

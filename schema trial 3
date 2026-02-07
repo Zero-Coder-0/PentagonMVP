@@ -169,3 +169,535 @@ ALTER TABLE public.project_units ADD COLUMN unit_specs JSONB DEFAULT '{}';
 -- Example Data for these columns:
 -- projects.specifications = {"water_source": "Cauvery + Borewell", "stp_capacity": "500 KLD"}
 -- project_units.unit_specs = {"door_type": "Teak Wood", "window_brand": "Fenesta"}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- =====================================================
+-- GEOESTATE V7: MIGRATION TO ADD MISSING PDF FIELDS
+-- =====================================================
+
+-- 1. ADD MISSING FIELDS TO PROJECTS TABLE
+ALTER TABLE public.projects 
+    ADD COLUMN IF NOT EXISTS property_type TEXT,                    -- Type of Development (Villas/Apartments/Township)
+    ADD COLUMN IF NOT EXISTS floor_levels TEXT,                     -- Towers & Structure (e.g., "2B+G+18")
+    ADD COLUMN IF NOT EXISTS clubhouse_size TEXT,                   -- Club House Total Sqft
+    ADD COLUMN IF NOT EXISTS builder_grade TEXT,                    -- Society Highlights: Builder Grade
+    ADD COLUMN IF NOT EXISTS construction_type TEXT,                -- Society Highlights: Construction Type
+    ADD COLUMN IF NOT EXISTS elevators_per_tower TEXT,              -- Elevators Per Tower
+    ADD COLUMN IF NOT EXISTS payment_plan TEXT,                     -- Payment Plan
+    ADD COLUMN IF NOT EXISTS floor_rise_charges TEXT,               -- Floor Rise Charges
+    ADD COLUMN IF NOT EXISTS car_parking_cost TEXT,                 -- Car Parking Cost
+    ADD COLUMN IF NOT EXISTS clubhouse_charges TEXT,                -- Clubhouse Charges
+    ADD COLUMN IF NOT EXISTS infrastructure_charges TEXT,           -- Infrastructure Development Charges
+    ADD COLUMN IF NOT EXISTS sinking_fund TEXT,                     -- Sinking Fund
+    ADD COLUMN IF NOT EXISTS onwards_pricing TEXT,                  -- Onwards Pricing
+    ADD COLUMN IF NOT EXISTS price_per_sqft TEXT,                   -- Price per sqft
+    ADD COLUMN IF NOT EXISTS facing_direction TEXT,                 -- Primary facing direction
+    ADD COLUMN IF NOT EXISTS completion_duration TEXT;              -- e.g., "36 months"
+
+
+-- 2. ADD MISSING FIELDS TO UNITS TABLE
+ALTER TABLE public.project_units 
+    ADD COLUMN IF NOT EXISTS wc_count INT,                          -- WC (Water Closets/Bathrooms)
+    ADD COLUMN IF NOT EXISTS balcony_count INT,                     -- BL (Balconies)
+    ADD COLUMN IF NOT EXISTS facing_available TEXT[],               -- Facing Available (array of directions)
+    ADD COLUMN IF NOT EXISTS plc_charges NUMERIC;                   -- PLC (Preferred Location Charges)
+
+
+-- 3. CREATE NEW TABLE FOR LOCATION ADVANTAGES (Numbered Categories)
+CREATE TABLE IF NOT EXISTS public.project_location_advantages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id UUID REFERENCES public.projects(id) ON DELETE CASCADE,
+    category_number INT,                                            -- ①②③④⑤⑥⑦
+    category_name TEXT,                                             -- Metro/Hospitals/Schools/Shopping/Business/Connectivity/Roads
+    details TEXT,                                                   -- Description with distance/time
+    distance_km NUMERIC,
+    travel_time_mins INT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_location_advantages_project ON public.project_location_advantages(project_id);
+
+
+-- 4. CREATE NEW TABLE FOR COMPETITOR PROJECTS
+CREATE TABLE IF NOT EXISTS public.project_competitors (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project_id UUID REFERENCES public.projects(id) ON DELETE CASCADE,
+    competitor_name TEXT NOT NULL,
+    competitor_price_range TEXT,                                    -- e.g., "₹3.8 Cr - ₹5.0 Cr"
+    distance_km NUMERIC,
+    similar_configs TEXT[],                                         -- Overlapping BHK types
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_competitors_project ON public.project_competitors(project_id);
+
+
+-- 5. ENHANCE SPECIFICATIONS JSONB STRUCTURE
+-- Add comments for expected structure
+COMMENT ON COLUMN public.projects.specifications IS 
+'Expected keys: 
+{
+  "WC": "2-3",
+  "Balconies": "2",
+  "UDS": "2400 sqft",
+  "UDS Highlight": "High ownership value",
+  "Maintenance": "Rs 3.5/sqft",
+  "Total Land Area": "25 Acres",
+  "Total Units": "1875",
+  "Land Area": "7 Acres",
+  "Open Space %": "78%",
+  "Open Space": "60% open",
+  "Builder Grade": "Premium/Tier-1",
+  "Construction Type": "RCC Framed/Mivan/Aluminum Formwork",
+  "Club House": "17,760 Sq.Ft",
+  "Clubhouse Size": "77,850 sq ft",
+  "Type of Development": "Villas/Apartments/Township",
+  "Payment Plan": "Construction Linked (10-90)",
+  "Elevators per Tower": "2 Passenger + 1 Service"
+}';
+
+
+-- 6. UPDATE EXISTING DUMMY DATA WITH NEW FIELDS
+UPDATE public.projects 
+SET 
+    property_type = 'Residential Apartments',
+    builder_grade = 'Premium',
+    construction_type = 'RCC Framed Structure',
+    elevators_per_tower = '2 Passenger + 1 Service',
+    payment_plan = 'Construction Linked (10-90-100)',
+    floor_rise_charges = 'Rs 25-40 per sqft per floor',
+    car_parking_cost = 'Included in base price',
+    clubhouse_charges = 'Lifetime membership free',
+    price_per_sqft = '₹12,500',
+    facing_direction = 'East, West, North',
+    completion_duration = '36 months',
+    clubhouse_size = '17,760 Sq.Ft',
+    onwards_pricing = 'Starting from base price'
+WHERE name = 'Skyline Heights';
+
+UPDATE public.projects 
+SET 
+    property_type = '4-5 BHK Villas',
+    builder_grade = 'Luxury',
+    construction_type = 'RCC with Premium Finishes',
+    payment_plan = 'Flexible Construction Linked',
+    price_per_sqft = '₹10,200',
+    facing_direction = 'East, West',
+    completion_duration = 'Ready to Move',
+    clubhouse_size = '11,000 Sq.Ft',
+    floor_levels = 'G+1 (Individual Villas)'
+WHERE name = 'Green Valley Villas';
+
+
+-- 7. ADD UNIT-LEVEL CONFIGURATION DATA
+UPDATE public.project_units 
+SET 
+    wc_count = 3,
+    balcony_count = 2,
+    facing_available = ARRAY['East', 'West', 'North']
+WHERE type = '3BHK Luxury';
+
+UPDATE public.project_units 
+SET 
+    wc_count = 4,
+    balcony_count = 3,
+    facing_available = ARRAY['East', 'West']
+WHERE type = '4BHK Villa';
+
+UPDATE public.project_units 
+SET 
+    wc_count = 2,
+    balcony_count = 1,
+    facing_available = ARRAY['East', 'North']
+WHERE type = '2BHK Studio';
+
+
+-- 8. INSERT SAMPLE LOCATION ADVANTAGES (Numbered Categories)
+INSERT INTO public.project_location_advantages (project_id, category_number, category_name, details, distance_km, travel_time_mins)
+SELECT 
+    id,
+    1,
+    'Metro Stations',
+    'Kalena Agrahara Metro Station - 6 km',
+    6,
+    10
+FROM public.projects WHERE name = 'Green Valley Villas';
+
+INSERT INTO public.project_location_advantages (project_id, category_number, category_name, details, distance_km, travel_time_mins)
+SELECT 
+    id,
+    2,
+    'Hospitals',
+    'Apollo Hospital - 15 mins, Fortis Hospital - 20 mins',
+    10,
+    15
+FROM public.projects WHERE name = 'Green Valley Villas';
+
+INSERT INTO public.project_location_advantages (project_id, category_number, category_name, details, distance_km, travel_time_mins)
+SELECT 
+    id,
+    3,
+    'Schools',
+    'DPS, VIBGYOR, Delhi Public School nearby',
+    5,
+    12
+FROM public.projects WHERE name = 'Green Valley Villas';
+
+INSERT INTO public.project_location_advantages (project_id, category_number, category_name, details, distance_km, travel_time_mins)
+SELECT 
+    id,
+    4,
+    'Shopping & Entertainment',
+    'Phoenix Mall - 15 mins, IKEA - 20 mins',
+    8,
+    15
+FROM public.projects WHERE name = 'Green Valley Villas';
+
+INSERT INTO public.project_location_advantages (project_id, category_number, category_name, details, distance_km, travel_time_mins)
+SELECT 
+    id,
+    5,
+    'Business Hub (IT Parks)',
+    'Manyata Tech Park - 10 mins, Electronic City - 25 mins',
+    7,
+    10
+FROM public.projects WHERE name = 'Green Valley Villas';
+
+INSERT INTO public.project_location_advantages (project_id, category_number, category_name, details, distance_km, travel_time_mins)
+SELECT 
+    id,
+    6,
+    'Connectivity',
+    'Airport - 25 mins, Yelahanka Railway - 15 mins',
+    20,
+    25
+FROM public.projects WHERE name = 'Green Valley Villas';
+
+INSERT INTO public.project_location_advantages (project_id, category_number, category_name, details, distance_km, travel_time_mins)
+SELECT 
+    id,
+    7,
+    'Road Connectivity',
+    'Direct access to ORR, 30ft internal roads',
+    0,
+    0
+FROM public.projects WHERE name = 'Green Valley Villas';
+
+
+-- 9. INSERT SAMPLE COMPETITOR DATA
+INSERT INTO public.project_competitors (project_id, competitor_name, competitor_price_range, distance_km, similar_configs)
+SELECT 
+    id,
+    'Prestige Green Gables',
+    '₹2.95 Cr Onwards',
+    3.5,
+    ARRAY['3BHK', '4BHK']
+FROM public.projects WHERE name = 'Green Valley Villas';
+
+INSERT INTO public.project_competitors (project_id, competitor_name, competitor_price_range, distance_km, similar_configs)
+SELECT 
+    id,
+    'Sobha Tropical Greens',
+    '₹89 L - ₹1.15 Cr',
+    4.2,
+    ARRAY['2BHK', '3BHK']
+FROM public.projects WHERE name = 'Green Valley Villas';
+
+INSERT INTO public.project_competitors (project_id, competitor_name, competitor_price_range, distance_km, similar_configs)
+SELECT 
+    id,
+    'Obel Villas',
+    '₹4.0 Cr Onwards',
+    2.8,
+    ARRAY['4BHK', '5BHK']
+FROM public.projects WHERE name = 'Green Valley Villas';
+
+
+-- 10. CREATE VIEW FOR COMPLETE PROJECT DETAILS (Easier Querying)
+CREATE OR REPLACE VIEW public.vw_project_complete AS
+SELECT 
+    p.id,
+    p.name,
+    p.developer,
+    p.rera_id,
+    p.status,
+    p.zone,
+    p.region,
+    p.property_type,
+    p.price_display,
+    p.price_per_sqft,
+    p.configurations,
+    p.total_units,
+    p.floor_levels,
+    p.clubhouse_size,
+    p.builder_grade,
+    p.construction_type,
+    p.elevators_per_tower,
+    p.payment_plan,
+    p.open_space_percent,
+    p.onwards_pricing,
+    p.specifications,
+    
+    -- Aggregated Location Advantages (as JSON array)
+    COALESCE(
+        json_agg(
+            DISTINCT jsonb_build_object(
+                'category_number', la.category_number,
+                'category_name', la.category_name,
+                'details', la.details
+            ) ORDER BY jsonb_build_object(
+                'category_number', la.category_number,
+                'category_name', la.category_name,
+                'details', la.details
+            )
+        ) FILTER (WHERE la.id IS NOT NULL),
+        '[]'
+    ) as location_advantages,
+    
+    -- Aggregated Competitors (as JSON array)
+    COALESCE(
+        json_agg(
+            DISTINCT jsonb_build_object(
+                'name', pc.competitor_name,
+                'price_range', pc.competitor_price_range,
+                'distance_km', pc.distance_km
+            ) ORDER BY jsonb_build_object(
+                'name', pc.competitor_name,
+                'price_range', pc.competitor_price_range,
+                'distance_km', pc.distance_km
+            )
+        ) FILTER (WHERE pc.id IS NOT NULL),
+        '[]'
+    ) as competitors,
+    
+    -- Aggregated Units (as JSON array)
+    COALESCE(
+        json_agg(
+            DISTINCT jsonb_build_object(
+                'type', pu.type,
+                'wc_count', pu.wc_count,
+                'balcony_count', pu.balcony_count,
+                'sba_sqft', pu.sba_sqft,
+                'uds_sqft', pu.uds_sqft,
+                'facing_available', pu.facing_available,
+                'base_price', pu.base_price
+            ) ORDER BY jsonb_build_object(
+                'type', pu.type,
+                'wc_count', pu.wc_count,
+                'balcony_count', pu.balcony_count,
+                'sba_sqft', pu.sba_sqft,
+                'uds_sqft', pu.uds_sqft,
+                'facing_available', pu.facing_available,
+                'base_price', pu.base_price
+            )
+        ) FILTER (WHERE pu.id IS NOT NULL),
+        '[]'
+    ) as units,
+    
+    -- Analysis
+    pa.overall_rating,
+    pa.pros,
+    pa.cons,
+    pa.target_customer_profile,
+    pa.closing_pitch
+    
+FROM public.projects p
+LEFT JOIN public.project_location_advantages la ON p.id = la.project_id
+LEFT JOIN public.project_competitors pc ON p.id = pc.project_id
+LEFT JOIN public.project_units pu ON p.id = pu.project_id
+LEFT JOIN public.project_analysis pa ON p.id = pa.project_id
+GROUP BY p.id, pa.overall_rating, pa.pros, pa.cons, pa.target_customer_profile, pa.closing_pitch;
+
+
+-- 11. CREATE HELPER FUNCTION TO GET ALL PROJECT DATA FOR MEGAPOPUP
+CREATE OR REPLACE FUNCTION public.get_project_megapopup_data(project_uuid UUID)
+RETURNS TABLE (
+    project_data JSONB,
+    units_data JSONB,
+    location_advantages JSONB,
+    competitors JSONB,
+    analysis JSONB,
+    amenities JSONB,
+    cost_extras JSONB
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        -- Project Data
+        to_jsonb(p.*) as project_data,
+        
+        -- Units Data
+        COALESCE(
+            (SELECT jsonb_agg(to_jsonb(pu.*))
+             FROM public.project_units pu 
+             WHERE pu.project_id = project_uuid),
+            '[]'::jsonb
+        ) as units_data,
+        
+        -- Location Advantages
+        COALESCE(
+            (SELECT jsonb_agg(to_jsonb(la.*) ORDER BY la.category_number)
+             FROM public.project_location_advantages la 
+             WHERE la.project_id = project_uuid),
+            '[]'::jsonb
+        ) as location_advantages,
+        
+        -- Competitors
+        COALESCE(
+            (SELECT jsonb_agg(to_jsonb(pc.*))
+             FROM public.project_competitors pc 
+             WHERE pc.project_id = project_uuid),
+            '[]'::jsonb
+        ) as competitors,
+        
+        -- Analysis
+        COALESCE(
+            (SELECT to_jsonb(pa.*)
+             FROM public.project_analysis pa 
+             WHERE pa.project_id = project_uuid 
+             LIMIT 1),
+            '{}'::jsonb
+        ) as analysis,
+        
+        -- Amenities
+        COALESCE(
+            (SELECT jsonb_agg(to_jsonb(pam.*))
+             FROM public.project_amenities pam 
+             WHERE pam.project_id = project_uuid),
+            '[]'::jsonb
+        ) as amenities,
+        
+        -- Cost Extras
+        COALESCE(
+            (SELECT jsonb_agg(to_jsonb(pce.*))
+             FROM public.project_cost_extras pce 
+             WHERE pce.project_id = project_uuid),
+            '[]'::jsonb
+        ) as cost_extras
+        
+    FROM public.projects p
+    WHERE p.id = project_uuid;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- 12. GRANT PERMISSIONS (Adjust as needed for your RLS policies)
+-- GRANT SELECT ON public.project_location_advantages TO authenticated;
+-- GRANT SELECT ON public.project_competitors TO authenticated;
+-- GRANT SELECT ON public.vw_project_complete TO authenticated;
+
+
+-- 13. VERIFICATION QUERIES
+-- Check if all fields are added
+SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name = 'projects' 
+ORDER BY ordinal_position;
+
+-- Check sample data
+SELECT * FROM public.vw_project_complete WHERE name = 'Green Valley Villas';
+
+-- Test the helper function
+SELECT * FROM public.get_project_megapopup_data(
+    (SELECT id FROM public.projects WHERE name = 'Green Valley Villas' LIMIT 1)
+);
+
+
+-- =====================================================
+-- MIGRATION COMPLETE
+-- =====================================================
+-- New Fields Added:
+-- ✅ WC, BL, Facing Available (in project_units)
+-- ✅ Builder Grade, Construction Type, Elevators Per Tower (in projects)
+-- ✅ Payment Plan, Floor Rise Charges, PLC, Car Parking, etc. (in projects)
+-- ✅ Location Advantages with numbered categories (new table)
+-- ✅ Competitor Projects (new table)
+-- ✅ Helper view and function for easy querying
+-- =====================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ALTER TABLE public.projects 
+ADD COLUMN IF NOT EXISTS open_space_percent INTEGER,
+ADD COLUMN IF NOT EXISTS construction_technology TEXT,
+ADD COLUMN IF NOT EXISTS builder_grade TEXT,
+ADD COLUMN IF NOT EXISTS construction_type TEXT,
+ADD COLUMN IF NOT EXISTS total_land_area TEXT,
+ADD COLUMN IF NOT EXISTS address_line TEXT,
+ADD COLUMN IF NOT EXISTS onwards_pricing TEXT,
+ADD COLUMN IF NOT EXISTS specifications JSONB DEFAULT '{}'::jsonb,
+ADD COLUMN IF NOT EXISTS hero_image_url TEXT,
+ADD COLUMN IF NOT EXISTS brochure_url TEXT,
+ADD COLUMN IF NOT EXISTS marketing_kit_url TEXT;
+-- Add USP column to project_analysis table
+ALTER TABLE public.project_analysis 
+ADD COLUMN IF NOT EXISTS usp TEXT;

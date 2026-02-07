@@ -1,27 +1,20 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import dynamic from 'next/dynamic'
-import { MapPin, Navigation } from 'lucide-react' 
 import { useDashboard } from './page'
-import styles from './Dashboard.module.css'
-import LocationSearch from '@/modules/map-engine/components/LocationSearch'
 
-// Dynamic import for Leaflet (No SSR)
 const LeafletMap = dynamic(
   () => import('@/modules/map-engine/components/LeafletMap'),
-  { ssr: false, loading: () => <div className="h-full w-full bg-slate-100 animate-pulse flex items-center justify-center text-slate-400">Loading Map...</div> }
+  { 
+    ssr: false, 
+    loading: () => (
+      <div className="h-full w-full bg-slate-100 rounded-2xl flex items-center justify-center border border-slate-300">
+        <div className="text-slate-500 text-sm font-medium">Loading Map...</div>
+      </div>
+    ) 
+  }
 )
-
-const QUICK_LOCATIONS = [
-  { name: 'Hebbal', lat: 13.0354, lng: 77.5988 },
-  { name: 'Whitefield', lat: 12.9698, lng: 77.7500 },
-  { name: 'Yelahanka', lat: 13.1007, lng: 77.5963 },
-  { name: 'Sarjapur', lat: 12.9237, lng: 77.6547 },
-]
-
-
-
 
 export default function MapContainer() {
   const { 
@@ -34,56 +27,27 @@ export default function MapContainer() {
     setMapBounds
   } = useDashboard()
 
-  // Handle Location Selection (from Search, Chips, or Double Click)
   const handleLocationUpdate = (lat: number, lng: number, name: string) => {
     setUserLocation({ lat, lng, displayName: name })
-    // Zoom in slightly when a specific location is chosen
     setMapBounds([
       [lat - 0.03, lng - 0.03], 
       [lat + 0.03, lng + 0.03]
     ])
   }
 
-  // NEW: Reset seed location (called on right-click)
   const handleSeedReset = () => {
     setUserLocation(null);
     setMapBounds(undefined);
   };
 
   return (
-    <div className={styles.mapContainer}>
-      {/* Floating Search Bar */}
-      <div className={styles.searchWrapper}>
-        
-        {/* Replaced manual input with smart LocationSearch */}
-        <div className="w-full relative shadow-lg rounded-xl">
-           <LocationSearch 
-             onLocationSelect={(lat, lng, label) => handleLocationUpdate(lat, lng, label)}
-           />
-        </div>
-
-        {/* Quick Chips */}
-        <div className={styles.chipContainer}>
-          {QUICK_LOCATIONS.map(loc => (
-            <button 
-              key={loc.name}
-              onClick={() => handleLocationUpdate(loc.lat, loc.lng, loc.name)}
-              className={styles.chip}
-            >
-              <MapPin className="w-3 h-3" />
-              {loc.name}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Map Instance */}
+    <div className="w-full h-full rounded-2xl overflow-hidden border border-slate-300 shadow-lg">
       <LeafletMap 
         items={displayedProperties}
         selectedId={selectedId}
         onSelect={handlePinClick} 
-        onMarkerDbClick={handleLocationUpdate} // Double-click sets new seed
-        onSeedReset={handleSeedReset} // Right-click resets seed
+        onMarkerDbClick={handleLocationUpdate}
+        onSeedReset={handleSeedReset}
         center={userLocation ? [userLocation.lat, userLocation.lng] : undefined}
         bounds={mapBounds}
       />

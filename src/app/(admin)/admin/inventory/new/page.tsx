@@ -1,20 +1,23 @@
-'use client'
-
+// src/app/admin/inventory/new/page.tsx
 import ProjectWizard from '@/components/admin/ProjectWizard';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
-export default function NewProjectPage() {
+export default function NewPropertyPage() {
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      <div className="max-w-5xl mx-auto mb-6">
-        <h1 className="text-2xl font-bold text-slate-800">Add New Project</h1>
-        <p className="text-slate-500 text-sm">Create a new inventory listing directly in the Live Database.</p>
+    <div className="min-h-screen bg-slate-50">
+      {/* Back Button */}
+      <div className="max-w-5xl mx-auto pt-6 px-4">
+        <Link 
+          href="/admin/inventory"
+          className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 font-medium"
+        >
+          <ArrowLeft size={20} />
+          Back to Inventory
+        </Link>
       </div>
-      
-      {/* 
-         We use the Wizard in "admin" mode.
-         This means when you click Submit, it writes to 'projects' table (LIVE),
-         NOT 'property_drafts' (PENDING).
-      */}
+
+      {/* Wizard Component */}
       <ProjectWizard mode="admin" />
     </div>
   );
