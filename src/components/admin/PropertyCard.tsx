@@ -1,5 +1,5 @@
 // src/components/admin/PropertyCard.tsx
-'use client';
+/*'use client';
 
 import { Edit2, Trash2, MapPin } from 'lucide-react';
 import { useState } from 'react';
@@ -47,7 +47,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-      {/* Image */}
+      {/* Image *//*}
       <div className="h-32 bg-slate-100 w-full rounded-t-xl relative overflow-hidden">
         {(property.media as any)?.images?.[0] ? (
           <img 
@@ -65,7 +65,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
         </div>
       </div>
 
-      {/* Content */}
+      {/* Content *//*}
       <div className="p-4">
         <h3 className="font-bold text-slate-900 truncate">{property.name}</h3>
         <div className="flex items-center text-slate-500 text-xs mt-1 mb-3">
@@ -99,3 +99,4 @@ export default function PropertyCard({ property }: PropertyCardProps) {
     </div>
   );
 }
+*/
