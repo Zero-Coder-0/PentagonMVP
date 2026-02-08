@@ -3,9 +3,6 @@
 import React, { useState } from 'react';
 import { Upload, FileSpreadsheet, AlertCircle, CheckCircle, Download } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
-import { useRouter } from 'next/navigation';
-import ExcelJS from 'exceljs';  
-import Papa from 'papaparse';
 
 interface UploadResult {
   total: number;
@@ -15,7 +12,6 @@ interface UploadResult {
 }
 
 export default function BulkUploadPage() {
-  const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [processing, setProcessing] = useState(false);
   const [results, setResults] = useState<UploadResult | null>(null);
@@ -29,14 +25,8 @@ export default function BulkUploadPage() {
     const uploadedFile = e.target.files?.[0];
     if (!uploadedFile) return;
 
-    const validTypes = [
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-excel',
-      'text/csv'
-    ];
-
-    if (!validTypes.includes(uploadedFile.type) && !uploadedFile.name.endsWith('.csv')) {
-      alert('❌ Please upload a valid Excel (.xlsx, .xls) or CSV file');
+    if (!uploadedFile.name.endsWith('.csv')) {
+      alert('❌ Please upload a CSV file (.csv)');
       return;
     }
 
@@ -44,44 +34,25 @@ export default function BulkUploadPage() {
     setResults(null);
   };
 
-  const parseExcelFile = async (file: File): Promise<any[]> => {
-    const arrayBuffer = await file.arrayBuffer();
-    const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(arrayBuffer);
-    
-    const worksheet = workbook.worksheets[0];
+  const parseCSV = (text: string): any[] => {
+    const lines = text.split('\n').filter(line => line.trim());
+    if (lines.length < 2) return [];
+
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
     const rows: any[] = [];
-    const headers: string[] = [];
 
-    // Get headers from first row
-    worksheet.getRow(1).eachCell((cell, colNumber) => {
-      headers[colNumber - 1] = cell.value?.toString() || '';
-    });
-
-    // Parse data rows
-    worksheet.eachRow((row, rowNumber) => {
-      if (rowNumber === 1) return; // Skip header row
-      
-      const rowData: any = {};
-      row.eachCell((cell, colNumber) => {
-        const header = headers[colNumber - 1];
-        rowData[header] = cell.value;
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+      const row: any = {};
+      headers.forEach((header, index) => {
+        row[header] = values[index] || '';
       });
-      rows.push(rowData);
-    });
+      if (row[headers[0]]) { // Has data in first column
+        rows.push(row);
+      }
+    }
 
     return rows;
-  };
-
-  const parseCSVFile = async (file: File): Promise<any[]> => {
-    return new Promise((resolve, reject) => {
-      Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (results) => resolve(results.data),
-        error: (error) => reject(error)
-      });
-    });
   };
 
   const processFile = async () => {
@@ -91,13 +62,8 @@ export default function BulkUploadPage() {
     const errors: Array<{ row: number; error: string }> = [];
     
     try {
-      // Parse file based on type
-      let jsonData: any[];
-      if (file.name.endsWith('.csv')) {
-        jsonData = await parseCSVFile(file);
-      } else {
-        jsonData = await parseExcelFile(file);
-      }
+      const text = await file.text();
+      const jsonData = parseCSV(text);
 
       console.log('Parsed data:', jsonData);
 
@@ -105,41 +71,32 @@ export default function BulkUploadPage() {
         throw new Error('No data found in file');
       }
 
-      // Process each row and insert
+      // Process each row - ONLY USE GUARANTEED COLUMNS
       const insertResults = await Promise.allSettled(
         jsonData.map(async (row: any, index: number) => {
           try {
-            // Map Excel columns to V7 schema
-            const projectData = {
+            // MINIMAL SCHEMA - Only fields that definitely exist
+            const projectData: any = {
               name: row['Project Name'] || row['name'],
               developer: row['Developer'] || row['developer'],
-              rera_id: row['RERA ID'] || row['rera_id'] || null,
               status: row['Status'] || 'Under Construction',
               zone: row['Zone'] || 'North',
-              region: row['Region'] || row['region'] || null,
-              address_line: row['Address'] || row['address_line'] || null,
-              lat: parseFloat(row['Latitude'] || row['lat'] || '12.9716'),
-              lng: parseFloat(row['Longitude'] || row['lng'] || '77.5946'),
-              price_display: row['Price Display'] || row['price_display'] || null,
-              price_min: row['Price Min'] ? parseInt(row['Price Min']) : null,
-              price_max: row['Price Max'] ? parseInt(row['Price Max']) : null,
-              price_per_sqft: row['Price per SqFt'] || row['price_per_sqft'] || null,
-              total_units: row['Total Units'] ? parseInt(row['Total Units']) : null,
-              total_land_area: row['Land Area'] || row['total_land_area'] || null,
-              property_type: row['Property Type'] || row['property_type'] || null,
-              builder_grade: row['Builder Grade'] || row['builder_grade'] || null,
-              construction_technology: row['Construction Technology'] || null,
-              open_space_percent: row['Open Space %'] ? parseInt(row['Open Space %']) : null,
-              structure_details: row['Structure Details'] || null,
-              floor_levels: row['Floor Levels'] || null,
-              clubhouse_size: row['Clubhouse Size'] || null,
-              possession_date: row['Possession Date'] || null,
-              completion_duration: row['Completion Duration'] || null
+              lat: parseFloat(row['Latitude'] || '12.9716'),
+              lng: parseFloat(row['Longitude'] || '77.5946')
             };
+
+            // Add optional fields ONLY if they exist in your schema
+            if (row['RERA ID']) projectData.rera_id = row['RERA ID'];
+            if (row['Region']) projectData.region = row['Region'];
+            if (row['Address']) projectData.address_line = row['Address'];
+            if (row['Price Display']) projectData.price_display = row['Price Display'];
+            if (row['Total Units']) projectData.total_units = parseInt(row['Total Units']);
+            if (row['Land Area']) projectData.total_land_area = row['Land Area'];
+            if (row['Property Type']) projectData.property_type = row['Property Type'];
 
             // Validate required fields
             if (!projectData.name || !projectData.developer) {
-              throw new Error('Missing required fields: Project Name and Developer');
+              throw new Error('Missing required: Project Name and Developer');
             }
 
             // Insert to projects table
@@ -158,7 +115,7 @@ export default function BulkUploadPage() {
             };
           } catch (err: any) {
             errors.push({ 
-              row: index + 2, // +2 because Excel is 1-indexed and has header row
+              row: index + 2,
               error: err.message 
             });
             throw err;
@@ -178,125 +135,81 @@ export default function BulkUploadPage() {
 
       if (successful > 0) {
         alert(
-          `✅ BULK UPLOAD COMPLETE!\n\n` +
-          `Total Rows: ${jsonData.length}\n` +
-          `✅ Successful: ${successful}\n` +
-          `❌ Failed: ${failed}\n\n` +
-          (failed > 0 ? `Check the results section for error details.` : `All projects uploaded successfully!`)
+          `✅ UPLOAD COMPLETE!\n\n` +
+          `Total: ${jsonData.length}\n` +
+          `✅ Success: ${successful}\n` +
+          `❌ Failed: ${failed}`
         );
-      } else {
-        alert('❌ All uploads failed. Please check your data and try again.');
       }
     } catch (err: any) {
-      alert('❌ Error processing file: ' + err.message);
+      alert('❌ Error: ' + err.message);
       console.error(err);
-      setResults(null);
     } finally {
       setProcessing(false);
     }
   };
 
-  const downloadTemplate = async () => {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Properties');
-
-    // Define columns with headers
-    worksheet.columns = [
-      { header: 'Project Name', key: 'name', width: 30 },
-      { header: 'Developer', key: 'developer', width: 25 },
-      { header: 'RERA ID', key: 'rera_id', width: 30 },
-      { header: 'Status', key: 'status', width: 20 },
-      { header: 'Zone', key: 'zone', width: 15 },
-      { header: 'Region', key: 'region', width: 20 },
-      { header: 'Address', key: 'address', width: 40 },
-      { header: 'Latitude', key: 'lat', width: 15 },
-      { header: 'Longitude', key: 'lng', width: 15 },
-      { header: 'Price Display', key: 'price_display', width: 20 },
-      { header: 'Price Min', key: 'price_min', width: 15 },
-      { header: 'Price Max', key: 'price_max', width: 15 },
-      { header: 'Price per SqFt', key: 'price_per_sqft', width: 15 },
-      { header: 'Total Units', key: 'total_units', width: 15 },
-      { header: 'Land Area', key: 'land_area', width: 15 },
-      { header: 'Property Type', key: 'property_type', width: 20 },
-      { header: 'Builder Grade', key: 'builder_grade', width: 15 },
-      { header: 'Open Space %', key: 'open_space', width: 15 },
-      { header: 'Floor Levels', key: 'floor_levels', width: 15 },
-      { header: 'Clubhouse Size', key: 'clubhouse_size', width: 15 },
-      { header: 'Possession Date', key: 'possession_date', width: 20 },
-      { header: 'Construction Technology', key: 'construction_tech', width: 30 }
+  const downloadTemplate = () => {
+    // MINIMAL CSV - Only guaranteed columns
+    const headers = [
+      'Project Name',
+      'Developer',
+      'Status',
+      'Zone',
+      'Region',
+      'Address',
+      'Latitude',
+      'Longitude',
+      'Price Display',
+      'Total Units',
+      'Land Area',
+      'Property Type',
+      'RERA ID'
     ];
 
-    // Style header row
-    worksheet.getRow(1).font = { bold: true, size: 12 };
-    worksheet.getRow(1).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF4472C4' }
-    };
-    worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-    worksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+    const sampleData = [
+      [
+        'Prestige Lakeside Habitat',
+        'Prestige Group',
+        'Under Construction',
+        'North',
+        'Whitefield',
+        'Varthur Main Road, Whitefield',
+        '12.9716',
+        '77.5946',
+        '₹1.2 Cr onwards',
+        '500',
+        '25 Acres',
+        'Apartments',
+        'PRM/KA/RERA/1251/308'
+      ],
+      [
+        'Brigade Eldorado',
+        'Brigade Group',
+        'Ready',
+        'East',
+        'Bagalur',
+        'Bagalur Main Road',
+        '13.0827',
+        '77.6350',
+        '₹85 Lakhs onwards',
+        '850',
+        '35 Acres',
+        'Apartments',
+        'PRM/KA/RERA/1251/309'
+      ]
+    ];
 
-    // Add sample data
-    worksheet.addRow({
-      name: 'Prestige Lakeside Habitat',
-      developer: 'Prestige Group',
-      rera_id: 'PRM/KA/RERA/1251/308/PR/170623/003370',
-      status: 'Under Construction',
-      zone: 'North',
-      region: 'Whitefield',
-      address: 'Varthur Main Road, Whitefield, Bangalore',
-      lat: 12.9716,
-      lng: 77.5946,
-      price_display: '₹1.2 Cr onwards',
-      price_min: 12000000,
-      price_max: 25000000,
-      price_per_sqft: '₹6,500',
-      total_units: 500,
-      land_area: '25 Acres',
-      property_type: 'Apartments',
-      builder_grade: 'Premium',
-      open_space: 70,
-      floor_levels: 'G+18',
-      clubhouse_size: '25,000 sq.ft',
-      possession_date: 'Dec 2027',
-      construction_tech: 'Mivan Technology'
-    });
+    const csvContent = [
+      headers.join(','),
+      ...sampleData.map(row => row.join(','))
+    ].join('\n');
 
-    // Add another example
-    worksheet.addRow({
-      name: 'Brigade Eldorado',
-      developer: 'Brigade Group',
-      rera_id: 'PRM/KA/RERA/1251/309/PR/180924/002345',
-      status: 'Ready',
-      zone: 'East',
-      region: 'Bagalur',
-      address: 'Bagalur Main Road, North Bangalore',
-      lat: 13.0827,
-      lng: 77.6350,
-      price_display: '₹85 Lakhs onwards',
-      price_min: 8500000,
-      price_max: 15000000,
-      price_per_sqft: '₹4,800',
-      total_units: 850,
-      land_area: '35 Acres',
-      property_type: 'Apartments',
-      builder_grade: 'Mid-Segment',
-      open_space: 75,
-      floor_levels: 'G+14',
-      clubhouse_size: '30,000 sq.ft',
-      possession_date: 'Immediate',
-      construction_tech: 'RCC Framed Structure'
-    });
-
-    // Download file
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { 
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-    });
+    const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'bulk-upload-template.xlsx';
+    link.download = 'bulk-upload-template.csv';
     link.click();
     window.URL.revokeObjectURL(url);
   };
@@ -306,9 +219,7 @@ export default function BulkUploadPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-slate-900 mb-2">Bulk Upload Properties</h1>
-        <p className="text-lg text-slate-600">
-          Upload multiple properties at once using Excel or CSV files
-        </p>
+        <p className="text-lg text-slate-600">Upload multiple properties using CSV</p>
       </div>
 
       {/* Info Banner */}
@@ -316,27 +227,23 @@ export default function BulkUploadPage() {
         <div className="flex items-start gap-4">
           <div className="text-4xl">📤</div>
           <div className="flex-1">
-            <h3 className="font-bold text-green-900 text-lg mb-2">How Bulk Upload Works</h3>
+            <h3 className="font-bold text-green-900 text-lg mb-2">Simple CSV Upload (100% Free)</h3>
             <ul className="text-sm text-green-800 space-y-2">
               <li className="flex items-center gap-2">
-                <CheckCircle size={16} className="text-green-600 flex-shrink-0" />
-                <span>Uses the same <strong>ProjectWizard V7 standards</strong></span>
+                <CheckCircle size={16} className="flex-shrink-0" />
+                <span>No payment needed - uses your existing Supabase free tier</span>
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle size={16} className="text-green-600 flex-shrink-0" />
-                <span>Validates all required fields before insertion</span>
+                <CheckCircle size={16} className="flex-shrink-0" />
+                <span>Upload CSV files (open in Excel or Google Sheets)</span>
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle size={16} className="text-green-600 flex-shrink-0" />
-                <span>Automatically inserts to projects table</span>
+                <CheckCircle size={16} className="flex-shrink-0" />
+                <span>Only uses columns that exist in your current schema</span>
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle size={16} className="text-green-600 flex-shrink-0" />
-                <span>Supports Excel (.xlsx, .xls) and CSV formats</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle size={16} className="text-green-600 flex-shrink-0" />
-                <span>Secure modern ExcelJS library (no vulnerabilities)</span>
+                <CheckCircle size={16} className="flex-shrink-0" />
+                <span>Works with anon key (no service key needed)</span>
               </li>
             </ul>
           </div>
@@ -351,18 +258,18 @@ export default function BulkUploadPage() {
               <FileSpreadsheet className="text-blue-600" size={28} />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-lg mb-1">Download Template</h3>
+              <h3 className="font-bold text-slate-900 text-lg mb-1">Download CSV Template</h3>
               <p className="text-sm text-slate-600">
-                Get the Excel template with all required columns and sample data
+                Simple template matching your current schema
               </p>
             </div>
           </div>
           <button
             onClick={downloadTemplate}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium flex items-center gap-2 shadow-sm hover:shadow"
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium flex items-center gap-2"
           >
             <Download size={20} />
-            Download Template
+            Download CSV
           </button>
         </div>
       </div>
@@ -372,7 +279,7 @@ export default function BulkUploadPage() {
         <input
           type="file"
           id="file-upload"
-          accept=".xlsx,.xls,.csv"
+          accept=".csv"
           onChange={handleFileUpload}
           className="hidden"
         />
@@ -381,12 +288,10 @@ export default function BulkUploadPage() {
             <Upload className="text-blue-600" size={40} />
           </div>
           <h3 className="text-xl font-bold text-slate-900 mb-2">
-            {file ? `📄 ${file.name}` : 'Choose a file or drag it here'}
+            {file ? `📄 ${file.name}` : 'Choose CSV file'}
           </h3>
-          <p className="text-slate-600 mb-4">
-            Supports Excel (.xlsx, .xls) and CSV files • Max 100 rows
-          </p>
-          <div className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-sm">
+          <p className="text-slate-600 mb-4">CSV only • Max 50 rows recommended</p>
+          <div className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
             Browse Files
           </div>
         </label>
@@ -401,17 +306,10 @@ export default function BulkUploadPage() {
             className={`px-10 py-4 rounded-xl font-bold text-lg transition shadow-lg ${
               processing
                 ? 'bg-slate-400 text-white cursor-not-allowed'
-                : 'bg-green-600 text-white hover:bg-green-700 hover:shadow-xl'
+                : 'bg-green-600 text-white hover:bg-green-700'
             }`}
           >
-            {processing ? (
-              <span className="flex items-center gap-3">
-                <span className="animate-spin">⏳</span>
-                Processing...
-              </span>
-            ) : (
-              '✅ Process & Upload'
-            )}
+            {processing ? '⏳ Processing...' : '✅ Upload'}
           </button>
         </div>
       )}
@@ -419,9 +317,7 @@ export default function BulkUploadPage() {
       {/* Results */}
       {results && (
         <div className="bg-white border-2 border-slate-200 rounded-xl p-6 shadow-sm">
-          <h3 className="font-bold text-slate-900 text-xl mb-6 flex items-center gap-2">
-            📊 Upload Results
-          </h3>
+          <h3 className="font-bold text-slate-900 text-xl mb-6">📊 Upload Results</h3>
           
           <div className="grid grid-cols-3 gap-4 mb-6">
             <div className="bg-blue-50 rounded-xl p-6 text-center border-2 border-blue-200">
@@ -458,20 +354,20 @@ export default function BulkUploadPage() {
         </div>
       )}
 
-      {/* Warning */}
-      <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6 mt-8">
+      {/* Instructions */}
+      <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mt-8">
         <div className="flex items-start gap-3">
-          <AlertCircle className="text-yellow-600 flex-shrink-0" size={24} />
+          <div className="text-2xl">💡</div>
           <div>
-            <h4 className="font-bold text-yellow-900 mb-2">⚠️ Important Notes</h4>
-            <ul className="text-sm text-yellow-800 space-y-1">
-              <li>• Bulk upload publishes projects immediately (no approval needed)</li>
-              <li>• Make sure all data is accurate before uploading</li>
-              <li>• Project Name and Developer are required fields</li>
-              <li>• Invalid rows will be skipped with error messages</li>
-              <li>• For complex data (units, amenities), use manual ProjectWizard after bulk upload</li>
-              <li>• Maximum 100 rows per upload for optimal performance</li>
-            </ul>
+            <h4 className="font-bold text-blue-900 mb-2">How to Use (100% Free)</h4>
+            <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+              <li>Download the CSV template above</li>
+              <li>Open it in Excel or Google Sheets</li>
+              <li>Fill in your property data</li>
+              <li>Save as CSV</li>
+              <li>Upload here</li>
+              <li>All processing happens in your browser using your free Supabase anon key</li>
+            </ol>
           </div>
         </div>
       </div>
