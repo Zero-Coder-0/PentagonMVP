@@ -1,5 +1,5 @@
 // src/modules/inventory/types-v7.ts
-
+export type Zone = 'North' | 'South' | 'East' | 'West';
 // 1. The Master Table: Projects
 export interface ProjectV7 {
   id?: string; // Optional for new projects
@@ -10,7 +10,7 @@ export interface ProjectV7 {
   status: 'Pre-Launch' | 'Under Construction' | 'Ready';
   
   // Location
-  zone: 'North' | 'South' | 'East' | 'West';
+  zone: Zone;
   region: string;
   address_line: string | null;
   lat: number;

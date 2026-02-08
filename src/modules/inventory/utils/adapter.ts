@@ -55,13 +55,12 @@ export function adaptProjectToProperty(project: ProjectFullV7): Property {
 
     // NEW V7 Field Mapping
     totalUnits: project.units?.length || 0,
-    priceRange: {}, // Placeholder
     amenities: project.amenities?.map(a => a.name) || [],
 
     // Pricing
     price_value: project.price_min || 0,
     price_display: project.price_display || 'Price on Request',
-    price_per_sqft: 0, 
+    price_per_sqft: project.price_per_sqft || 0, 
 
     // Status Compatibility
     status: project.status === 'Ready' ? 'Ready' : 'Under Construction',

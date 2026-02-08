@@ -27,6 +27,7 @@ interface NavItem {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [pendingCount, setPendingCount] = useState<number>(0);
+  const [userRole, setUserRole] = useState<string | null>(null); // To store role
   const [loading, setLoading] = useState(true);
 
   const supabase = createBrowserClient(
@@ -34,38 +35,49 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // Fetch pending approvals count
   useEffect(() => {
-    async function fetchPendingCount() {
+    async function initData() {
       try {
-        // Count property drafts with status 'pending'
+        // 1. Get Current User Role
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+          
+          setUserRole(profile?.role || null);
+        }
+
+        // 2. Count Pending Approvals
         const { count: propertyCount, error: propertyError } = await supabase
           .from('property_drafts')
           .select('*', { count: 'exact', head: true })
           .eq('status', 'pending');
 
         if (propertyError) throw propertyError;
+        setPendingCount(propertyCount || 0);
 
-        // If you have user approvals, add this:
-        // const { count: userCount, error: userError } = await supabase
-        //   .from('profiles')
-        //   .select('*', { count: 'exact', head: true })
-        //   .eq('approval_status', 'pending');
-        
-        const totalPending = propertyCount || 0; // + (userCount || 0) if you have user approvals
-        setPendingCount(totalPending);
       } catch (err) {
-        console.error('Error fetching pending count:', err);
-        setPendingCount(0);
+        console.error('Error fetching admin data:', err);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchPendingCount();
+    initData();
 
     // Refresh count every 30 seconds
-    const interval = setInterval(fetchPendingCount, 30000);
+    const interval = setInterval(() => {
+        // Simple re-fetch for counts only
+        supabase
+        .from('property_drafts')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending')
+        .then(({ count }) => setPendingCount(count || 0));
+    }, 30000);
+
     return () => clearInterval(interval);
   }, []);
 
@@ -108,16 +120,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="flex min-h-screen bg-slate-50">
       {/* Modern Light Sidebar */}
-      <aside className="w-72 bg-white border-r border-slate-200 flex flex-col shadow-sm">
+      <aside className="w-72 bg-white border-r border-slate-200 flex flex-col shadow-sm sticky top-0 h-screen">
         {/* Header */}
         <div className="p-6 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
+          <div className="flex items-center gap-3 mb-0">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
               <Sparkles className="text-white" size={20} />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">Pentagon Admin</h1>
-              <p className="text-xs text-slate-600">Tenant Administrator</p>
+              <h1 className="text-xl font-bold text-slate-900 leading-tight">Pentagon Admin</h1>
+              {/* REMOVED: Tenant Administrator text */}
             </div>
           </div>
         </div>
@@ -140,7 +152,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 `}
               >
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className={`flex-shrink-0 ${active ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                  <div className={`flex-shrink-0 transition-colors ${active ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
                     {item.icon}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -202,24 +214,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </nav>
 
         {/* Footer Section */}
-        <div className="p-4 border-t border-slate-200 space-y-3">
-          {/* Schema Builder */}
-          <Link
-            href="/super/schema"
-            className={`
-              flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200
-              ${isActive('/super/schema')
-                ? 'bg-purple-50 text-purple-700 ring-1 ring-purple-100'
-                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-              }
-            `}
-          >
-            <Settings size={20} />
-            <span>Schema Builder</span>
-          </Link>
+        <div className="p-4 border-t border-slate-200 space-y-3 bg-slate-50/50">
+          
+          {/* Schema Builder - ONLY FOR SUPER ADMIN */}
+          {userRole === 'super_admin' && (
+            <Link
+              href="/super/schema"
+              className={`
+                flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200
+                ${isActive('/super/schema')
+                  ? 'bg-purple-50 text-purple-700 ring-1 ring-purple-100'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                }
+              `}
+            >
+              <Settings size={20} className="text-purple-600" />
+              <span>Schema Builder</span>
+            </Link>
+          )}
 
           {/* Quick Tip Card */}
-          <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-xl p-4 border border-blue-100">
+          <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-xl p-4 border border-blue-100 shadow-sm">
             <div className="flex items-start gap-2">
               <div className="text-lg">💡</div>
               <div className="flex-1 min-w-0">
@@ -232,14 +247,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           {/* Version Info */}
-          <div className="text-center">
-            <p className="text-xs text-slate-400">v7.0 Schema</p>
+          <div className="text-center pt-2">
+            <p className="text-[10px] font-mono text-slate-400">v7.0.2 Stable</p>
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto bg-slate-50">
+      <main className="flex-1 overflow-y-auto h-screen bg-slate-50">
         {children}
       </main>
     </div>

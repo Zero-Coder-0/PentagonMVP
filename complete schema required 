@@ -1,0 +1,930 @@
+I apologize for the frustration. You are completely right—I ran the code in the background but failed to display the actual text for you to copy.
+
+Here is the **complete SQL Schema** ready for you to copy and paste directly into your Supabase SQL Editor.
+
+### **Part 1: The Database Schema (Table Structure)**
+Copy this entirely to create the tables.
+
+```sql
+-- ============================================
+-- REAL ESTATE PROJECT DATABASE SCHEMA
+-- For Supabase PostgreSQL
+-- ============================================
+
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- ============================================
+-- TABLE 1: PROJECTS (Main Master Table)
+-- ============================================
+CREATE TABLE projects (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_name VARCHAR(255) NOT NULL,
+    developer_name VARCHAR(255) NOT NULL,
+    project_type VARCHAR(100), -- Villas, Apartments, Township, etc.
+    total_land_area VARCHAR(100),
+    total_units INTEGER,
+    number_of_phases INTEGER,
+    current_phase_under_sale VARCHAR(50),
+    project_theme TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 2: PROJECT_ADDRESSES
+-- ============================================
+CREATE TABLE project_addresses (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    general_location TEXT,
+    key_road_access TEXT,
+    detailed_address TEXT,
+    nearby_landmark TEXT,
+    rera_registration_no VARCHAR(255),
+    pincode VARCHAR(10),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 3: DEVELOPER_INFO
+-- ============================================
+CREATE TABLE developer_info (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    developer_reputation TEXT,
+    past_completed_projects TEXT,
+    years_in_market INTEGER,
+    construction_quality TEXT,
+    customer_feedback TEXT,
+    financial_strength TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 4: LOCATION_CONNECTIVITY
+-- ============================================
+CREATE TABLE location_connectivity (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    distance_to_main_road VARCHAR(50),
+    airport_distance VARCHAR(100),
+    railway_station_distance VARCHAR(100),
+    metro_station_distance VARCHAR(100),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 5: IT_PARKS_PROXIMITY
+-- ============================================
+CREATE TABLE it_parks_proximity (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    it_park_name VARCHAR(255),
+    distance_km VARCHAR(50),
+    travel_time VARCHAR(50),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 6: SCHOOLS_NEARBY
+-- ============================================
+CREATE TABLE schools_nearby (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    school_name VARCHAR(255),
+    distance_km VARCHAR(50),
+    travel_time VARCHAR(50),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 7: HOSPITALS_NEARBY
+-- ============================================
+CREATE TABLE hospitals_nearby (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    hospital_name VARCHAR(255),
+    distance_km VARCHAR(50),
+    travel_time VARCHAR(50),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 8: SHOPPING_MALLS_NEARBY
+-- ============================================
+CREATE TABLE shopping_malls_nearby (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    mall_name VARCHAR(255),
+    distance_km VARCHAR(50),
+    travel_time VARCHAR(50),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 9: FUTURE_GOVT_DEVELOPMENTS
+-- ============================================
+CREATE TABLE future_govt_developments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    development_name VARCHAR(255),
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 10: COMPETITOR_PROJECTS
+-- ============================================
+CREATE TABLE competitor_projects (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    competitor_name VARCHAR(255),
+    approx_price_range VARCHAR(100),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 11: AREA_MARKET_INFO
+-- ============================================
+CREATE TABLE area_market_info (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    segment VARCHAR(100), -- Value/Mid-Segment, Premium/Luxury
+    avg_price_per_sqft VARCHAR(50),
+    area_demand_level VARCHAR(50), -- Low, Medium, High
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 12: PROJECT_SPECIFICATIONS
+-- ============================================
+CREATE TABLE project_specifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    construction_type TEXT,
+    no_of_towers INTEGER,
+    floors_per_tower VARCHAR(100),
+    units_per_floor VARCHAR(100),
+    elevators_per_tower VARCHAR(100),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 13: FLOORING_DETAILS
+-- ============================================
+CREATE TABLE flooring_details (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    living_dining_kitchen TEXT,
+    master_suite TEXT,
+    other_bedrooms TEXT,
+    balconies_terraces TEXT,
+    maids_room TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 14: KITCHEN_SPECIFICATIONS
+-- ============================================
+CREATE TABLE kitchen_specifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    kitchen_design TEXT,
+    provisions TEXT,
+    fittings TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 15: BATHROOM_FITTINGS
+-- ============================================
+CREATE TABLE bathroom_fittings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    flooring TEXT,
+    fixtures TEXT,
+    water_heater TEXT,
+    additional_features TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 16: DOORS_WINDOWS
+-- ============================================
+CREATE TABLE doors_windows (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    main_door TEXT,
+    internal_doors TEXT,
+    windows TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 17: ELECTRICAL_FITTINGS
+-- ============================================
+CREATE TABLE electrical_fittings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    wiring_details TEXT,
+    switches TEXT,
+    tv_telephone_points TEXT,
+    ac_provisions TEXT,
+    power_supply VARCHAR(100),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 18: SMART_HOME_FEATURES
+-- ============================================
+CREATE TABLE smart_home_features (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    feature_name VARCHAR(255),
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 19: PROJECT_LAYOUT_INFO
+-- ============================================
+CREATE TABLE project_layout_info (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    open_space_percentage VARCHAR(10),
+    green_area_description TEXT,
+    internal_road_width VARCHAR(50),
+    water_borewell VARCHAR(50),
+    uds VARCHAR(100),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 20: UNIT_CONFIGURATIONS
+-- ============================================
+CREATE TABLE unit_configurations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    configuration VARCHAR(50), -- 1BHK, 2BHK, 3BHK, etc.
+    size_sba VARCHAR(50), -- Super Built-up Area
+    size_carpet VARCHAR(50), -- Carpet Area
+    available_units INTEGER,
+    vastu_compliance TEXT,
+    ventilation_quality VARCHAR(50),
+    premium_facing_options TEXT,
+    view_types TEXT,
+    unit_strengths TEXT,
+    unit_drawbacks TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 21: CLUBHOUSE_AMENITIES
+-- ============================================
+CREATE TABLE clubhouse_amenities (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    clubhouse_size VARCHAR(100),
+    total_clubhouses INTEGER DEFAULT 1,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 22: INDOOR_AMENITIES
+-- ============================================
+CREATE TABLE indoor_amenities (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    amenity_name VARCHAR(255),
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 23: OUTDOOR_AMENITIES
+-- ============================================
+CREATE TABLE outdoor_amenities (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    amenity_name VARCHAR(255),
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 24: SWIMMING_POOL_DETAILS
+-- ============================================
+CREATE TABLE swimming_pool_details (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    pool_type VARCHAR(100), -- Lap Pool, Kids Pool, etc.
+    dimensions VARCHAR(100),
+    features TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 25: SPORTS_FACILITIES
+-- ============================================
+CREATE TABLE sports_facilities (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    facility_name VARCHAR(255),
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 26: SECURITY_SYSTEMS
+-- ============================================
+CREATE TABLE security_systems (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    security_feature VARCHAR(255),
+    description TEXT,
+    cctv_coverage TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 27: PARKING_DETAILS
+-- ============================================
+CREATE TABLE parking_details (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    parking_type VARCHAR(100), -- Basement, Lower Ground, Open
+    visitor_parking TEXT,
+    parking_levels INTEGER,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 28: UNIQUE_AMENITIES
+-- ============================================
+CREATE TABLE unique_amenities (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    amenity_name VARCHAR(255),
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 29: PRICING_DETAILS
+-- ============================================
+CREATE TABLE pricing_details (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    base_price_per_sqft DECIMAL(10,2),
+    floor_rise_charges TEXT,
+    plc_charges TEXT, -- Preferential Location Charges
+    car_parking_cost DECIMAL(12,2),
+    clubhouse_charges DECIMAL(12,2),
+    infrastructure_charges TEXT,
+    maintenance_charges TEXT,
+    sinking_fund TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 30: OTHER_CHARGES
+-- ============================================
+CREATE TABLE other_charges (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    charge_type VARCHAR(255), -- GST, TDS, Stamp Duty, etc.
+    charge_value TEXT,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 31: PAYMENT_PLANS
+-- ============================================
+CREATE TABLE payment_plans (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    plan_name VARCHAR(255),
+    plan_description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 32: ONGOING_OFFERS
+-- ============================================
+CREATE TABLE ongoing_offers (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    offer_name VARCHAR(255),
+    offer_description TEXT,
+    validity_period VARCHAR(100),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 33: INVENTORY_AVAILABILITY
+-- ============================================
+CREATE TABLE inventory_availability (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    total_available_units INTEGER,
+    hot_selling_units TEXT,
+    builder_hold_units INTEGER,
+    cp_hold_units INTEGER,
+    recommended_units TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 34: CP_COMMERCIALS (Channel Partner)
+-- ============================================
+CREATE TABLE cp_commercials (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    commission_percentage DECIMAL(5,2),
+    bonus_incentives TEXT,
+    commission_payment_cycle VARCHAR(100),
+    required_documents TEXT,
+    builder_support TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 35: SALES_STRATEGY
+-- ============================================
+CREATE TABLE sales_strategy (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    key_selling_points TEXT,
+    customer_objections TEXT,
+    objection_handling TEXT,
+    ideal_customer_persona TEXT,
+    closing_strategy TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 36: RISKS_CHALLENGES
+-- ============================================
+CREATE TABLE risks_challenges (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    risk_type VARCHAR(255),
+    description TEXT,
+    mitigation_strategy TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 37: PROJECT_DOCUMENTS
+-- ============================================
+CREATE TABLE project_documents (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    document_type VARCHAR(100), -- Brochure, Price Sheet, Master Plan, etc.
+    document_url TEXT,
+    document_status VARCHAR(50), -- Available, Not Available
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 38: BUILDER_CONTACTS
+-- ============================================
+CREATE TABLE builder_contacts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    contact_type VARCHAR(100), -- Sales Manager, CRM Coordinator, etc.
+    contact_name VARCHAR(255),
+    phone_number VARCHAR(20),
+    email VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 39: PROJECT_RATINGS
+-- ============================================
+CREATE TABLE project_ratings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    overall_rating DECIMAL(3,1),
+    price_justification TEXT,
+    strength_summary TEXT,
+    weakness_summary TEXT,
+    target_customer_segment TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- TABLE 40: CONSTRUCTION_TIMELINE
+-- ============================================
+CREATE TABLE construction_timeline (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+    phase_name VARCHAR(100),
+    start_date DATE,
+    expected_completion_date DATE,
+    possession_date DATE,
+    current_status VARCHAR(100),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ============================================
+-- INDEXES FOR PERFORMANCE
+-- ============================================
+CREATE INDEX idx_projects_name ON projects(project_name);
+CREATE INDEX idx_projects_developer ON projects(developer_name);
+CREATE INDEX idx_project_addresses_project ON project_addresses(project_id);
+CREATE INDEX idx_location_connectivity_project ON location_connectivity(project_id);
+CREATE INDEX idx_unit_configurations_project ON unit_configurations(project_id);
+CREATE INDEX idx_pricing_details_project ON pricing_details(project_id);
+CREATE INDEX idx_inventory_availability_project ON inventory_availability(project_id);
+
+-- ============================================
+-- UPDATED_AT TRIGGER FUNCTION
+-- ============================================
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Apply trigger to projects table
+CREATE TRIGGER update_projects_updated_at
+    BEFORE UPDATE ON projects
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+```
+
+***
+
+### **Part 2: Sample Data (Rainbow Mayfair)**
+After you run the schema above, run this script to populate it with the Rainbow Mayfair data.
+
+**IMPORTANT:**
+1. Run the FIRST block to insert the project and get the ID.
+2. Replace `'<rainbow_mayfair_id>'` in the rest of the script with the actual UUID generated (e.g., `'123e4567-e89b-12d3-a456-426614174000'`).
+
+```sql
+-- STEP 1: Insert the main project
+INSERT INTO projects (project_name, developer_name, project_type, total_land_area, total_units, number_of_phases, current_phase_under_sale, project_theme)
+VALUES (
+    'Rainbow Mayfair',
+    'Rainbow Properties',
+    'Villas (4 & 5 BHK)',
+    '4 Acre',
+    64,
+    2,
+    '2',
+    'Lake-Facing Serenity and Vehicle-Free Zone. Focused on luxury, serene, lakefront living with all parking tucked underground.'
+);
+
+-- CHECK THE ID generated:
+SELECT id, project_name FROM projects WHERE project_name = 'Rainbow Mayfair';
+
+-- STEP 2: PASTE THE ID BELOW replacing <rainbow_mayfair_id>
+-- Then run the rest of this script:
+
+-- Insert address
+INSERT INTO project_addresses (project_id, general_location, key_road_access, detailed_address, nearby_landmark, rera_registration_no, pincode)
+VALUES (
+    '<rainbow_mayfair_id>',
+    'Hullahalli, Bengaluru',
+    'Off, Begur - Koppa Rd, Hullahalli, Bengaluru',
+    'SY NO 41/4, AND SY NO 43/1, HULLAHALLI VILLAGE, JIGANI HOBLI, Anekal, Bengaluru Urban, Karnataka',
+    'Near BVM Global School, Koppa Road',
+    'PRM/KA/RERA/1251/308/PR/190325/007593',
+    '560083'
+);
+
+-- Insert developer info
+INSERT INTO developer_info (project_id, developer_reputation, past_completed_projects, years_in_market, construction_quality, customer_feedback, financial_strength)
+VALUES (
+    '<rainbow_mayfair_id>',
+    'Premium national developer',
+    '530+ projects',
+    28,
+    '1,456 quality checks, backward integrated',
+    'Positive testimonials included',
+    'Strong – in-house manufacturing'
+);
+
+-- Insert location connectivity
+INSERT INTO location_connectivity (project_id, distance_to_main_road, airport_distance, railway_station_distance, metro_station_distance)
+VALUES (
+    '<rainbow_mayfair_id>',
+    '1 Kms',
+    '45 - 60 km (Kempegowda International Airport - BLR)',
+    'Heelalige Railway Station',
+    'Upcoming Namma Metro Yellow Line (Bommasandra Station - Approx. 10 - 12 km)'
+);
+
+-- Insert IT Parks
+INSERT INTO it_parks_proximity (project_id, it_park_name, distance_km, travel_time) VALUES
+('<rainbow_mayfair_id>', 'Electronic City', '8 - 12 km', 'N/A'),
+('<rainbow_mayfair_id>', 'Wipro Limited', '5 km', 'N/A');
+
+-- Insert Schools
+INSERT INTO schools_nearby (project_id, school_name, distance_km, travel_time) VALUES
+('<rainbow_mayfair_id>', 'Candor International School', '1 - 2 km', '5 - 10 min'),
+('<rainbow_mayfair_id>', 'Christ Academy', '3 - 5 km', '10 - 15 min'),
+('<rainbow_mayfair_id>', 'EKYA School', '7 - 9 km', '20 - 30 min'),
+('<rainbow_mayfair_id>', 'Delhi Public School', '8 - 10 km', '25 - 35 min'),
+('<rainbow_mayfair_id>', 'Greenwood High School', '11 - 13 km', '30 - 45 min'),
+('<rainbow_mayfair_id>', 'National Public School', '15 - 17 km', '40 - 55 min');
+
+-- Insert Hospitals
+INSERT INTO hospitals_nearby (project_id, hospital_name, distance_km, travel_time) VALUES
+('<rainbow_mayfair_id>', 'Cloudnine Hospital', '5 - 7 km', '15 - 20 min'),
+('<rainbow_mayfair_id>', 'Neo Hospital', '8 - 10 km', '20 - 30 min'),
+('<rainbow_mayfair_id>', 'Fortis Hospital (Bannerghatta Rd)', '10 - 12 km', '25 - 40 min'),
+('<rainbow_mayfair_id>', 'Apollo Hospital (Bannerghatta Rd)', '11 - 13 km', '30 - 45 min');
+
+-- Insert Shopping
+INSERT INTO shopping_malls_nearby (project_id, mall_name, distance_km, travel_time) VALUES
+('<rainbow_mayfair_id>', 'ZUDIO (Neeladri Nagar)', '7 - 9 km', '20 - 30 min'),
+('<rainbow_mayfair_id>', 'DMart', '8 - 10 km', '25 - 35 min'),
+('<rainbow_mayfair_id>', 'Royal Meenakshi Mall', '14 - 16 km', '35 - 50 min'),
+('<rainbow_mayfair_id>', 'Decathlon', '8 - 10 km', '25 - 35 min');
+
+-- Insert Future Developments
+INSERT INTO future_govt_developments (project_id, development_name, description) VALUES
+('<rainbow_mayfair_id>', 'Namma Metro Yellow Line Completion', 'Metro expansion to Bommasandra'),
+('<rainbow_mayfair_id>', 'Electronic City/Hosur Road corridor Upgrades', 'Infrastructure improvements');
+
+-- Insert Competitor Projects
+INSERT INTO competitor_projects (project_id, competitor_name, approx_price_range) VALUES
+('<rainbow_mayfair_id>', 'Suraksha Springs', 'Approx. ₹3.8 Cr to ₹5.0 Cr+'),
+('<rainbow_mayfair_id>', 'Assetz Canvas & Cove', 'Approx. ₹3.8 Cr to ₹5.0 Cr+'),
+('<rainbow_mayfair_id>', 'Lodha Azur', 'Approx. ₹3.8 Cr to ₹5.0 Cr+');
+
+-- Insert Area Market Info
+INSERT INTO area_market_info (project_id, segment, avg_price_per_sqft, area_demand_level) VALUES
+('<rainbow_mayfair_id>', 'Value / Mid-Segment', '₹8,000 – ₹10,000', 'Medium');
+
+-- Insert Project Specifications
+INSERT INTO project_specifications (project_id, construction_type, no_of_towers, floors_per_tower, units_per_floor, elevators_per_tower)
+VALUES (
+    '<rainbow_mayfair_id>',
+    'Seismic-II zone compliant RCC framed structure | Row Houses/Villas',
+    1,
+    '4BHK: LG+UG+2, 5BHK: LG+UG+3',
+    'Individual Row Houses',
+    '1 Provision/Villa'
+);
+
+-- Insert Flooring Details
+INSERT INTO flooring_details (project_id, living_dining_kitchen, master_suite, other_bedrooms, balconies_terraces, maids_room)
+VALUES (
+    '<rainbow_mayfair_id>',
+    'Imported marble',
+    'Laminated wooden flooring',
+    'High-end vitrified tiles',
+    'Vitrified/Exterior grade tiles',
+    'Vitrified tile flooring'
+);
+
+-- Insert Kitchen Specifications
+INSERT INTO kitchen_specifications (project_id, kitchen_design, provisions, fittings)
+VALUES (
+    '<rainbow_mayfair_id>',
+    'Open modern kitchen',
+    'Provision for water purifier, geyser, hob & chimney, gas pipe, refrigerator, sink, and washing machine & dishwasher in the utility area',
+    'High-end fittings'
+);
+
+-- Insert Bathroom Fittings
+INSERT INTO bathroom_fittings (project_id, flooring, fixtures, water_heater, additional_features)
+VALUES (
+    '<rainbow_mayfair_id>',
+    'High-end vitrified tile flooring & dado up to false-ceiling level (8'')',
+    'EWC and counter type wash basin (white) of Kohler or equivalent. Hot/cold mixer, shower, and health faucet',
+    '100-litre solar water heaters connected to all toilets',
+    'Premium bathroom fixtures'
+);
+
+-- Insert Doors & Windows
+INSERT INTO doors_windows (project_id, main_door, internal_doors, windows)
+VALUES (
+    '<rainbow_mayfair_id>',
+    'Engineered wooden frames with veneered designer doors (PU polish)',
+    'Hardwood frames with veneered designer doors (PU polish)',
+    'Premium aluminum windows with mosquito mesh'
+);
+
+-- Insert Electrical Fittings
+INSERT INTO electrical_fittings (project_id, wiring_details, switches, tv_telephone_points, ac_provisions, power_supply)
+VALUES (
+    '<rainbow_mayfair_id>',
+    'Fire retardant electric wires (Havells/Finolex or equivalent)',
+    'Modular switches (Schneider/Legrand/Havells or equivalent)',
+    'T.V. and Telephone point in living/all bedrooms',
+    'Split AC power points in family, living, dining, and all bedrooms',
+    '4 BHK: 12 KW; 5 BHK: 14 KW'
+);
+
+-- Insert Smart Home Features
+INSERT INTO smart_home_features (project_id, feature_name, description) VALUES
+('<rainbow_mayfair_id>', 'Intercom facility', 'From security to each house'),
+('<rainbow_mayfair_id>', 'CCTV cameras', 'At security & strategic common areas'),
+('<rainbow_mayfair_id>', 'UPS provision', 'For each villa'),
+('<rainbow_mayfair_id>', 'Biometric lock', 'For main door'),
+('<rainbow_mayfair_id>', 'Video Door Phone', 'Security feature'),
+('<rainbow_mayfair_id>', 'Gas Leak Detector', 'Safety feature'),
+('<rainbow_mayfair_id>', 'Geyser Control', 'Smart control system');
+
+-- Insert Project Layout Info
+INSERT INTO project_layout_info (project_id, open_space_percentage, green_area_description, internal_road_width, water_borewell, uds)
+VALUES (
+    '<rainbow_mayfair_id>',
+    '60%',
+    'Landscaped gardens, Park, Yoga Decks, Meditation zones, Tree planting',
+    '20 ft',
+    '3',
+    '2400 Sqft'
+);
+
+-- Insert Unit Configurations
+INSERT INTO unit_configurations (project_id, configuration, size_sba, size_carpet, available_units, vastu_compliance, ventilation_quality, premium_facing_options, view_types, unit_strengths, unit_drawbacks)
+VALUES
+('<rainbow_mayfair_id>', '4BHK', '3923 Sq.ft', NULL, 57, 'East Facing', 'Good', 'East Facing - 200Sqft Garden', 'Lake View, Garden View', 'Large SBAs, patios, smart features', NULL),
+('<rainbow_mayfair_id>', '4BHK', '3959 Sq.ft', NULL, 57, 'West Facing', 'Good', 'West Facing', NULL, 'Large SBAs, patios, smart features', NULL),
+('<rainbow_mayfair_id>', '4BHK', '4894 Sq.ft', NULL, 57, 'North Facing', 'Good', 'North Facing', NULL, 'Large SBAs, patios, smart features', NULL),
+('<rainbow_mayfair_id>', '5BHK', '4836 Sq.ft', NULL, 57, 'West Facing', 'Good', 'West Facing - Lake View', 'Lake View, Sunset View', 'Large SBAs, patios, smart features', NULL);
+
+-- Insert Clubhouse Amenities
+INSERT INTO clubhouse_amenities (project_id, clubhouse_size, total_clubhouses)
+VALUES ('<rainbow_mayfair_id>', '11,000 Sq.ft', 1);
+
+-- Insert Indoor Amenities
+INSERT INTO indoor_amenities (project_id, amenity_name, description) VALUES
+('<rainbow_mayfair_id>', 'Gymnasium', 'Fully equipped gym'),
+('<rainbow_mayfair_id>', 'Indoor Badminton Court', 'Professional court'),
+('<rainbow_mayfair_id>', 'Games Room / Dining Space', 'Multi-purpose area'),
+('<rainbow_mayfair_id>', 'Snooker Room', 'Recreation'),
+('<rainbow_mayfair_id>', 'Multipurpose Hall', 'Events and gatherings'),
+('<rainbow_mayfair_id>', 'Party Deck', 'Social gatherings'),
+('<rainbow_mayfair_id>', 'Yoga & Meditation Space', 'Wellness area'),
+('<rainbow_mayfair_id>', 'Working Pods', 'Co-working space');
+
+-- Insert Outdoor Amenities
+INSERT INTO outdoor_amenities (project_id, amenity_name, description) VALUES
+('<rainbow_mayfair_id>', 'Half Basketball Court', 'Sports facility'),
+('<rainbow_mayfair_id>', 'Pickleball Court', 'Sports facility'),
+('<rainbow_mayfair_id>', 'Cricket Pitch', 'Sports facility'),
+('<rainbow_mayfair_id>', 'Reflexology Path', 'Wellness feature'),
+('<rainbow_mayfair_id>', 'Outdoor Gym', 'Fitness area'),
+('<rainbow_mayfair_id>', 'Party Lawn', 'Open gathering space'),
+('<rainbow_mayfair_id>', 'View Point', 'Lake viewing area'),
+('<rainbow_mayfair_id>', 'Rock Garden', 'Landscaping feature'),
+('<rainbow_mayfair_id>', 'Orchards / Aroma Garden', 'Green space'),
+('<rainbow_mayfair_id>', 'Kids Play Area', 'Children facilities');
+
+-- Insert Swimming Pool Details
+INSERT INTO swimming_pool_details (project_id, pool_type, dimensions, features)
+VALUES ('<rainbow_mayfair_id>', 'Main Pool', '14ft x 40ft', 'Separate children pool');
+
+-- Insert Sports Facilities
+INSERT INTO sports_facilities (project_id, facility_name, description) VALUES
+('<rainbow_mayfair_id>', 'Indoor Badminton Court', 'Professional indoor court'),
+('<rainbow_mayfair_id>', 'Half Basketball Court', 'Outdoor court'),
+('<rainbow_mayfair_id>', 'Pickleball Court', 'Latest sport facility'),
+('<rainbow_mayfair_id>', 'Cricket Pitch', 'Practice area'),
+('<rainbow_mayfair_id>', 'Snooker Room', 'Indoor game'),
+('<rainbow_mayfair_id>', 'Outdoor Gym', 'Fitness zone');
+
+-- Insert Security Systems
+INSERT INTO security_systems (project_id, security_feature, description, cctv_coverage)
+VALUES (
+    '<rainbow_mayfair_id>',
+    '24/7 Security with Biometric Access',
+    'Biometric lock for main door, Video Door Phone, Gas Leak Detector, Geyser Control, Access-controlled clubhouse areas',
+    'CCTV cameras at security points and strategic common area locations'
+);
+
+-- Insert Parking Details
+INSERT INTO parking_details (project_id, parking_type, visitor_parking, parking_levels)
+VALUES (
+    '<rainbow_mayfair_id>',
+    'Lower Ground',
+    'Outside the Villa',
+    1
+);
+
+-- Insert Unique Amenities
+INSERT INTO unique_amenities (project_id, amenity_name, description) VALUES
+('<rainbow_mayfair_id>', '60% Open Space', 'Maximum green coverage'),
+('<rainbow_mayfair_id>', 'Aroma Garden', 'Aromatic plants garden'),
+('<rainbow_mayfair_id>', 'Reflexology Path', 'Health and wellness'),
+('<rainbow_mayfair_id>', 'Working Pods', 'Co-working spaces'),
+('<rainbow_mayfair_id>', 'View Point', 'Lake viewing deck'),
+('<rainbow_mayfair_id>', 'Rock Garden', 'Natural landscaping'),
+('<rainbow_mayfair_id>', 'Orchards', 'Fruit bearing trees'),
+('<rainbow_mayfair_id>', 'Biometric main door lock', 'Advanced security'),
+('<rainbow_mayfair_id>', 'Solar water heater (100 litres)', 'Connected to all toilets'),
+('<rainbow_mayfair_id>', 'Laminated wooden flooring', 'In master suite');
+
+-- Insert Pricing Details
+INSERT INTO pricing_details (project_id, base_price_per_sqft, floor_rise_charges, plc_charges, car_parking_cost, clubhouse_charges, infrastructure_charges, maintenance_charges, sinking_fund)
+VALUES (
+    '<rainbow_mayfair_id>',
+    10200.00,
+    'No extra',
+    '₹200/Sqft for premium facing',
+    0.00,
+    500000.00,
+    '400/sqft',
+    '90/Sqft',
+    '90/Sqft'
+);
+
+-- Insert Other Charges
+INSERT INTO other_charges (project_id, charge_type, charge_value, description) VALUES
+('<rainbow_mayfair_id>', 'GST', 'CGST + SGST', 'As per government rates'),
+('<rainbow_mayfair_id>', 'Sinking Fund', '90/Sqft', 'One-time payment'),
+('<rainbow_mayfair_id>', 'TDS', '1%', 'On taxable value'),
+('<rainbow_mayfair_id>', 'Stamp Duty & Registration', 'As actuals', 'Government charges');
+
+-- Insert Payment Plans
+INSERT INTO payment_plans (project_id, plan_name, plan_description) VALUES
+('<rainbow_mayfair_id>', '10% Booking', 'Initial booking amount'),
+('<rainbow_mayfair_id>', 'Quarterly Plan', 'Quarterly installments'),
+('<rainbow_mayfair_id>', 'Half yearly Plan', 'Half-yearly installments'),
+('<rainbow_mayfair_id>', 'Yearly Plan', 'Annual installments');
+
+-- Insert Inventory Availability
+INSERT INTO inventory_availability (project_id, total_available_units, hot_selling_units, builder_hold_units, cp_hold_units, recommended_units)
+VALUES (
+    '<rainbow_mayfair_id>',
+    64,
+    'Lake facing villas',
+    5,
+    NULL,
+    'Family-centric 4 BHK & 5 BHK with lake view'
+);
+
+-- Insert CP Commercials
+INSERT INTO cp_commercials (project_id, commission_percentage, bonus_incentives, commission_payment_cycle, required_documents, builder_support)
+VALUES (
+    '<rainbow_mayfair_id>',
+    3.00,
+    '1L for every sales of BHK for all incl of luxe and premium',
+    '30 days',
+    'RERA Certificate, GST No, Pan Card, Invoice',
+    'Collarals and Brochures | 3D video and Images'
+);
+
+-- Insert Sales Strategy
+INSERT INTO sales_strategy (project_id, key_selling_points, customer_objections, objection_handling, ideal_customer_persona, closing_strategy)
+VALUES (
+    '<rainbow_mayfair_id>',
+    'Lake-facing premium villas, 60% open space, underground parking, large UDS (2400 sqft), smart home features, premium finishes',
+    'Distance from main areas, Price point, Location perception',
+    'Emphasize quality focus, future infrastructure development, unique lake-facing advantage, large land ownership (UDS)',
+    'Upper Middle Class to HNI families, IT professionals, families seeking luxury villa lifestyle',
+    'Theme-driven visual pitch focusing on lake view and premium lifestyle'
+);
+
+-- Insert Risks & Challenges
+INSERT INTO risks_challenges (project_id, risk_type, description, mitigation_strategy) VALUES
+('<rainbow_mayfair_id>', 'Pricing Concerns', 'Premium segment pricing comparable to major grid builders', 'Emphasize unique lake-facing advantage and large UDS'),
+('<rainbow_mayfair_id>', 'Location Concerns', '7 km inside from Bannerghatta Main Road / Metro line', 'Highlight future metro connectivity and infrastructure development'),
+('<rainbow_mayfair_id>', 'Brand Recognition', 'Not as established as Brigade, Prestige', 'Focus on quality, specifications, and value proposition'),
+('<rainbow_mayfair_id>', 'Environmental Concerns', 'Stone-cutting factory within 1 km', 'Address proactively with noise/dust mitigation measures'),
+('<rainbow_mayfair_id>', 'Lake Cleanliness', 'Lake is not very clean and only 3.5 acres', 'Focus on the view and ambiance rather than water quality');
+
+-- Insert Project Documents
+INSERT INTO project_documents (project_id, document_type, document_url, document_status) VALUES
+('<rainbow_mayfair_id>', 'Brochure', 'https://drive.google.com/file/d/1rvvrmcF8GfFs6FOfPtc6OZLk4l3_6QaT/view?usp=drive_link', 'Available'),
+('<rainbow_mayfair_id>', 'Price Sheet', 'https://drive.google.com/file/d/1Ele57T8we3cEu_mr4Z43sBTsNUdZtlHl/view?usp=drive_link', 'Available'),
+('<rainbow_mayfair_id>', 'Master Plan', 'https://drive.google.com/file/d/1rvvrmcF8GfFs6FOfPtc6OZLk4l3_6QaT/view?usp=drive_link', 'Available'),
+('<rainbow_mayfair_id>', 'Floor Plans', 'https://drive.google.com/file/d/1rvvrmcF8GfFs6FOfPtc6OZLk4l3_6QaT/view?usp=drive_link', 'Available');
+
+-- Insert Builder Contacts
+INSERT INTO builder_contacts (project_id, contact_type, contact_name, phone_number, email) VALUES
+('<rainbow_mayfair_id>', 'Sales Manager', 'Koushik Bharath', '8147231840', NULL);
+
+-- Insert Project Ratings
+INSERT INTO project_ratings (project_id, overall_rating, price_justification, strength_summary, weakness_summary, target_customer_segment)
+VALUES (
+    '<rainbow_mayfair_id>',
+    8.0,
+    'Brand + value + amenities + lake-facing advantage + large UDS',
+    'Premium lake view, unique villa positioning with no back-to-back layout, large gardens (88ft for inner villas), elevated design with lower ground parking, massive 2400 UDS, 30-feet wide concrete roads, spacious 4-5 BHK configurations',
+    'Common-wall structure (not independent villas), pricing comparable to major brands, 7km from main road/metro, no major Grade-A builders nearby, stone-cutting factory within 1km, lake cleanliness issues',
+    'Upper Middle Class to HNI (Household income > ₹2.5L/month)'
+);
+
+-- Insert Construction Timeline
+INSERT INTO construction_timeline (project_id, phase_name, start_date, expected_completion_date, possession_date, current_status)
+VALUES (
+    '<rainbow_mayfair_id>',
+    'Phase 2',
+    NULL,
+    '2028-12-01',
+    '2028-12-01',
+    'Under Construction'
+);
+```

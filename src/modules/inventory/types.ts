@@ -1,15 +1,17 @@
 // src/modules/inventory/types.ts
 
+export type Zone = 'North' | 'South' | 'East' | 'West';
+
 export interface Property {
   id: string
   name: string
   developer: string
   location_area: string
-  zone: 'North' | 'South' | 'East' | 'West'
+  zone: Zone
   lat: number
   lng: number
   price_display: string
-  price_per_sqft?: string
+  price_per_sqft?: string | number;
   price_value?: number // Added for compatibility
   sq_ft_range?: string
   configurations?: string[]

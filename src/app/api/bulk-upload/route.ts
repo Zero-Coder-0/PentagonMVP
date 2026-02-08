@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       jsonData = parseWorksheet(worksheet);
     } else {
       // Parse Excel
-      await workbook.xlsx.load(buffer);
+      await workbook.xlsx.load(buffer as any);
       const worksheet = workbook.worksheets[0];
       jsonData = parseWorksheet(worksheet);
     }
