@@ -1,196 +1,493 @@
 // src/modules/inventory/types-v7.ts
-export type Zone = 'North' | 'South' | 'East' | 'West';
-// 1. The Master Table: Projects
-export interface ProjectV7 {
-  id?: string; // Optional for new projects
-  created_at?: string; // ISO timestamp
+// Type definitions matching REAL_ESTATE_SCHEMA_FINAL.sql
+
+// =====================================================
+// ENUMS (matching PostgreSQL ENUMs from schema)
+// =====================================================
+
+export type UserRole = 
+  | 'Super Admin' 
+  | 'Admin' 
+  | 'Manager' 
+  | 'Sales Executive' 
+  | 'Vendor';
+
+export type ProjectStatus = 
+  | 'DRAFT'
+  | 'PENDING_APPROVAL'
+  | 'Pre-Launch'
+  | 'Under Construction'
+  | 'Nearing Completion'
+  | 'Ready to Move'
+  | 'Sold Out';
+
+export type BangaloreZone = 
+  | 'North' 
+  | 'South' 
+  | 'East' 
+  | 'West' 
+  | 'Central';
+
+export type BuilderGrade = 
+  | 'A+' | 'A' | 'A-'
+  | 'B+' | 'B' | 'B-'
+  | 'C+' | 'C' | 'C-'
+  | 'D+' | 'D' | 'D-'
+  | 'F';
+
+export type UnitStatus = 
+  | 'Available' 
+  | 'Blocked' 
+  | 'Sold' 
+  | 'Reserved' 
+  | 'Resale';
+
+export type LeadStatus = 
+  | 'New'
+  | 'Contacted'
+  | 'Site Visit Booked'
+  | 'Site Visit Done'
+  | 'Negotiation'
+  | 'Closed Won'
+  | 'Closed Lost';
+
+export type VisitStatus = 
+  | 'Confirmed' 
+  | 'Completed' 
+  | 'Cancelled' 
+  | 'Rescheduled' 
+  | 'No Show';
+
+// =====================================================
+// MASTER TABLES
+// =====================================================
+
+export interface Developer {
+  id?: string;
+  developer_name: string;
+  slug?: string;
+  builder_grade?: BuilderGrade;
+  established_year?: number;
+  headquarters_location?: string;
+  gst_number?: string;
+  rera_registration?: string;
+  office_address?: string;
+  office_phone?: string;
+  office_email?: string;
+  website_url?: string;
+  years_in_market?: number;
+  total_completed_projects?: number;
+  reputation_score?: number;
+  financial_strength?: string;
+  construction_quality?: string;
+  customer_feedback?: string;
+  logo_url?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface AmenityMaster {
+  id?: string;
+  amenity_name: string;
+  category?: string;
+  display_order?: number;
+  is_active?: boolean;
+  created_at?: string;
+}
+
+// =====================================================
+// PROJECTS TABLE (Main)
+// =====================================================
+
+export interface Project {
+  id?: string;
+  project_name: string;
+  slug?: string;
+  developer_id?: string; // FK to developers table
+  
+  // Geolocation (MANDATORY)
+  latitude: number;
+  longitude: number;
+  
+  // Address
+  address_line?: string;
+  region?: string;
+  city?: string;
+  pincode?: string;
+  
+  // Zone
+  bangalore_zone?: BangaloreZone;
+  
+  // Status
+  project_status?: ProjectStatus;
+  possession_date?: string; // ISO date
+  
+  // Property Details
+  property_type?: string;
+  total_land_area?: string;
+  total_units?: number;
+  number_of_phases?: number;
+  current_phase_under_sale?: string;
+  floor_levels?: string;
+  construction_type?: string;
+  construction_technology?: string;
+  elevators_per_tower?: string;
+  open_space_percent?: number;
+  project_theme?: string;
+  usp?: string;
+  rera_registration_no?: string;
+  
+  // CACHED FIELDS (auto-updated by triggers)
+  price_min?: number;
+  price_max?: number;
+  price_display?: string;
+  price_per_sqft?: string;
+  onwards_pricing?: string;
+  configurations?: string[]; // Array: ['2BHK', '3BHK']
+  
+  // Clubhouse
+  clubhouse_size?: string;
+  clubhouse_charges?: string;
+  
+  // Costs
+  payment_plan?: string;
+  floor_rise_charges?: string;
+  car_parking_cost?: string;
+  infrastructure_charges?: string;
+  sinking_fund?: string;
+  maintenance_charges?: string;
+  
+  // Gallery Images (cached for map popups)
+  gallery_images?: string[]; // Array of URLs
+  
+  // Flexible Specs (JSONB)
+  specifications?: Record<string, any>;
+  
+  // Custom Amenities (JSONB)
+  custom_amenities?: Record<string, any>;
+  
+  // Nearby Summary (cached JSONB)
+  nearby_summary?: {
+    schools?: Array<{ name: string; distance: string }>;
+    hospitals?: Array<{ name: string; distance: string }>;
+    malls?: Array<{ name: string; distance: string }>;
+    it_parks?: Array<{ name: string; distance: string }>;
+  };
+  
+  // WhatsApp Pitch
+  whatsapp_pitch_headline?: string;
+  whatsapp_pitch_highlights?: string[];
+  whatsapp_pitch_cta?: string;
+  
+  // Builder Grade (can override developer's grade)
+  builder_grade?: BuilderGrade;
+  
+  // Media
+  hero_image_url?: string;
+  brochure_url?: string;
+  marketing_kit_url?: string;
+  
+  // Metadata
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+}
+
+// =====================================================
+// UNIT TEMPLATES
+// =====================================================
+
+export interface UnitTemplate {
+  id?: string;
+  project_id: string;
+  template_name: string; // e.g., "Tower A - 2BHK Premium"
+  config_type: string; // '2BHK', '3BHK', '4BHK'
+  
+  // Standard Areas
+  std_super_built_up_area?: number;
+  std_carpet_area?: number;
+  std_balcony_area?: number;
+  std_terrace_area?: number;
+  std_garden_area?: number;
+  std_uds_area?: number;
+  
+  wc_count?: number;
+  balcony_count?: number;
+  
+  // Standard Pricing
+  std_base_price?: number;
+  std_price_per_sqft?: number;
+  
+  // Specs (JSONB)
+  specifications?: Record<string, any>;
+  room_dimensions?: Record<string, any>;
+  
+  description?: string;
+  unit_strengths?: string;
+  unit_drawbacks?: string;
+  vastu_compliance?: string;
+  ventilation_quality?: string;
+  
+  created_at?: string;
+}
+
+// =====================================================
+// UNITS TABLE
+// =====================================================
+
+export interface Unit {
+  id?: string;
+  project_id: string;
+  template_id?: string; // FK to unit_templates
+  
+  unit_number: string; // e.g., "A-101"
+  floor_number?: number;
+  block_tower?: string;
+  facing?: string;
+  facing_available?: string[];
+  view_type?: string;
+  
+  // Status
+  status?: UnitStatus;
+  is_available?: boolean;
+  
+  // Actual Areas (can differ from template)
+  actual_sba?: number;
+  actual_carpet_area?: number;
+  balcony_area?: number;
+  private_terrace_area?: number;
+  garden_area?: number;
+  uds_area?: number;
+  
+  wc_count?: number;
+  balcony_count?: number;
+  
+  // Pricing
+  price_total: number;
+  price_per_sqft?: number;
+  plc_charges?: number;
+  floor_rise_charges?: number;
+  parking_charges?: number;
+  
+  flooring_type?: string;
+  power_load_kw?: number;
+  
+  // Custom Fields (JSONB)
+  unit_specs?: Record<string, any>;
+  custom_features?: Record<string, any>;
+  
+  is_hot_selling?: boolean;
+  is_recommended?: boolean;
+  internal_notes?: string;
+  
+  created_at?: string;
+  updated_at?: string;
+}
+
+// =====================================================
+// PROJECT AMENITIES (Many-to-Many Link)
+// =====================================================
+
+export interface ProjectAmenityLink {
+  id?: string;
+  project_id: string;
+  amenity_id: string; // FK to amenities_master
+  custom_description?: string;
+  size_specs?: string;
+  quantity?: number;
+}
+
+// =====================================================
+// ANALYSIS & SALES STRATEGY
+// =====================================================
+
+export interface ProjectAnalysis {
+  id?: string;
+  project_id: string;
+  overall_rating?: number;
+  pros?: string[];
+  cons?: string[];
+  target_customer_profile?: string;
+  closing_pitch?: string;
+  objection_handling?: string;
+  competitor_names?: string[];
+  usp?: string;
+  created_at?: string;
+}
+
+// =====================================================
+// NEARBY INFRASTRUCTURE
+// =====================================================
+
+export interface ITParkProximity {
+  id?: string;
+  project_id: string;
+  it_park_name: string;
+  distance_km?: string;
+  travel_time?: string;
+  created_at?: string;
+}
+
+export interface SchoolNearby {
+  id?: string;
+  project_id: string;
+  school_name: string;
+  distance_km?: string;
+  travel_time?: string;
+  created_at?: string;
+}
+
+export interface HospitalNearby {
+  id?: string;
+  project_id: string;
+  hospital_name: string;
+  distance_km?: string;
+  travel_time?: string;
+  created_at?: string;
+}
+
+export interface ShoppingMallNearby {
+  id?: string;
+  project_id: string;
+  mall_name: string;
+  distance_km?: string;
+  travel_time?: string;
+  created_at?: string;
+}
+
+export interface ProjectLandmark {
+  id?: string;
+  project_id: string;
+  category: string;
   name: string;
-  developer: string;
-  rera_id: string | null;
-  status: 'Pre-Launch' | 'Under Construction' | 'Ready';
+  distance_km?: number;
+  travel_time_mins?: number;
+  created_at?: string;
+}
+
+// =====================================================
+// COMPETITORS
+// =====================================================
+
+export interface ProjectCompetitor {
+  id?: string;
+  project_id: string;
+  competitor_name: string;
+  competitor_price_range?: string;
+  distance_km?: number;
+  similar_configs?: string[];
+  notes?: string;
+  created_at?: string;
+}
+
+// =====================================================
+// LEADS & SITE VISITS
+// =====================================================
+
+export interface Lead {
+  id?: string;
+  phone_number: string;
+  customer_name?: string;
+  email?: string;
+  lead_source?: string;
+  lead_status?: LeadStatus;
+  budget_min?: number;
+  budget_max?: number;
+  preferred_locations?: string;
+  preferred_config?: string;
+  assigned_to?: string;
+  last_contacted?: string;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface SiteVisit {
+  id?: string;
+  project_id: string;
+  unit_id?: string;
+  lead_id: string;
+  customer_name: string;
+  customer_phone: string;
+  visit_date: string; // DATE
+  visit_time?: string; // TIME
+  visit_status?: VisitStatus;
+  seller_confirmation_status?: 'Pending' | 'Confirmed' | 'Declined';
+  visit_notes?: string;
+  feedback?: string;
+  created_by: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// =====================================================
+// COMPOSITE TYPES FOR UI
+// =====================================================
+
+export interface ProjectFull extends Project {
+  // Joined data
+  developer?: Developer;
+  units?: Unit[];
+  unit_templates?: UnitTemplate[];
+  analysis?: ProjectAnalysis;
+  amenities?: ProjectAmenityLink[];
+  landmarks?: ProjectLandmark[];
+  competitors?: ProjectCompetitor[];
+  it_parks?: ITParkProximity[];
+  schools?: SchoolNearby[];
+  hospitals?: HospitalNearby[];
+  malls?: ShoppingMallNearby[];
+}
+
+// =====================================================
+// FILTER CRITERIA
+// =====================================================
+
+export interface FilterCriteria {
+  // Status
+  status?: ProjectStatus[];
   
   // Location
-  zone: Zone;
-  region: string;
-  address_line: string | null;
-  lat: number;
-  lng: number;
-
-  // Auto-calculated Marketing Info
-  price_min?: number;
-  price_display?: string;
-  configurations?: string[]; // ["2BHK", "3BHK"]
-
-  // Tech Specs
-  total_land_area: string | null;
-  total_units: number | null;
-  possession_date: string | null; // ISO Date string
-  construction_technology: string | null;
-  open_space_percent: number | null;
-  structure_details: string | null;
-
-  // ========== NEW FIELDS FROM PDF ==========
-  property_type: string | null;                    // Type of Development (Villas/Apartments/Township)
-  floor_levels: string | null;                     // Towers & Structure (e.g., "2B+G+18")
-  clubhouse_size: string | null;                   // Club House Total Sqft
-  builder_grade: string | null;                    // Society Highlights: Builder Grade (Premium/Tier-1)
-  construction_type: string | null;                // Society Highlights: Construction Type (RCC/Mivan)
-  elevators_per_tower: string | null;              // Elevators Per Tower (e.g., "2 Passenger + 1 Service")
-  payment_plan: string | null;                     // Payment Plan (Construction Linked/Flexible)
-  floor_rise_charges: string | null;               // Floor Rise Charges (per floor increment)
-  car_parking_cost: string | null;                 // Car Parking Cost (Included/Extra)
-  clubhouse_charges: string | null;                // Clubhouse Charges (One-time/Free)
-  infrastructure_charges: string | null;           // Infrastructure Development Charges
-  sinking_fund: string | null;                     // Sinking Fund
-  onwards_pricing: string | null;                  // Onwards Pricing (Starting price text)
-  price_per_sqft: string | null;                   // Price per sqft (formatted)
-  facing_direction: string | null;                 // Primary facing direction(s)
-  completion_duration: string | null;              // e.g., "36 months" or "Ready to Move"
-
-  // Assets
-  hero_image_url: string | null;
-  brochure_url: string | null;
-  marketing_kit_url: string | null;
+  zones?: BangaloreZone[];
+  regions?: string[];
   
-  // Flexible Field (explicitly defined)
-  specifications?: Record<string, any>; 
-}
-
-
-// 2. The Inventory: Units
-export interface ProjectUnitV7 {
-  id?: string; 
-  project_id?: string; 
-  
-  type: string;        // "3BHK Premium"
-  facing: string | null;
-  sba_sqft: number;
-  carpet_sqft: number | null;
-  uds_sqft: number | null;
-  base_price: number;
-  flooring_type: string | null;
-  power_load_kw: number | null;
-  is_available: boolean;
-  
-  // ========== NEW FIELDS FROM PDF ==========
-  wc_count: number | null;                         // WC (Water Closets/Bathrooms)
-  balcony_count: number | null;                    // BL (Balconies)
-  facing_available: string[] | null;               // Facing Available (array of directions)
-  plc_charges: number | null;                      // PLC (Preferred Location Charges)
-  
-  unit_specs?: Record<string, any>; // Support for extra unit details
-}
-
-
-// 3. Analysis & Pitch
-export interface ProjectAnalysisV7 {
-  id?: string;
-  project_id?: string;
-  overall_rating: number | null;
-  pros: string[] | null;
-  cons: string[] | null;
-  target_customer_profile: string | null;
-  closing_pitch: string | null;
-  objection_handling: string | null;
-  competitor_names: string[] | null;
-  usp?: string;
-}
-
-
-// 4. Amenities
-export interface ProjectAmenityV7 {
-  id?: string;
-  project_id?: string;
-  category: string;    // "Sports", "Leisure"
-  name: string;
-  size_specs: string | null; // "20,000 sqft"
-}
-
-
-// 5. Landmarks (Original - kept for backward compatibility)
-export interface ProjectLandmarkV7 {
-  id?: string;
-  project_id?: string;
-  category: string;    // "School", "IT Park"
-  name: string;
-  distance_km: number;
-  travel_time_mins: number | null;
-}
-
-
-// ========== NEW: Location Advantages (Numbered Categories) ==========
-export interface ProjectLocationAdvantageV7 {
-  id?: string;
-  project_id?: string;
-  category_number: number;                         // ①②③④⑤⑥⑦ (1-7)
-  category_name: string;                           // Metro/Hospitals/Schools/Shopping/Business/Connectivity/Roads
-  details: string;                                 // Description with distance/time
-  distance_km: number | null;
-  travel_time_mins: number | null;
-  created_at?: string;
-}
-
-
-// ========== NEW: Competitor Projects ==========
-export interface ProjectCompetitorV7 {
-  id?: string;
-  project_id?: string;
-  competitor_name: string;                         // e.g., "Prestige Green Gables"
-  competitor_price_range: string | null;           // e.g., "₹2.95 Cr - ₹5.0 Cr"
-  distance_km: number | null;
-  similar_configs: string[] | null;                // Overlapping BHK types
-  notes: string | null;
-  created_at?: string;
-}
-
-
-// 6. Cost Extras (GST, Club, etc.)
-export interface ProjectCostExtraV7 {
-  id?: string;
-  project_id?: string;
-  name: string;
-  cost_type: 'Fixed' | 'Percentage' | string;
-  amount: number;
-  payment_milestone: string | null;
-}
-
-
-// === COMPOSITE TYPE FOR UI ===
-// This is what we fetch from the DB (Project joined with children)
-export interface ProjectFullV7 extends ProjectV7 {
-  units?: ProjectUnitV7[]; // Optional to handle partial data during creation
-  analysis?: ProjectAnalysisV7; // Optional because it might be null
-  amenities?: ProjectAmenityV7[];
-  landmarks?: ProjectLandmarkV7[];
-  location_advantages?: ProjectLocationAdvantageV7[]; // NEW
-  competitors?: ProjectCompetitorV7[]; // NEW
-  cost_extras?: ProjectCostExtraV7[];
-}
-
-
-// === HELPER TYPE FOR MEGAPOPUP DATA ===
-export interface MegaPopupDataV7 {
-  project_data: ProjectV7;
-  units_data: ProjectUnitV7[];
-  location_advantages: ProjectLocationAdvantageV7[];
-  competitors: ProjectCompetitorV7[];
-  analysis: ProjectAnalysisV7 | null;
-  amenities: ProjectAmenityV7[];
-  cost_extras: ProjectCostExtraV7[];
-}
-
-
-// === FILTER CRITERIA (for filtering projects) ===
-export interface FilterCriteriaV7 {
-  status?: ('Pre-Launch' | 'Under Construction' | 'Ready')[];
-  zones?: ('North' | 'South' | 'East' | 'West')[];
+  // Configuration
   configurations?: string[];
+  
+  // Price Range
   minPrice?: number;
   maxPrice?: number;
+  
+  // Area Range
   minSqft?: number;
   maxSqft?: number;
+  
+  // Developer
   developers?: string[];
+  developer_ids?: string[];
+  
+  // Possession
   possession_year?: string;
-  builder_grade?: string[];
-  property_type?: string[];
+  
+  // Builder Grade
+  builder_grades?: BuilderGrade[];
+  
+  // Property Type
+  property_types?: string[];
+  
+  // Amenities
+  required_amenities?: string[];
+}
+
+// =====================================================
+// PROPERTY DRAFTS (Vendor Submissions)
+// =====================================================
+
+export interface PropertyDraft {
+  id?: string;
+  vendor_id?: string;
+  submission_data: ProjectFull; // JSONB containing full project data
+  status?: 'pending' | 'approved' | 'rejected';
+  admin_notes?: string;
+  created_at?: string;
 }

@@ -9,7 +9,7 @@ import SearchBar from './SearchBar'
 
 import { Property, FilterCriteria } from '@/modules/inventory/types';
 import { filterProperties } from '@/modules/inventory/utils/filter-engine';
-import { getProjectsV7 } from '@/modules/inventory/actions-v7';
+import { getProjects } from '@/modules/inventory/actions-v7';
 
 interface DashboardContextType {
   properties: Property[]

@@ -1,203 +1,511 @@
-'use server'
+// src/modules/inventory/actions-v7.ts
+// Server actions for fetching and filtering properties (READ operations)
+// Updated to match REAL_ESTATE_SCHEMA_FINAL.sql
 
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import { Property } from './types'
-import { ProjectFullV7 } from './types-v7'
+'use server';
 
-async function createClient() {
-  const cookieStore = await cookies()
-  
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {
-            // Handle cookie setting errors
-          }
-        },
-      },
-    }
-  )
-}
+import { createClient } from '@/core/db/server';
+import {
+  Project,
+  ProjectFull,
+  FilterCriteria,
+  ProjectStatus,
+  BangaloreZone,
+} from './types-v7';
 
-export async function getProjectsV7(): Promise<Property[]> {
-  const supabase = await createClient()
+// =====================================================
+// FETCH ALL PROJECTS (with filters)
+// =====================================================
 
-  const { data: projects, error: projectsError } = await supabase
-    .from('projects')
-    .select('*')
+export async function fetchProjectsFiltered(
+  filters?: FilterCriteria
+): Promise<{ success: boolean; data?: ProjectFull[]; error?: string }> {
+  try {
+    const supabase = await createClient();
 
-  if (projectsError) {
-    console.error('Error fetching projects:', projectsError)
-    return []
-  }
+    // Start query
+    let query = supabase
+      .from('projects')
+      .select(
+        `
+        *,
+        developer:developers(
+          id,
+          developer_name,
+          builder_grade,
+          logo_url,
+          reputation_score
+        )
+      `
+      )
+      .order('created_at', { ascending: false });
 
-  if (!projects || projects.length === 0) {
-    return []
-  }
+    // =====================================================
+    // FILTER: Project Status (hide DRAFT/PENDING from public)
+    // =====================================================
+    
+    // Check user role
+    const { data: { user } } = await supabase.auth.getUser();
+    const isAdmin = user?.user_metadata?.role === 'Super Admin' || 
+                    user?.user_metadata?.role === 'Admin' ||
+                    user?.user_metadata?.role === 'Manager';
 
-  // Fetch related data for all projects
-  const projectIds = projects.map(p => p.id)
-
-  const [
-    { data: units },
-    { data: analysis },
-    { data: amenities },
-    { data: landmarks },
-    { data: locationAdvantages },
-    { data: competitors },
-    { data: costExtras }
-  ] = await Promise.all([
-    supabase.from('project_units').select('*').in('project_id', projectIds),
-    supabase.from('project_analysis').select('*').in('project_id', projectIds),
-    supabase.from('project_amenities').select('*').in('project_id', projectIds),
-    supabase.from('project_landmarks').select('*').in('project_id', projectIds),
-    supabase.from('project_location_advantages').select('*').in('project_id', projectIds),
-    supabase.from('project_competitors').select('*').in('project_id', projectIds),
-    supabase.from('project_cost_extras').select('*').in('project_id', projectIds)
-  ])
-
-  // Map to Property format
-  return projects.map(project => {
-    const projectUnits = units?.filter(u => u.project_id === project.id) || []
-    const projectAnalysis = analysis?.find(a => a.project_id === project.id)
-    const projectAmenities = amenities?.filter(a => a.project_id === project.id) || []
-    const projectLandmarks = landmarks?.filter(l => l.project_id === project.id) || []
-    const projectLocationAdvantages = locationAdvantages?.filter(la => la.project_id === project.id) || []
-    const projectCompetitors = competitors?.filter(c => c.project_id === project.id) || []
-    const projectCostExtras = costExtras?.filter(ce => ce.project_id === project.id) || []
-
-    // Group amenities by category
-    const amenitiesDetailed: Record<string, string[]> = {}
-    projectAmenities.forEach(amenity => {
-      if (!amenitiesDetailed[amenity.category]) {
-        amenitiesDetailed[amenity.category] = []
-      }
-      amenitiesDetailed[amenity.category].push(amenity.name)
-    })
-
-    // Build social_infra from location advantages and landmarks
-    const socialInfra: Record<string, string> = {}
-    projectLocationAdvantages.forEach(la => {
-      socialInfra[la.category_name] = la.details
-    })
-
-    // Get configurations from units or project
-    const configurations = projectUnits.length > 0
-      ? [...new Set(projectUnits.map(u => u.type))]
-      : project.configurations || []
-
-    // Calculate price range
-    const prices = projectUnits.map(u => u.base_price).filter(p => p > 0)
-    const minPrice = prices.length > 0 ? Math.min(...prices) : project.price_min || 0
-    const maxPrice = prices.length > 0 ? Math.max(...prices) : project.price_min || 0
-    const sqFtRange = projectUnits.length > 0
-      ? `${Math.min(...projectUnits.map(u => u.sba_sqft))}-${Math.max(...projectUnits.map(u => u.sba_sqft))} sqft`
-      : 'N/A'
-
-    // Flatten amenities for simple list
-    const amenitiesList = Object.values(amenitiesDetailed).flat()
-
-    const property: Property = {
-      id: project.id,
-      name: project.name,
-      developer: project.developer,
-      location_area: project.region,
-      zone: project.zone,
-      lat: project.lat,
-      lng: project.lng,
-      price_display: project.price_display || formatPrice(minPrice),
-      price_per_sqft: project.price_per_sqft || 'N/A',
-      price_value: minPrice,
-      sq_ft_range: sqFtRange,
-      configurations,
-      status: project.status,
-      rera_id: project.rera_id,
-      property_type: project.property_type,
-      floor_levels: project.floor_levels,
-      facing_direction: project.facing_direction,
-      completion_date: project.possession_date,
-      completion_duration: project.completion_duration,
-      
-      // For compatibility
-      totalUnits: project.total_units,
-      priceRange: `${formatPrice(minPrice)} - ${formatPrice(maxPrice)}`,
-      
-      // Amenities
-      amenities: amenitiesList,
-      amenities_detailed: amenitiesDetailed,
-      
-      // Social Infrastructure
-      social_infra: socialInfra,
-      
-      // Specs with sales_analysis included
-      specs: {
-        ...project.specifications,
-        'Type of Development': project.property_type,
-        'Total Land Area': project.total_land_area,
-        'Total Units': project.total_units,
-        'Open Space %': project.open_space_percent ? `${project.open_space_percent}%` : null,
-        'Builder Grade': project.builder_grade,
-        'Construction Type': project.construction_type,
-        'Elevators per Tower': project.elevators_per_tower,
-        'Payment Plan': project.payment_plan,
-        'Clubhouse Size': project.clubhouse_size,
-        'Floor Rise Charges': project.floor_rise_charges,
-        'Car Parking Cost': project.car_parking_cost,
-        Maintenance: project.specifications?.Maintenance,
-        
-        // IMPORTANT: Add sales_analysis to specs
-        sales_analysis: projectAnalysis ? {
-          overall_rating: projectAnalysis.overall_rating,
-          pros: projectAnalysis.pros,
-          cons: projectAnalysis.cons,
-          whom_to_target: projectAnalysis.target_customer_profile,
-          pitch_angle: projectAnalysis.closing_pitch,
-          usp: projectAnalysis.pros?.slice(0, 3).join(', '),
-          objection_handling: projectAnalysis.objection_handling,
-          competitor_names: projectAnalysis.competitor_names
-        } : null,
-        
-        // Add cost_extras
-        cost_extras: projectCostExtras.map(ce => ({
-          name: ce.name,
-          cost_type: ce.cost_type,
-          amount: ce.amount,
-          payment_milestone: ce.payment_milestone
-        }))
-      },
-      
-      // Media placeholder
-      media: {
-        images: project.hero_image_url ? [project.hero_image_url] : [],
-        floor_plan: project.brochure_url,
-        videos: []
-      },
-      
-      // Store raw units data for future use
-      units: projectUnits,
-      competitors: projectCompetitors
+    if (!isAdmin) {
+      // Public users: only show live projects
+      query = query.not('project_status', 'in', '("DRAFT","PENDING_APPROVAL")');
+    } else if (filters?.status && filters.status.length > 0) {
+      // Admin with status filter
+      query = query.in('project_status', filters.status);
     }
 
-    return property
-  })
+    // =====================================================
+    // FILTER: Zones
+    // =====================================================
+    if (filters?.zones && filters.zones.length > 0) {
+      query = query.in('bangalore_zone', filters.zones);
+    }
+
+    // =====================================================
+    // FILTER: Regions
+    // =====================================================
+    if (filters?.regions && filters.regions.length > 0) {
+      query = query.in('region', filters.regions);
+    }
+
+    // =====================================================
+    // FILTER: Price Range (using cached price_min/price_max)
+    // =====================================================
+    if (filters?.minPrice !== undefined && filters.minPrice > 0) {
+      query = query.gte('price_min', filters.minPrice);
+    }
+    if (filters?.maxPrice !== undefined && filters.maxPrice > 0) {
+      query = query.lte('price_max', filters.maxPrice);
+    }
+
+    // =====================================================
+    // FILTER: Developer IDs
+    // =====================================================
+    if (filters?.developer_ids && filters.developer_ids.length > 0) {
+      query = query.in('developer_id', filters.developer_ids);
+    }
+
+    // =====================================================
+    // FILTER: Builder Grade
+    // =====================================================
+    if (filters?.builder_grades && filters.builder_grades.length > 0) {
+      query = query.in('builder_grade', filters.builder_grades);
+    }
+
+    // =====================================================
+    // FILTER: Property Types
+    // =====================================================
+    if (filters?.property_types && filters.property_types.length > 0) {
+      query = query.in('property_type', filters.property_types);
+    }
+
+    // =====================================================
+    // FILTER: Configurations (uses cached array)
+    // =====================================================
+    if (filters?.configurations && filters.configurations.length > 0) {
+      // PostgreSQL array overlap operator
+      query = query.overlaps('configurations', filters.configurations);
+    }
+
+    // Execute query
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Fetch projects error:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data: data as ProjectFull[] };
+  } catch (error: any) {
+    console.error('Fetch projects exception:', error);
+    return { success: false, error: error.message };
+  }
 }
 
-function formatPrice(price: number): string {
-  if (price >= 10000000) {
-    return `₹${(price / 10000000).toFixed(2)} Cr`
-  } else if (price >= 100000) {
-    return `₹${(price / 100000).toFixed(2)} L`
+// =====================================================
+// FETCH SINGLE PROJECT BY ID (with all relationships)
+// =====================================================
+
+export async function fetchProjectById(
+  projectId: string
+): Promise<{ success: boolean; data?: ProjectFull; error?: string }> {
+  try {
+    const supabase = await createClient();
+
+    // Fetch project with developer
+    const { data: project, error: projectError } = await supabase
+      .from('projects')
+      .select(
+        `
+        *,
+        developer:developers(*)
+      `
+      )
+      .eq('id', projectId)
+      .single();
+
+    if (projectError) {
+      return { success: false, error: projectError.message };
+    }
+
+    // Fetch related data in parallel
+    const [
+      { data: units },
+      { data: templates },
+      { data: analysis },
+      { data: amenityLinks },
+      { data: landmarks },
+      { data: competitors },
+      { data: itParks },
+      { data: schools },
+      { data: hospitals },
+      { data: malls },
+    ] = await Promise.all([
+      supabase.from('units').select('*').eq('project_id', projectId),
+      supabase.from('unit_templates').select('*').eq('project_id', projectId),
+      supabase.from('project_analysis').select('*').eq('project_id', projectId).single(),
+      supabase
+        .from('project_amenities_link')
+        .select(
+          `
+          *,
+          amenity:amenities_master(amenity_name, category)
+        `
+        )
+        .eq('project_id', projectId),
+      supabase.from('project_landmarks').select('*').eq('project_id', projectId),
+      supabase.from('project_competitors').select('*').eq('project_id', projectId),
+      supabase.from('it_parks_proximity').select('*').eq('project_id', projectId),
+      supabase.from('schools_nearby').select('*').eq('project_id', projectId),
+      supabase.from('hospitals_nearby').select('*').eq('project_id', projectId),
+      supabase.from('shopping_malls_nearby').select('*').eq('project_id', projectId),
+    ]);
+
+    const fullProject: ProjectFull = {
+      ...project,
+      units: units || [],
+      unit_templates: templates || [],
+      analysis: analysis || undefined,
+      amenities: amenityLinks || [],
+      landmarks: landmarks || [],
+      competitors: competitors || [],
+      it_parks: itParks || [],
+      schools: schools || [],
+      hospitals: hospitals || [],
+      malls: malls || [],
+    };
+
+    return { success: true, data: fullProject };
+  } catch (error: any) {
+    console.error('Fetch project by ID error:', error);
+    return { success: false, error: error.message };
   }
-  return `₹${price.toLocaleString()}`
+}
+
+// =====================================================
+// FETCH PROJECTS FOR MAP (lightweight, only needed fields)
+// =====================================================
+
+export async function fetchProjectsForMap(): Promise<{
+  success: boolean;
+  data?: Array<{
+    id: string;
+    project_name: string;
+    latitude: number;
+    longitude: number;
+    bangalore_zone?: BangaloreZone;
+    price_display?: string;
+    configurations?: string[];
+    hero_image_url?: string;
+    gallery_images?: string[];
+    developer_name?: string;
+    project_status?: ProjectStatus;
+  }>;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    // Check if user is admin
+    const { data: { user } } = await supabase.auth.getUser();
+    const isAdmin = user?.user_metadata?.role === 'Super Admin' || 
+                    user?.user_metadata?.role === 'Admin' ||
+                    user?.user_metadata?.role === 'Manager';
+
+    let query = supabase
+      .from('projects')
+      .select(
+        `
+        id,
+        project_name,
+        latitude,
+        longitude,
+        bangalore_zone,
+        price_display,
+        configurations,
+        hero_image_url,
+        gallery_images,
+        project_status,
+        developer:developers(developer_name)
+      `
+      );
+
+    // Filter out drafts for non-admins
+    if (!isAdmin) {
+      query = query.not('project_status', 'in', '("DRAFT","PENDING_APPROVAL")');
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Fetch map projects error:', error);
+      return { success: false, error: error.message };
+    }
+
+    // Flatten developer name
+    const flatData = data?.map((p: any) => ({
+      ...p,
+      developer_name: p.developer?.developer_name || 'Unknown Developer',
+    }));
+
+    return { success: true, data: flatData };
+  } catch (error: any) {
+    console.error('Fetch map projects exception:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// =====================================================
+// FETCH FILTER OPTIONS (for dropdowns)
+// =====================================================
+
+export async function fetchFilterOptions(): Promise<{
+  success: boolean;
+  data?: {
+    zones: BangaloreZone[];
+    regions: string[];
+    developers: Array<{ id: string; name: string }>;
+    configurations: string[];
+    property_types: string[];
+  };
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    // Fetch distinct values
+    const [
+      { data: projects },
+      { data: developers },
+    ] = await Promise.all([
+      supabase
+        .from('projects')
+        .select('bangalore_zone, region, property_type, configurations')
+        .not('project_status', 'in', '("DRAFT","PENDING_APPROVAL")'),
+      supabase.from('developers').select('id, developer_name').eq('is_active', true),
+    ]);
+
+    // Extract unique values
+    const zones = Array.from(
+      new Set(
+        projects
+          ?.map((p) => p.bangalore_zone)
+          .filter((z): z is BangaloreZone => z != null)
+      )
+    );
+
+    const regions = Array.from(
+      new Set(
+        projects?.map((p) => p.region).filter((r): r is string => r != null && r !== '')
+      )
+    );
+
+    const propertyTypes = Array.from(
+      new Set(
+        projects
+          ?.map((p) => p.property_type)
+          .filter((pt): pt is string => pt != null && pt !== '')
+      )
+    );
+
+    // Flatten configurations array
+    const allConfigs = projects?.flatMap((p) => p.configurations || []) || [];
+    const configurations = Array.from(new Set(allConfigs));
+
+    const developersList =
+      developers?.map((d) => ({
+        id: d.id,
+        name: d.developer_name,
+      })) || [];
+
+    return {
+      success: true,
+      data: {
+        zones,
+        regions,
+        developers: developersList,
+        configurations,
+        property_types: propertyTypes,
+      },
+    };
+  } catch (error: any) {
+    console.error('Fetch filter options error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// =====================================================
+// FETCH AMENITIES MASTER LIST
+// =====================================================
+
+export async function fetchAmenitiesMaster(): Promise<{
+  success: boolean;
+  data?: Array<{ id: string; amenity_name: string; category: string }>;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+      .from('amenities_master')
+      .select('id, amenity_name, category')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('Fetch amenities error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// =====================================================
+// FETCH DEVELOPERS LIST
+// =====================================================
+
+export async function fetchDevelopers(): Promise<{
+  success: boolean;
+  data?: Array<{
+    id: string;
+    developer_name: string;
+    builder_grade?: string;
+    logo_url?: string;
+  }>;
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+      .from('developers')
+      .select('id, developer_name, builder_grade, logo_url')
+      .order('developer_name', { ascending: true });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('Fetch developers error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// =====================================================
+// SEARCH PROJECTS BY NAME OR DEVELOPER
+// =====================================================
+
+export async function searchProjects(
+  searchTerm: string
+): Promise<{ success: boolean; data?: ProjectFull[]; error?: string }> {
+  try {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+      .from('projects')
+      .select(
+        `
+        *,
+        developer:developers(developer_name, builder_grade)
+      `
+      )
+      .or(`project_name.ilike.%${searchTerm}%,region.ilike.%${searchTerm}%`)
+      .not('project_status', 'in', '("DRAFT","PENDING_APPROVAL")')
+      .limit(20);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data: data as ProjectFull[] };
+  } catch (error: any) {
+    console.error('Search projects error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// =====================================================
+// FETCH UNITS FOR A PROJECT
+// =====================================================
+
+export async function fetchUnitsByProject(
+  projectId: string,
+  filters?: {
+    config_type?: string;
+    min_price?: number;
+    max_price?: number;
+    facing?: string;
+    status?: string;
+  }
+): Promise<{ success: boolean; data?: any[]; error?: string }> {
+  try {
+    const supabase = await createClient();
+
+    let query = supabase
+      .from('units')
+      .select(
+        `
+        *,
+        template:unit_templates(template_name, config_type)
+      `
+      )
+      .eq('project_id', projectId);
+
+    // Apply filters
+    if (filters?.config_type) {
+      query = query.eq('template.config_type', filters.config_type);
+    }
+    if (filters?.min_price) {
+      query = query.gte('price_total', filters.min_price);
+    }
+    if (filters?.max_price) {
+      query = query.lte('price_total', filters.max_price);
+    }
+    if (filters?.facing) {
+      query = query.eq('facing', filters.facing);
+    }
+    if (filters?.status) {
+      query = query.eq('status', filters.status);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('Fetch units error:', error);
+    return { success: false, error: error.message };
+  }
 }
