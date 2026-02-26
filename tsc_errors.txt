@@ -1,0 +1,138 @@
+﻿src/app/(dashboard)/dashboard/MediaGallery.tsx(36,27): error TS2339: Property 'image' does not exist on type 'ProjectV7'.
+src/app/(dashboard)/dashboard/MediaGallery.tsx(36,45): error TS2339: Property 'image' does not exist on type 'ProjectV7'.
+src/app/(dashboard)/dashboard/MediaGallery.tsx(65,32): error TS2339: Property 'name' does not exist on type 'ProjectV7'.
+src/app/(dashboard)/dashboard/MediaGallery.tsx(76,29): error TS2339: Property 'name' does not exist on type 'ProjectV7'.
+src/app/(dashboard)/dashboard/MediaGallery.tsx(80,31): error TS2339: Property 'status' does not exist on type 'ProjectV7'.
+src/app/(dashboard)/dashboard/MediaGallery.tsx(84,43): error TS2339: Property 'developer' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MediaGallery.tsx(99,73): error TS2551: Property 'price_display' does not exist on type 'ProjectV7'. Did you mean 'pricedisplay'?
+src/app/(dashboard)/dashboard/MegaPopup.tsx(36,66): error TS2339: Property 'developer' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/AlternativesTab.tsx(46,42): error TS2551: Property 'price_min' does not exist on type 'ProjectFullV7'. Did you mean 'pricemin'?
+src/app/(dashboard)/dashboard/MegaPopup/AlternativesTab.tsx(47,42): error TS2551: Property 'price_max' does not exist on type 'ProjectFullV7'. Did you mean 'pricemax'?
+src/app/(dashboard)/dashboard/MegaPopup/AlternativesTab.tsx(54,30): error TS2339: Property 'latitude' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/AlternativesTab.tsx(55,30): error TS2339: Property 'longitude' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/AlternativesTab.tsx(56,23): error TS2339: Property 'latitude' does not exist on type 'ProjectV7'.
+src/app/(dashboard)/dashboard/MegaPopup/AlternativesTab.tsx(57,23): error TS2339: Property 'longitude' does not exist on type 'ProjectV7'.
+src/app/(dashboard)/dashboard/MegaPopup/AlternativesTab.tsx(63,32): error TS2551: Property 'price_min' does not exist on type 'ProjectV7'. Did you mean 'pricemin'?
+src/app/(dashboard)/dashboard/MegaPopup/AlternativesTab.tsx(64,32): error TS2551: Property 'price_max' does not exist on type 'ProjectV7'. Did you mean 'pricemax'?
+src/app/(dashboard)/dashboard/MegaPopup/AlternativesTab.tsx(71,44): error TS2339: Property 'builder_grade' does not exist on type 'ProjectV7'.
+src/app/(dashboard)/dashboard/MegaPopup/AlternativesTab.tsx(71,63): error TS2339: Property 'builder_grade' does not exist on type 'ProjectV7'.
+src/app/(dashboard)/dashboard/MegaPopup/AlternativesTab.tsx(71,90): error TS2339: Property 'builder_grade' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/AlternativesTab.tsx(178,46): error TS2339: Property 'name' does not exist on type 'ScoredAlternative'.
+src/app/(dashboard)/dashboard/MegaPopup/AlternativesTab.tsx(202,46): error TS2551: Property 'price_display' does not exist on type 'ScoredAlternative'. Did you mean 'pricedisplay'?
+src/app/(dashboard)/dashboard/MegaPopup/Header.tsx(4,26): error TS2305: Module '"@/modules/inventory/types-v7"' has no exported member 'ProjectDeveloperV7'.
+src/app/(dashboard)/dashboard/MegaPopup/Header.tsx(9,51): error TS2339: Property 'address' does not exist on type 'ProjectV7'.
+src/app/(dashboard)/dashboard/MegaPopup/Header.tsx(12,20): error TS2339: Property 'name' does not exist on type 'ProjectV7'.
+src/app/(dashboard)/dashboard/MegaPopup/Header.tsx(13,22): error TS2339: Property 'status' does not exist on type 'ProjectV7'.
+src/app/(dashboard)/dashboard/MegaPopup/Header.tsx(14,21): error TS2339: Property 'builder_grade' does not exist on type 'ProjectV7'.
+src/app/(dashboard)/dashboard/MegaPopup/Header.tsx(15,21): error TS2551: Property 'price_display' does not exist on type 'ProjectV7'. Did you mean 'pricedisplay'?
+src/app/(dashboard)/dashboard/MegaPopup/LocationTab.tsx(28,17): error TS2339: Property 'connectivity' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/LocationTab.tsx(34,23): error TS2339: Property 'connectivity' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/LocationTab.tsx(37,80): error TS2339: Property 'connectivity' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/LocationTab.tsx(40,23): error TS2339: Property 'connectivity' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/LocationTab.tsx(43,80): error TS2339: Property 'connectivity' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/LocationTab.tsx(46,23): error TS2339: Property 'connectivity' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/LocationTab.tsx(49,80): error TS2339: Property 'connectivity' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/LocationTab.tsx(52,23): error TS2339: Property 'connectivity' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/LocationTab.tsx(55,80): error TS2339: Property 'connectivity' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/LocationTab.tsx(58,23): error TS2339: Property 'connectivity' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/LocationTab.tsx(61,80): error TS2339: Property 'connectivity' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/OverviewTab.tsx(11,11): error TS2339: Property 'analysis' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/OverviewTab.tsx(46,17): error TS2339: Property 'developer' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/OverviewTab.tsx(49,23): error TS2339: Property 'developer' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/OverviewTab.tsx(50,34): error TS2339: Property 'developer' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/OverviewTab.tsx(50,68): error TS2339: Property 'developer' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/OverviewTab.tsx(53,74): error TS2339: Property 'developer' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/OverviewTab.tsx(54,63): error TS2339: Property 'developer' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/OverviewTab.tsx(54,101): error TS2339: Property 'developer' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/OverviewTab.tsx(54,205): error TS2339: Property 'developer' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/OverviewTab.tsx(57,21): error TS2339: Property 'developer' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/OverviewTab.tsx(58,119): error TS2339: Property 'developer' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/OverviewTab.tsx(63,67): error TS2339: Property 'developer' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/OverviewTab.tsx(63,107): error TS2339: Property 'developer' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/OverviewTab.tsx(67,67): error TS2339: Property 'developer' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/OverviewTab.tsx(71,67): error TS2339: Property 'developer' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/OverviewTab.tsx(75,67): error TS2339: Property 'developer' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/PricingTab.tsx(7,49): error TS2339: Property 'cost_extras' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/PricingTab.tsx(12,25): error TS2339: Property 'maintenance_charges' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/PricingTab.tsx(13,23): error TS2339: Property 'clubhouse_size' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(8,20): error TS2339: Property 'towers' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(9,20): error TS2339: Property 'floor_levels' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(12,23): error TS2339: Property 'open_space' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(14,23): error TS2339: Property 'clubhouse_size' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(15,26): error TS2339: Property 'builder_grade' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(34,93): error TS2339: Property 'technical_specs' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(36,52): error TS2339: Property 'towers' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(36,71): error TS2339: Property 'technical_specs' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(37,58): error TS2339: Property 'floor_levels' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(37,83): error TS2339: Property 'technical_specs' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(38,89): error TS2339: Property 'technical_specs' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(39,87): error TS2339: Property 'technical_specs' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(40,56): error TS2339: Property 'open_space' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(40,81): error TS2339: Property 'open_space' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(48,91): error TS2339: Property 'technical_specs' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(49,96): error TS2339: Property 'technical_specs' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(56,87): error TS2339: Property 'technical_specs' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(57,90): error TS2339: Property 'technical_specs' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(71,94): error TS2339: Property 'technical_specs' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(71,132): error TS2339: Property 'technical_specs' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(75,62): error TS2339: Property 'technical_specs' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(75,187): error TS2339: Property 'technical_specs' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(79,58): error TS2339: Property 'technical_specs' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(79,96): error TS2339: Property 'technical_specs' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(83,62): error TS2339: Property 'technical_specs' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/SpecsTab.tsx(83,138): error TS2339: Property 'technical_specs' does not exist on type 'ProjectFullV7'.
+src/app/(dashboard)/dashboard/MegaPopup/UnitsTab.tsx(31,24): error TS2551: Property 'price_total' does not exist on type 'ProjectUnitV7'. Did you mean 'pricetotal'?
+src/app/(dashboard)/dashboard/MegaPopup/UnitsTab.tsx(32,24): error TS2551: Property 'price_total' does not exist on type 'ProjectUnitV7'. Did you mean 'pricetotal'?
+src/app/(dashboard)/dashboard/MegaPopup/UnitsTab.tsx(62,64): error TS2551: Property 'unit_number' does not exist on type 'ProjectUnitV7'. Did you mean 'unitnumber'?
+src/app/(dashboard)/dashboard/MegaPopup/UnitsTab.tsx(72,22): error TS2551: Property 'wc_count' does not exist on type 'ProjectUnitV7'. Did you mean 'wccount'?
+src/app/(dashboard)/dashboard/MegaPopup/UnitsTab.tsx(72,38): error TS2551: Property 'wc_count' does not exist on type 'ProjectUnitV7'. Did you mean 'wccount'?
+src/app/(dashboard)/dashboard/MegaPopup/UnitsTab.tsx(73,22): error TS2551: Property 'balcony_count' does not exist on type 'ProjectUnitV7'. Did you mean 'balconycount'?
+src/app/(dashboard)/dashboard/MegaPopup/UnitsTab.tsx(73,46): error TS2551: Property 'balcony_count' does not exist on type 'ProjectUnitV7'. Did you mean 'balconycount'?
+src/app/(dashboard)/dashboard/page.tsx(149,40): error TS2551: Property 'price_max' does not exist on type 'ProjectV7'. Did you mean 'pricemax'?
+src/app/(dashboard)/dashboard/page.tsx(149,58): error TS2551: Property 'price_max' does not exist on type 'ProjectV7'. Did you mean 'pricemax'?
+src/app/(dashboard)/dashboard/page.tsx(153,40): error TS2551: Property 'price_min' does not exist on type 'ProjectV7'. Did you mean 'pricemin'?
+src/app/(dashboard)/dashboard/page.tsx(153,58): error TS2551: Property 'price_min' does not exist on type 'ProjectV7'. Did you mean 'pricemin'?
+src/app/(dashboard)/dashboard/page.tsx(158,81): error TS2339: Property 'builder_grade' does not exist on type 'ProjectV7'.
+src/app/(dashboard)/dashboard/page.tsx(185,76): error TS2339: Property 'latitude' does not exist on type 'ProjectV7'.
+src/app/(dashboard)/dashboard/page.tsx(185,96): error TS2339: Property 'longitude' does not exist on type 'ProjectV7'.
+src/app/(dashboard)/dashboard/PropertyListContainer.tsx(61,22): error TS2339: Property 'latitude' does not exist on type 'ProjectV7'.
+src/app/(dashboard)/dashboard/PropertyListContainer.tsx(62,22): error TS2339: Property 'longitude' does not exist on type 'ProjectV7'.
+src/app/(dashboard)/dashboard/PropertyListContainer.tsx(85,29): error TS2339: Property 'image' does not exist on type 'ProjectV7'.
+src/app/(dashboard)/dashboard/PropertyListContainer.tsx(87,37): error TS2339: Property 'image' does not exist on type 'ProjectV7'.
+src/app/(dashboard)/dashboard/PropertyListContainer.tsx(88,37): error TS2339: Property 'name' does not exist on type 'ProjectV7'.
+src/app/(dashboard)/dashboard/PropertyListContainer.tsx(104,31): error TS2339: Property 'name' does not exist on type 'ProjectV7'.
+src/app/(dashboard)/dashboard/PropertyListContainer.tsx(111,33): error TS2339: Property 'address' does not exist on type 'ProjectV7'.
+src/app/(dashboard)/dashboard/PropertyListContainer.tsx(120,33): error TS2551: Property 'price_display' does not exist on type 'ProjectV7'. Did you mean 'pricedisplay'?
+src/modules/booking/components/BookingForm.tsx(64,62): error TS2339: Property 'name' does not exist on type 'ProjectV7'.
+src/modules/inventory/actions-v7.ts(179,14): error TS2352: Conversion of type '{ id: string; project_name: string; projectstatus: string; developer_buildergrade: string; city_zone: string; region: string; address_line: string; lat: number; lng: number; pricedisplay: string; ... 72 more ...; competitors: ProjectCompetitorV7[]; }' to type 'ProjectFullV7' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Types of property 'overall_rating' are incompatible.
+    Type 'Decimal' is not comparable to type 'number'.
+src/modules/inventory/components/FilterModal.tsx(126,62): error TS2345: Argument of type '{ possessionYear: string; status?: string[]; city_zones?: CityZone[]; minPrice?: number; maxPrice?: number; configurations?: string[]; facing?: string[]; possessionMonth?: string; amenities?: string[]; builderGrades?: string[]; sqFtMin?: number; } | { ...; }' is not assignable to parameter of type 'FilterCriteriaV7'.
+  Object literal may only specify known properties, and 'possessionYear' does not exist in type 'FilterCriteriaV7'.
+src/modules/inventory/components/FilterModal.tsx(126,91): error TS2339: Property 'possessionYear' does not exist on type 'FilterCriteriaV7 | { status: any[]; city_zones: any[]; configurations: any[]; facing: any[]; minPrice: number; maxPrice: number; sqFtMin: number; sqFtMax: number; possessionYear: string; }'.
+  Property 'possessionYear' does not exist on type 'FilterCriteriaV7'.
+src/modules/inventory/components/FilterModal.tsx(127,105): error TS2339: Property 'possessionYear' does not exist on type 'FilterCriteriaV7 | { status: any[]; city_zones: any[]; configurations: any[]; facing: any[]; minPrice: number; maxPrice: number; sqFtMin: number; sqFtMax: number; possessionYear: string; }'.
+  Property 'possessionYear' does not exist on type 'FilterCriteriaV7'.
+src/modules/inventory/components/FilterModal.tsx(173,37): error TS2339: Property 'sqFtMax' does not exist on type 'FilterCriteriaV7 | { status: any[]; city_zones: any[]; configurations: any[]; facing: any[]; minPrice: number; maxPrice: number; sqFtMin: number; sqFtMax: number; possessionYear: string; }'.
+  Property 'sqFtMax' does not exist on type 'FilterCriteriaV7'.
+src/modules/inventory/components/FilterModal.tsx(174,62): error TS2345: Argument of type '{ sqFtMax: number; status?: string[]; city_zones?: CityZone[]; minPrice?: number; maxPrice?: number; configurations?: string[]; facing?: string[]; possessionMonth?: string; amenities?: string[]; builderGrades?: string[]; sqFtMin?: number; } | { ...; }' is not assignable to parameter of type 'FilterCriteriaV7'.
+  Object literal may only specify known properties, and 'sqFtMax' does not exist in type 'FilterCriteriaV7'.
+src/modules/inventory/components/ProjectList.tsx(25,59): error TS2339: Property 'name' does not exist on type 'ExtendedProjectV7'.
+src/modules/inventory/components/ProjectList.tsx(35,21): error TS2551: Property 'price_display' does not exist on type 'ExtendedProjectV7'. Did you mean 'pricedisplay'?
+src/modules/inventory/utils/filter-engine.ts(31,32): error TS2551: Property 'price_min' does not exist on type 'ProjectV7'. Did you mean 'pricemin'?
+src/modules/inventory/utils/filter-engine.ts(32,32): error TS2551: Property 'price_max' does not exist on type 'ProjectV7'. Did you mean 'pricemax'?
+src/modules/inventory/utils/filter-engine.ts(58,20): error TS2339: Property 'builder_grade' does not exist on type 'ProjectV7'.
+src/modules/inventory/utils/filter-engine.ts(58,78): error TS2339: Property 'builder_grade' does not exist on type 'ProjectV7'.
+src/modules/inventory/utils/filter-engine.ts(71,18): error TS2339: Property 'possessionYear' does not exist on type 'FilterCriteriaV7'.
+src/modules/inventory/utils/filter-engine.ts(74,36): error TS2339: Property 'possessionYear' does not exist on type 'FilterCriteriaV7'.
+src/modules/map-engine/components/LeafletMap.tsx(68,33): error TS2339: Property 'latitude' does not exist on type 'ProjectV7'.
+src/modules/map-engine/components/LeafletMap.tsx(68,56): error TS2339: Property 'longitude' does not exist on type 'ProjectV7'.
+src/modules/map-engine/components/LeafletMap.tsx(178,23): error TS2339: Property 'latitude' does not exist on type 'ProjectV7'.
+src/modules/map-engine/components/LeafletMap.tsx(179,23): error TS2339: Property 'longitude' does not exist on type 'ProjectV7'.
+src/modules/map-engine/components/LeafletMap.tsx(180,23): error TS2339: Property 'latitude' does not exist on type 'ProjectV7'.
+src/modules/map-engine/components/LeafletMap.tsx(181,23): error TS2339: Property 'longitude' does not exist on type 'ProjectV7'.
+src/modules/map-engine/components/LeafletMap.tsx(188,31): error TS2339: Property 'latitude' does not exist on type 'ProjectV7'.
+src/modules/map-engine/components/LeafletMap.tsx(188,46): error TS2339: Property 'longitude' does not exist on type 'ProjectV7'.
+src/modules/map-engine/components/LeafletMap.tsx(200,42): error TS2339: Property 'latitude' does not exist on type 'ProjectV7'.
+src/modules/map-engine/components/LeafletMap.tsx(200,57): error TS2339: Property 'longitude' does not exist on type 'ProjectV7'.
+src/modules/map-engine/components/LeafletMap.tsx(200,73): error TS2339: Property 'name' does not exist on type 'ProjectV7'.

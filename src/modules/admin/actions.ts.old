@@ -1,0 +1,676 @@
+// src/modules/admin/actions.ts
+// ============================================
+// Admin CRUD operations for REAL_ESTATE_SCHEMA_FINAL.sql
+// ============================================
+
+'use server';
+
+import { createClient } from '@/core/db/server';
+import type {
+  ProjectV7,
+  Developer,
+  ProjectAddress,
+  UnitTemplate,
+  Unit,
+  ProjectMedia,
+  ProjectStatus,
+  BangaloreZone,
+  BuilderGrade,
+} from '@/modules/inventory/types-v7';
+
+// =====================================================
+// PROJECTS - CREATE
+// =====================================================
+
+export async function createProjectV7(projectData: Partial<ProjectV7>) {
+  const supabase = await createClient();
+
+  try {
+    // Validate required fields
+    if (!projectData.project_name) {
+      throw new Error('Project name is required');
+    }
+    if (projectData.latitude == null || projectData.longitude == null) {
+      throw new Error('Location coordinates are required');
+    }
+
+    const { data, error } = await supabase
+      .from('projects')
+      .insert({
+        project_name: projectData.project_name,
+        slug: projectData.slug || generateSlug(projectData.project_name),
+        developer_id: projectData.developer_id,
+        latitude: projectData.latitude,
+        longitude: projectData.longitude,
+        address_line: projectData.address_line,
+        region: projectData.region,
+        city: projectData.city || 'Bengaluru',
+        pincode: projectData.pincode,
+        bangalore_zone: projectData.bangalore_zone,
+        project_status: projectData.project_status || 'DRAFT',
+        possession_date: projectData.possession_date,
+        property_type: projectData.property_type,
+        total_land_area: projectData.total_land_area,
+        total_units: projectData.total_units,
+        number_of_phases: projectData.number_of_phases,
+        current_phase_under_sale: projectData.current_phase_under_sale,
+        floor_levels: projectData.floor_levels,
+        construction_type: projectData.construction_type,
+        construction_technology: projectData.construction_technology,
+        elevators_per_tower: projectData.elevators_per_tower,
+        open_space_percent: projectData.open_space_percent,
+        project_theme: projectData.project_theme,
+        usp: projectData.usp,
+        rera_registration_no: projectData.rera_registration_no,
+        clubhouse_size: projectData.clubhouse_size,
+        clubhouse_charges: projectData.clubhouse_charges,
+        payment_plan: projectData.payment_plan,
+        floor_rise_charges: projectData.floor_rise_charges,
+        car_parking_cost: projectData.car_parking_cost,
+        infrastructure_charges: projectData.infrastructure_charges,
+        sinking_fund: projectData.sinking_fund,
+        maintenance_charges: projectData.maintenance_charges,
+        specifications: projectData.specifications || {},
+        custom_amenities: projectData.custom_amenities || {},
+        whatsapp_pitch_headline: projectData.whatsapp_pitch_headline,
+        whatsapp_pitch_highlights: projectData.whatsapp_pitch_highlights,
+        whatsapp_pitch_cta: projectData.whatsapp_pitch_cta,
+        builder_grade: projectData.builder_grade,
+        hero_image_url: projectData.hero_image_url,
+        brochure_url: projectData.brochure_url,
+        marketing_kit_url: projectData.marketing_kit_url,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Failed to create project:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+// =====================================================
+// PROJECTS - UPDATE
+// =====================================================
+
+export async function updateProjectV7(projectId: string, updates: Partial<ProjectV7>) {
+  const supabase = await createClient();
+
+  try {
+    // Remove read-only fields
+    const {
+      id,
+      created_at,
+      updated_at,
+      price_min,
+      price_max,
+      price_display,
+      configurations,
+      gallery_images,
+      nearby_summary,
+      ...updateData
+    } = updates as any;
+
+    const { data, error } = await supabase
+      .from('projects')
+      .update(updateData)
+      .eq('id', projectId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Failed to update project:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+// =====================================================
+// PROJECTS - DELETE
+// =====================================================
+
+export async function deleteProjectV7(projectId: string) {
+  const supabase = await createClient();
+
+  try {
+    const { error } = await supabase.from('projects').delete().eq('id', projectId);
+
+    if (error) throw error;
+
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to delete project:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+// =====================================================
+// PROJECTS - CHANGE STATUS
+// =====================================================
+
+export async function changeProjectStatusV7(projectId: string, newStatus: ProjectStatus) {
+  const supabase = await createClient();
+
+  try {
+    const { data, error } = await supabase
+      .from('projects')
+      .update({ project_status: newStatus })
+      .eq('id', projectId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Failed to change project status:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+// =====================================================
+// DEVELOPERS - CREATE
+// =====================================================
+
+export async function createDeveloperV7(developerData: Partial<Developer>) {
+  const supabase = await createClient();
+
+  try {
+    if (!developerData.developer_name) {
+      throw new Error('Developer name is required');
+    }
+
+    const { data, error } = await supabase
+      .from('developers')
+      .insert({
+        developer_name: developerData.developer_name,
+        slug: developerData.slug || generateSlug(developerData.developer_name),
+        builder_grade: developerData.builder_grade,
+        established_year: developerData.established_year,
+        headquarters_location: developerData.headquarters_location,
+        gst_number: developerData.gst_number,
+        rera_registration: developerData.rera_registration,
+        office_address: developerData.office_address,
+        office_phone: developerData.office_phone,
+        office_email: developerData.office_email,
+        website_url: developerData.website_url,
+        years_in_market: developerData.years_in_market,
+        total_completed_projects: developerData.total_completed_projects,
+        reputation_score: developerData.reputation_score,
+        financial_strength: developerData.financial_strength,
+        construction_quality: developerData.construction_quality,
+        customer_feedback: developerData.customer_feedback,
+        logo_url: developerData.logo_url,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Failed to create developer:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+// =====================================================
+// DEVELOPERS - UPDATE
+// =====================================================
+
+export async function updateDeveloperV7(developerId: string, updates: Partial<Developer>) {
+  const supabase = await createClient();
+
+  try {
+    const { id, created_at, updated_at, ...updateData } = updates as any;
+
+    const { data, error } = await supabase
+      .from('developers')
+      .update(updateData)
+      .eq('id', developerId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Failed to update developer:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+// =====================================================
+// PROJECT ADDRESSES - UPSERT
+// =====================================================
+
+export async function upsertProjectAddressV7(projectId: string, addressData: Partial<ProjectAddress>) {
+  const supabase = await createClient();
+
+  try {
+    // Check if address exists
+    const { data: existing } = await supabase
+      .from('project_addresses')
+      .select('id')
+      .eq('project_id', projectId)
+      .maybeSingle();
+
+    if (existing) {
+      // Update
+      const { data, error } = await supabase
+        .from('project_addresses')
+        .update({
+          general_location: addressData.general_location,
+          key_road_access: addressData.key_road_access,
+          detailed_address: addressData.detailed_address,
+          nearby_landmark: addressData.nearby_landmark,
+        })
+        .eq('id', existing.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { success: true, data };
+    } else {
+      // Insert
+      const { data, error } = await supabase
+        .from('project_addresses')
+        .insert({
+          project_id: projectId,
+          general_location: addressData.general_location,
+          key_road_access: addressData.key_road_access,
+          detailed_address: addressData.detailed_address,
+          nearby_landmark: addressData.nearby_landmark,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { success: true, data };
+    }
+  } catch (error) {
+    console.error('Failed to upsert project address:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+// =====================================================
+// UNIT TEMPLATES - CREATE
+// =====================================================
+
+export async function createUnitTemplateV7(templateData: Partial<UnitTemplate>) {
+  const supabase = await createClient();
+
+  try {
+    if (!templateData.project_id || !templateData.template_name || !templateData.config_type) {
+      throw new Error('Project ID, template name, and config type are required');
+    }
+
+    const { data, error } = await supabase
+      .from('unit_templates')
+      .insert({
+        project_id: templateData.project_id,
+        template_name: templateData.template_name,
+        config_type: templateData.config_type,
+        std_super_built_up_area: templateData.std_super_built_up_area,
+        std_carpet_area: templateData.std_carpet_area,
+        std_balcony_area: templateData.std_balcony_area,
+        std_terrace_area: templateData.std_terrace_area,
+        std_garden_area: templateData.std_garden_area,
+        std_uds_area: templateData.std_uds_area,
+        wc_count: templateData.wc_count,
+        balcony_count: templateData.balcony_count,
+        std_base_price: templateData.std_base_price,
+        std_price_per_sqft: templateData.std_price_per_sqft,
+        specifications: templateData.specifications || {},
+        room_dimensions: templateData.room_dimensions || {},
+        description: templateData.description,
+        unit_strengths: templateData.unit_strengths,
+        unit_drawbacks: templateData.unit_drawbacks,
+        vastu_compliance: templateData.vastu_compliance,
+        ventilation_quality: templateData.ventilation_quality,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Failed to create unit template:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+// =====================================================
+// UNIT TEMPLATES - UPDATE
+// =====================================================
+
+export async function updateUnitTemplateV7(templateId: string, updates: Partial<UnitTemplate>) {
+  const supabase = await createClient();
+
+  try {
+    const { id, created_at, ...updateData } = updates as any;
+
+    const { data, error } = await supabase
+      .from('unit_templates')
+      .update(updateData)
+      .eq('id', templateId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Failed to update unit template:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+// =====================================================
+// UNITS - CREATE
+// =====================================================
+
+export async function createUnitV7(unitData: Partial<Unit>) {
+  const supabase = await createClient();
+
+  try {
+    if (!unitData.project_id || !unitData.unit_number || unitData.price_total == null) {
+      throw new Error('Project ID, unit number, and price are required');
+    }
+
+    const { data, error } = await supabase
+      .from('units')
+      .insert({
+        project_id: unitData.project_id,
+        template_id: unitData.template_id,
+        unit_number: unitData.unit_number,
+        floor_number: unitData.floor_number,
+        block_tower: unitData.block_tower,
+        facing: unitData.facing,
+        facing_available: unitData.facing_available,
+        view_type: unitData.view_type,
+        status: unitData.status || 'Available',
+        is_available: unitData.is_available !== false,
+        actual_sba: unitData.actual_sba,
+        actual_carpet_area: unitData.actual_carpet_area,
+        balcony_area: unitData.balcony_area,
+        private_terrace_area: unitData.private_terrace_area,
+        garden_area: unitData.garden_area,
+        uds_area: unitData.uds_area,
+        wc_count: unitData.wc_count,
+        balcony_count: unitData.balcony_count,
+        price_total: unitData.price_total,
+        price_per_sqft: unitData.price_per_sqft,
+        plc_charges: unitData.plc_charges,
+        floor_rise_charges: unitData.floor_rise_charges,
+        parking_charges: unitData.parking_charges,
+        flooring_type: unitData.flooring_type,
+        power_load_kw: unitData.power_load_kw,
+        unit_specs: unitData.unit_specs || {},
+        custom_features: unitData.custom_features || {},
+        is_hot_selling: unitData.is_hot_selling || false,
+        is_recommended: unitData.is_recommended || false,
+        internal_notes: unitData.internal_notes,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Failed to create unit:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+// =====================================================
+// UNITS - UPDATE
+// =====================================================
+
+export async function updateUnitV7(unitId: string, updates: Partial<Unit>) {
+  const supabase = await createClient();
+
+  try {
+    const { id, created_at, updated_at, ...updateData } = updates as any;
+
+    const { data, error } = await supabase
+      .from('units')
+      .update(updateData)
+      .eq('id', unitId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Failed to update unit:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+// =====================================================
+// UNITS - BULK CREATE
+// =====================================================
+
+export async function bulkCreateUnitsV7(units: Partial<Unit>[]) {
+  const supabase = await createClient();
+
+  try {
+    if (!units.length) {
+      throw new Error('No units provided');
+    }
+
+    const { data, error } = await supabase.from('units').insert(units).select();
+
+    if (error) throw error;
+
+    return { success: true, data, count: data.length };
+  } catch (error) {
+    console.error('Failed to bulk create units:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+// =====================================================
+// PROJECT MEDIA - UPLOAD
+// =====================================================
+
+export async function createProjectMediaV7(mediaData: Partial<ProjectMedia>) {
+  const supabase = await createClient();
+
+  try {
+    if (!mediaData.project_id || !mediaData.media_url) {
+      throw new Error('Project ID and media URL are required');
+    }
+
+    const { data, error } = await supabase
+      .from('project_media')
+      .insert({
+        project_id: mediaData.project_id,
+        media_type: mediaData.media_type || 'Project Image',
+        storage_provider: mediaData.storage_provider,
+        media_url: mediaData.media_url,
+        thumbnail_url: mediaData.thumbnail_url,
+        display_order: mediaData.display_order || 0,
+        is_primary: mediaData.is_primary || false,
+        title: mediaData.title,
+        file_size_kb: mediaData.file_size_kb,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Failed to create project media:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+// =====================================================
+// PROJECT MEDIA - SET PRIMARY
+// =====================================================
+
+export async function setPrimaryMediaV7(mediaId: string, projectId: string) {
+  const supabase = await createClient();
+
+  try {
+    // First, unset all primary media for this project
+    await supabase.from('project_media').update({ is_primary: false }).eq('project_id', projectId);
+
+    // Then set the new primary
+    const { data, error } = await supabase
+      .from('project_media')
+      .update({ is_primary: true })
+      .eq('id', mediaId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('Failed to set primary media:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+// =====================================================
+// PROJECT MEDIA - DELETE
+// =====================================================
+
+export async function deleteProjectMediaV7(mediaId: string) {
+  const supabase = await createClient();
+
+  try {
+    const { error } = await supabase.from('project_media').delete().eq('id', mediaId);
+
+    if (error) throw error;
+
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to delete project media:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+// =====================================================
+// HELPER FUNCTIONS
+// =====================================================
+
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+}
+
+// =====================================================
+// NEARBY DATA - BATCH UPSERT
+// =====================================================
+
+export async function upsertSchoolsV7(projectId: string, schools: Array<{ school_name: string; distance_km?: string; travel_time?: string }>) {
+  const supabase = await createClient();
+
+  try {
+    // Delete existing
+    await supabase.from('schools_nearby').delete().eq('project_id', projectId);
+
+    // Insert new
+    if (schools.length > 0) {
+      const { data, error } = await supabase
+        .from('schools_nearby')
+        .insert(schools.map((s) => ({ project_id: projectId, ...s })))
+        .select();
+
+      if (error) throw error;
+      return { success: true, data };
+    }
+
+    return { success: true, data: [] };
+  } catch (error) {
+    console.error('Failed to upsert schools:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+export async function upsertHospitalsV7(projectId: string, hospitals: Array<{ hospital_name: string; distance_km?: string; travel_time?: string }>) {
+  const supabase = await createClient();
+
+  try {
+    await supabase.from('hospitals_nearby').delete().eq('project_id', projectId);
+
+    if (hospitals.length > 0) {
+      const { data, error } = await supabase
+        .from('hospitals_nearby')
+        .insert(hospitals.map((h) => ({ project_id: projectId, ...h })))
+        .select();
+
+      if (error) throw error;
+      return { success: true, data };
+    }
+
+    return { success: true, data: [] };
+  } catch (error) {
+    console.error('Failed to upsert hospitals:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+export async function upsertItParksV7(projectId: string, itParks: Array<{ it_park_name: string; distance_km?: string; travel_time?: string }>) {
+  const supabase = await createClient();
+
+  try {
+    await supabase.from('it_parks_proximity').delete().eq('project_id', projectId);
+
+    if (itParks.length > 0) {
+      const { data, error } = await supabase
+        .from('it_parks_proximity')
+        .insert(itParks.map((park) => ({ project_id: projectId, ...park })))
+        .select();
+
+      if (error) throw error;
+      return { success: true, data };
+    }
+
+    return { success: true, data: [] };
+  } catch (error) {
+    console.error('Failed to upsert IT parks:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}
+
+export async function upsertMallsV7(projectId: string, malls: Array<{ mall_name: string; distance_km?: string; travel_time?: string }>) {
+  const supabase = await createClient();
+
+  try {
+    await supabase.from('shopping_malls_nearby').delete().eq('project_id', projectId);
+
+    if (malls.length > 0) {
+      const { data, error } = await supabase
+        .from('shopping_malls_nearby')
+        .insert(malls.map((mall) => ({ project_id: projectId, ...mall })))
+        .select();
+
+      if (error) throw error;
+      return { success: true, data };
+    }
+
+    return { success: true, data: [] };
+  } catch (error) {
+    console.error('Failed to upsert malls:', error);
+    return { success: false, error: (error as Error).message };
+  }
+}

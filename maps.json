@@ -1,0 +1,354 @@
+[
+  {
+    "line": 250,
+    "content": "{steps.map((step, idx) => ("
+  },
+  {
+    "line": 251,
+    "content": "<React.Fragment key={step.num}>"
+  },
+  {
+    "line": 320,
+    "content": "{BUILDER_GRADES.map((grade) => ("
+  },
+  {
+    "line": 321,
+    "content": "<option key={grade} value={grade}>Grade {grade}</option>"
+  },
+  {
+    "line": 372,
+    "content": "{CITY_ZONES.map((zone) => ("
+  },
+  {
+    "line": 373,
+    "content": "<option key={zone} value={zone}>{zone}</option>"
+  },
+  {
+    "line": 387,
+    "content": "{Object.values(PROJECT_STATUSES).map((s) => ("
+  },
+  {
+    "line": 388,
+    "content": "<option key={s.value} value={s.value}>{s.label}</option>"
+  },
+  {
+    "line": 397,
+    "content": "{POSSESSION_MONTHS.map((m) => ("
+  },
+  {
+    "line": 398,
+    "content": "<option key={m} value={m}>{m}</option>"
+  },
+  {
+    "line": 407,
+    "content": "{POSSESSION_YEARS.map((y) => ("
+  },
+  {
+    "line": 408,
+    "content": "<option key={y} value={y}>{y}</option>"
+  },
+  {
+    "line": 417,
+    "content": "{PROPERTY_TYPES.map((type) => ("
+  },
+  {
+    "line": 418,
+    "content": "<option key={type} value={type}>{type}</option>"
+  },
+  {
+    "line": 447,
+    "content": "{CONSTRUCTION_TYPES.map((tech) => ("
+  },
+  {
+    "line": 448,
+    "content": "<option key={tech} value={tech}>{tech}</option>"
+  },
+  {
+    "line": 501,
+    "content": "{unitFields.map((field, index) => ("
+  },
+  {
+    "line": 502,
+    "content": "<div key={field.field_id} className=\"border-2 border-slate-200 rounded-lg p-6 bg-slate-50 relative\">"
+  },
+  {
+    "line": 521,
+    "content": "{BHK_CONFIGS.map(c => <option key={c} value={c}>{c}</option>)}"
+  },
+  {
+    "line": 522,
+    "content": "</select>"
+  },
+  {
+    "line": 528,
+    "content": "{UNIT_VARIANTS.map(v => <option key={v} value={v}>{v}</option>)}"
+  },
+  {
+    "line": 529,
+    "content": "</select>"
+  },
+  {
+    "line": 543,
+    "content": "{UNIT_FACINGS.map(f => <option key={f} value={f}>{f}</option>)}"
+  },
+  {
+    "line": 544,
+    "content": "</select>"
+  },
+  {
+    "line": 551,
+    "content": "{BATHROOM_COUNTS.map(c => <option key={c} value={c}>{c}</option>)}"
+  },
+  {
+    "line": 552,
+    "content": "</select>"
+  },
+  {
+    "line": 558,
+    "content": "{BALCONY_COUNTS.map(c => <option key={c} value={c}>{c}</option>)}"
+  },
+  {
+    "line": 559,
+    "content": "</select>"
+  },
+  {
+    "line": 578,
+    "content": "{UNIT_STATUS_VALUES.map(s => <option key={s} value={s}>{s}</option>)}"
+  },
+  {
+    "line": 579,
+    "content": "</select>"
+  },
+  {
+    "line": 630,
+    "content": "{commercialFields.map((field, index) => ("
+  },
+  {
+    "line": 631,
+    "content": "<div key={field.field_id} className=\"border border-slate-200 rounded-lg p-4 bg-white mb-2 flex gap-4\">"
+  },
+  {
+    "line": 645,
+    "content": "{COST_TYPES.map(t => <option key={t} value={t}>{t}</option>)}"
+  },
+  {
+    "line": 646,
+    "content": "</select>"
+  },
+  {
+    "line": 652,
+    "content": "{PAYMENT_MILESTONES.map(m => <option key={m} value={m}>{m}</option>)}"
+  },
+  {
+    "line": 653,
+    "content": "</select>"
+  },
+  {
+    "line": 673,
+    "content": "{amenityFields.map((field, index) => ("
+  },
+  {
+    "line": 674,
+    "content": "<div key={field.field_id} className=\"border border-slate-200 rounded-lg p-4 bg-white mb-3\">"
+  },
+  {
+    "line": 681,
+    "content": "{AMENITY_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}"
+  },
+  {
+    "line": 682,
+    "content": "</select>"
+  },
+  {
+    "line": 738,
+    "content": "{landmarkFields.map((field, index) => ("
+  },
+  {
+    "line": 739,
+    "content": "<div key={field.id} className=\"border border-slate-200 rounded-lg p-4 bg-white mb-3\">"
+  },
+  {
+    "line": 746,
+    "content": "{LANDMARK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}"
+  },
+  {
+    "line": 747,
+    "content": "</select>"
+  },
+  {
+    "line": 792,
+    "content": "{FLOORING_TYPES.map(f => <option key={f} value={f}>{f}</option>)}"
+  },
+  {
+    "line": 793,
+    "content": "</select>"
+  },
+  {
+    "line": 799,
+    "content": "{FLOORING_TYPES.map(f => <option key={f} value={f}>{f}</option>)}"
+  },
+  {
+    "line": 800,
+    "content": "</select>"
+  },
+  {
+    "line": 806,
+    "content": "{FLOORING_TYPES.map(f => <option key={f} value={f}>{f}</option>)}"
+  },
+  {
+    "line": 807,
+    "content": "</select>"
+  },
+  {
+    "line": 813,
+    "content": "{FLOORING_TYPES.map(f => <option key={f} value={f}>{f}</option>)}"
+  },
+  {
+    "line": 814,
+    "content": "</select>"
+  },
+  {
+    "line": 822,
+    "content": "{COUNTERTOP_TYPES.map(c => <option key={c} value={c}>{c}</option>)}"
+  },
+  {
+    "line": 823,
+    "content": "</select>"
+  },
+  {
+    "line": 842,
+    "content": "{POWER_BACKUP_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}"
+  },
+  {
+    "line": 843,
+    "content": "</select>"
+  },
+  {
+    "line": 849,
+    "content": "{GAS_PIPELINE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}"
+  },
+  {
+    "line": 850,
+    "content": "</select>"
+  },
+  {
+    "line": 858,
+    "content": "{WATER_SOURCES.map(s => <option key={s} value={s}>{s}</option>)}"
+  },
+  {
+    "line": 859,
+    "content": "</select>"
+  },
+  {
+    "line": 879,
+    "content": "{uspHighlightFields.map((field, index) => ("
+  },
+  {
+    "line": 880,
+    "content": "<div key={field.field_id} className=\"flex gap-2 mb-2\">"
+  },
+  {
+    "line": 915,
+    "content": "{proFields.map((field, index) => ("
+  },
+  {
+    "line": 916,
+    "content": "<div key={field.field_id} className=\"flex gap-2 mb-2\">"
+  },
+  {
+    "line": 927,
+    "content": "{conFields.map((field, index) => ("
+  },
+  {
+    "line": 928,
+    "content": "<div key={field.field_id} className=\"flex gap-2 mb-2\">"
+  },
+  {
+    "line": 943,
+    "content": "{competitorFields.map((field, index) => ("
+  },
+  {
+    "line": 944,
+    "content": "<div key={field.field_id} className=\"flex gap-4 mb-3 border p-3 rounded-lg bg-slate-50\">"
+  },
+  {
+    "line": 967,
+    "content": "{imageFields.map((field, index) => ("
+  },
+  {
+    "line": 968,
+    "content": "<div key={field.field_id} className=\"flex gap-2\">"
+  },
+  {
+    "line": 1087,
+    "content": "{unitFields.map((u: any, i) => ("
+  },
+  {
+    "line": 1088,
+    "content": "<tr key={u.id}>"
+  },
+  {
+    "line": 1147,
+    "content": "{commercialFields.map((c: any, i) => ("
+  },
+  {
+    "line": 1148,
+    "content": "<div key={c.id} className=\"flex flex-col p-2 bg-white rounded border border-slate-200\">"
+  },
+  {
+    "line": 1172,
+    "content": "{amenityFields.map((a: any) => ("
+  },
+  {
+    "line": 1173,
+    "content": "<div key={a.id} className=\"p-3 bg-white border border-slate-200 rounded-lg\">"
+  },
+  {
+    "line": 1191,
+    "content": "{landmarkFields.map((l: any) => ("
+  },
+  {
+    "line": 1192,
+    "content": "<div key={l.id} className=\"text-xs p-3 bg-white rounded border border-slate-200 flex justify-between items-center\">"
+  },
+  {
+    "line": 1292,
+    "content": "{(getValues('pros') as string[] || []).map((p, i) => <li key={i}>{p}</li>)}"
+  },
+  {
+    "line": 1293,
+    "content": "</ul>"
+  },
+  {
+    "line": 1298,
+    "content": "{(getValues('cons') as string[] || []).map((c, i) => <li key={i}>{c}</li>)}"
+  },
+  {
+    "line": 1299,
+    "content": "</ul>"
+  },
+  {
+    "line": 1307,
+    "content": "{(getValues('usp_highlights') as string[] || []).map((h, i) => <li key={i}>{h}</li>)}"
+  },
+  {
+    "line": 1308,
+    "content": "</ul>"
+  },
+  {
+    "line": 1313,
+    "content": "{getValues('competitors')?.map((c: any, i) => <li key={i}><strong>{c.name}</strong> - {c.price_range}</li>)}"
+  },
+  {
+    "line": 1314,
+    "content": "</ul>"
+  },
+  {
+    "line": 1336,
+    "content": "{getValues('images')?.map((img, i) => ("
+  },
+  {
+    "line": 1337,
+    "content": "<div key={i} className=\"aspect-video bg-slate-200 rounded-lg overflow-hidden border border-slate-300 relative group\">"
+  }
+]

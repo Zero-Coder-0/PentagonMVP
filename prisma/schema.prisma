@@ -1,0 +1,378 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+  engineType    = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  super_admin
+  tenant_admin
+  salesman
+  vendor
+}
+
+// ============================================================================
+// CORE MODELS - Essential for all features (Auth, Projects, Leads)
+// ============================================================================
+
+model User {
+  // Frontend: User authentication, project ownership, lead assignment
+  id       String  @id @default(uuid())
+  email    String  @unique // Official company Gmail
+  fullname String? // Display name in admin UI
+
+  // NEW: Strictly typed role using the Enum
+  role UserRole @default(salesman)
+
+  // NEW: Controls access for new OAuth signups
+  is_active Boolean  @default(false)
+  createdAt DateTime @default(now()) // Audit trail
+
+  // Relations
+  projects Project[]
+  visits   SiteVisit[] // Track visits per executive
+  leads    Lead[]
+
+  @@map("users")
+}
+
+model Lead {
+  // Frontend: Lead management dashboard
+  id          String   @id @default(uuid())
+  name        String?
+  email       String?
+  phone       String? // Unique identity for lead continuity
+  status      String   @default("New") // New, Contacted, SiteVisit, Closed
+  project_id  String? // Link to specific project
+  assigned_to String? // Sales user ID
+  created_at  DateTime @default(now())
+
+  project Project? @relation(fields: [project_id], references: [id], onDelete: SetNull)
+  user    User?    @relation(fields: [assigned_to], references: [id])
+
+  @@map("leads")
+}
+
+// ============================================================================
+// DEVELOPER-details
+// ============================================================================
+
+model Project {
+  // Frontend: PropertyListContainer, Filters, MegaPopup Header, ALL tabs
+  id           String  @id @default(uuid())
+  project_name String  @unique // Parent entity
+  created_by   String? // Audit: Who created
+
+  // Map & Navigation
+
+  general_location String? // PropertyList: region
+  address_line     String? // MegaPopup Location: address
+  district         String? // Location context
+  lat              Float? // Map pins
+  lng              Float? // Map pins
+
+  // 6.1 Core Property Info
+
+  total_land_area String?
+  total_phases    Int?    @default(1)
+  project_theme   String?
+
+  // Property List / Filters
+  projectstatus    String? @default("UnderConstruction") // Filters.status
+  possession_month String? // Filter: jan,feb etc.
+  possession_year  Int? // Filter: 2026, 2027, etc.
+
+  slug                     String? @unique
+  city                     String? @default("Bengaluru")
+  pincode                  String?
+  region                   String?
+  city_zone                String?
+  property_type            String?
+  current_phase_under_sale String?
+
+  total_units          Int?
+  pricedisplay         String? // e.g., "₹95L - 1.65Cr"
+  pricemin             Decimal? // Add
+  pricemax             Decimal? // Add
+  payment_plan_type    String?
+  payment_plan_details String?
+  floor_rise_charges   String?
+  configurations       String[] // [2BHK, 3BHK] fetched from the ProjectUnit
+
+  // Media
+  hero_image           String?
+  images               String[]
+  virtual_tour_url     String?
+  brochure_url         String?
+  rera_registration_no String?
+
+  // Technical Specs (JSON for flexible schema)
+  //technical_specs Json? // this is for future updates use the specification table it is better SpecsTab: technicalspecs (master, kitchen, flooring, etc.)
+  updated_at DateTime @updatedAt
+  created_at DateTime @default(now())
+
+  // Relations: ALL MegaPopup tabs (with Cascade support)
+  developer    ProjectDeveloper?
+  specs        ProjectSpecification?
+  amenities    ProjectAmenity[]
+  analysis     ProjectAnalysis?
+  commercials  ProjectCommercial[]
+  competitors  ProjectCompetitor[]
+  landmarks    ProjectLandmark[]
+  projectunits ProjectUnit[]
+  connectivity LocationConnectivity?
+
+  // Workflow Relations
+  visits SiteVisit[]
+  leads  Lead[] // <--- Added this to fix the map
+  user   User?       @relation(fields: [created_by], references: [id])
+
+  @@map("projects")
+}
+
+// ============================================================================
+// UNIT DATA - UnitsTab (Primary), PropertyList pricing support
+// ============================================================================
+
+model ProjectUnit {
+  id String @id @default(uuid()) // Purpose: Unique identifier for each unit (auto-generated UUID)  // UI Mapping: Not displayed (internal use only)
+
+  project_id String // Purpose: Foreign key linking unit to parent Project  // UI Mapping: Not displayed (used by Prisma relation)
+
+  unitnumber  String // A-101, B-501, TowerC-1201  // Purpose: Human-readable unit identifier (tower + floor + number)  // UI Mapping: UnitsTab table → `<td>{u.unitnumber || '-'}</td>` (Unit column)
+  tower       String? // e.g. "Tower A", "Block 1" 
+  floornumber Int? // Purpose: Floor level (3, 5, 12 → 3rd, 5th, 12th floor)  // UI Mapping: Not directly shown, filter/sort: `units.filter(u => u.floornumber > 5)`
+
+  config String? // "2BHK", "3BHK", "Villa", "Penthouse"   // Purpose: BHK/configuration type (matches Project.configurations)  // UI Mapping: UnitsTab table → `<td>{u.config || 'NA'}</td>` (Type column)  // AlternativesTab: `extractConfigs(u.config)` matching
+
+  type String? // "Luxe", "Premium", "Standard", "Garden Facing"  // Purpose: Variant/quality tier within config (2BHK Premium vs 2BHK Standard)  // UI Mapping: UnitsTab table → `<td>{u.type || 'Standard'}</td>` (Type column variant)
+
+  actualsba Int? // 1250 (sqft) - Super Built-up Area  // Purpose: Total saleable area (includes walls, balconies)  // UI Mapping: UnitsTab → `formatSize(u.actualsba)` (Size SBA column) // Project.pricemin/max → min/max of actualsba
+
+  carpetarea Int? // 950 (sqft) - Carpet area  // Purpose: Usable interior area (excludes walls)  // UI Mapping: Tooltip/hover: "Carpet: {formatSize(u.carpetarea)}"
+
+  udsarea Int? // 450 (sqft) - Undivided land share  // Purpose: Land ownership share (legal document)  // UI SpecsTab/PricingTab: "UDS: {u.udsarea} sqft"
+
+  facing String? // "East", "North", "South-West", "Garden" // Purpose: Vastu/direction preference // UI Mapping: UnitsTab → `<span>{u.facing}</span>` (Facing column badge)
+
+  wccount Int? // 3 (number of bathrooms)  // Purpose: Attached bathrooms count  // UI Mapping: UnitsTab → `{u.wccount}B` (Bath column)
+
+  balconycount Int? // 2 (number of balconies)  // Purpose: Balcony count  // UI Mapping: UnitsTab → `{u.balconycount}Balc` (Balcony column)
+
+  pricepersqft Int? // 8500 (₹/sqft)  // Purpose: Rate per sqft (for price calculations)  // UI Mapping: Tooltip: "₹{u.pricepersqft}/sqft"
+
+  pricetotal Decimal? @db.Decimal(15, 2) // 1,25,00,000.00 // Purpose: Final sale price (actualsba × pricepersqft)  // UI Mapping: UnitsTab → `formatPrice(u.pricetotal)` (Price column - MAIN)  // Project.pricedisplay → min/max of pricetotal
+
+  status String? @default("Available") // Purpose: Availability (Available, Sold, Builder Hold, CP Hold)  // UI Mapping: Status badge/color:   // - Available → Green, Sold → Red, Hold → Yellow
+
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade) // Purpose: Back-reference to parent project  // UI Mapping: Not directly accessed (used by Prisma include)
+
+  @@map("project_units") // Purpose: Maps Prisma model to actual DB table name
+}
+
+// ============================================================================
+// CONTENT TABLES - MegaPopup Tabs (Direct Maps)
+// ============================================================================
+
+model ProjectSpecification {
+  id         String @id @default(uuid())
+  project_id String @unique
+
+  // 1. Density & Vertical Specs (Existing)
+  no_of_towers                Int?
+  floors_per_tower            Int?
+  units_per_floor             Int?
+  elevators_per_tower         Int?
+  service_elevators_per_tower Int?
+
+  // 2. Structure & Core Build
+  construction_type       String? // e.g., Mivan, RCC Shear Wall
+  structure_details       String? // e.g., Seismic Zone II compliant
+  wall_finishing_interior String? // e.g., Emulsion paint with putty
+  wall_finishing_exterior String? // e.g., Weather-proof textured paint
+
+  // 3. Flooring Common Mappings
+  flooring_living_dining   String? // e.g., Premium Vitrified Tiles (800x800)
+  flooring_master_bedroom  String? // e.g., Laminated Wooden Flooring
+  flooring_other_bedrooms  String? // e.g., Vitrified Tiles
+  flooring_balcony_utility String? // e.g., Anti-skid Ceramic Tiles
+
+  // 4. Kitchen Common Mappings
+  kitchen_countertop     String? // e.g., Granite platform
+  kitchen_sink_details   String? // e.g., Stainless steel sink with drainboard
+  kitchen_dado_tiling    String? // e.g., Ceramic tiles up to 2 feet
+  gas_pipeline_provision String? // e.g., Piped gas connection
+
+  // 5. Bathroom / Plumbing Common Mappings
+  bathroom_sanitary_ware String? // e.g., Kohler, Toto, or equivalent wall-mounted
+  bathroom_cp_fittings   String? // e.g., Jaquar, Grohe concealed fittings
+  bathroom_dado_tiling   String? // e.g., Glazed tiles up to false ceiling
+
+  // 6. Doors & Windows
+  main_door_specs      String? // e.g., Teak wood frame with veneer flush shutter
+  internal_doors_specs String? // e.g., Hardwood frame with laminate finish
+  windows_specs        String? // e.g., UPVC sliding windows with mosquito mesh
+
+  // 7. Electrical & Power
+  electrical_switches String? // e.g., Modular switches (Legrand/Schneider)
+  power_backup        String? // e.g., 100% DG backup for common areas, 1KW for units
+
+  // 8. General Site Specs (Existing)
+  road_width     String?
+  water_source   String? // Borewell / Kaveri
+  open_space_pct String? // e.g., "75%"
+
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("project_specifications")
+}
+
+model ProjectAmenity {
+  // AmenitiesTab: Direct array map
+  id          String  @id @default(uuid())
+  project_id  String
+  category    String? // "Pool", "Gym"
+  name        String?
+  description String?
+  size_specs  String? // "25m x 10m"
+
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("project_amenities")
+}
+
+model ProjectLandmark {
+  // LocationTab: Direct array map + filter by category
+  id          String  @id @default(uuid())
+  project_id  String
+  category    String? // "School", "Hospital", "Main Road"
+  name        String?
+  distance_km String? // "2.5 km"
+  travel_time String? // "8 mins"
+
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("project_landmarks")
+}
+
+model ProjectCommercial {
+  // PricingTab: Map to costextras[]
+  id                String   @id @default(uuid())
+  project_id        String
+  name              String? // "Car Parking"
+  amount            Decimal? @db.Decimal(15, 2)
+  cost_type         String? // "Mandatory"
+  payment_milestone String? // "Possession"
+
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("project_commercials")
+}
+
+model ProjectAnalysis {
+  // OverviewTab: Flatten analysis[0] → usp, pros, cons
+  id                 String   @id @default(uuid())
+  project_id         String   @unique
+  pros               String[]
+  cons               String[]
+  usp                String? // Overview USP
+  usp_highlights     String[] // Pitching Utilities
+  closing_pitch      String?
+  target_customer    String? // Persona
+  objection_handling Json? // { "Traffic": "Proposed 80ft road expansion" }
+  legal_notes        String? //
+  timeline_risk      String?
+  overall_rating     Decimal? @db.Decimal(3, 1)
+
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("project_analysis")
+}
+
+model ProjectDeveloper {
+  id         String @id @default(uuid())
+  project_id String @unique
+
+  // Brand & Identity (New)
+  name           String? // e.g., "Prestige Group"
+  logo_url       String?
+  website        String?
+  buildergrade   String? @default("A")
+  corporate_rera String? // Developer/Company RERA
+  description    String? // Short bio of the builder
+
+  // Reputation & Stats (Existing/Modified)
+  reputation         String?
+  years_in_market    Int?
+  past_projects      String? // e.g., "50+ Projects delivered"
+  financial_strength String?
+
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("project_developers")
+}
+
+model ProjectCompetitor {
+  // AlternativesTab: Direct array map
+  id          String  @id @default(uuid())
+  project_id  String
+  name        String?
+  price_range String?
+
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("project_competitors")
+}
+
+model LocationConnectivity {
+  // LocationTab: Specific distance fields MegaPopup expects
+  id                     String  @id @default(uuid())
+  project_id             String  @unique
+  distancetomainroad     String? // "0.8 km"
+  airportdistance        String? // "45 km"
+  railwaystationdistance String?
+  metrostationdistance   String?
+  busstopdistance        String?
+
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("location_connectivity")
+}
+
+// ============================================================================
+// SITE VISIT & WORKFLOW MODULES
+// ============================================================================
+
+model SiteVisit {
+  // Site Visit Tracking
+  id         String @id @default(uuid())
+  project_id String
+  user_id    String
+
+  customer_name  String
+  customer_phone String
+  visit_date     DateTime
+  status         String   @default("Confirmed") // Confirmed, Done, Cancelled
+  notes          String?
+
+  project Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [user_id], references: [id])
+
+  @@map("site_visits")
+}
+
+model PropertyDraft {
+  // Admin workflow
+  id              String   @id @default(uuid())
+  vendor_id       String
+  submission_data Json
+  status          String   @default("pending")
+  admin_notes     String?
+  created_at      DateTime @default(now())
+
+  @@map("property_drafts")
+}
