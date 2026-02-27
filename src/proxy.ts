@@ -37,23 +37,26 @@ export async function proxy(request: NextRequest) {
         }
     )
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
-
     const path = request.nextUrl.pathname
 
-    // Public routes that don't need RBAC
+    // Public routes that don't need RBAC — checked FIRST before any cookie/session access
+    // This is critical: /auth/callback must NOT have getUser() called before it,
+    // otherwise the PKCE code verifier cookie gets consumed and exchangeCodeForSession fails.
     if (
         path.startsWith('/_next') ||
         path.startsWith('/api') ||
         path.startsWith('/static') ||
         path === '/login' ||
         path === '/fake-login' ||
-        path === '/auth/callback'
+        path === '/approval-pending' ||
+        path.startsWith('/auth/callback')
     ) {
         return supabaseResponse
     }
+
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
 
     // If not logged in and trying to access protected routes, redirect to login
     if (!user && path !== '/') {
