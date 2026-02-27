@@ -20,30 +20,35 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
 
-    const { data: isAdmin } = await supabase.rpc('check_is_admin_email', {
-      check_email: email
-    })
-
-    if (isAdmin) {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${location.origin}/auth/callback`,
-        },
+    try {
+      // Use the newly created secure RPC
+      const { data: isAdmin, error: rpcError } = await supabase.rpc('check_is_admin_email', {
+        check_email: email
       })
 
-      if (error) {
-        alert('Error: ' + error.message)
-      } else {
-        alert('Magic Link sent! Please check your inbox.')
-      }
-    } else {
-      setTimeout(() => {
-        router.push('/fake-login')
-      }, 1500)
-    }
+      if (rpcError) throw rpcError;
 
-    setLoading(false)
+      if (isAdmin) {
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            emailRedirectTo: `${location.origin}/auth/callback`,
+          },
+        })
+
+        if (error) throw error;
+
+        alert('Magic Link sent! Please check your inbox.')
+      } else {
+        // Just show an alert. Middleware will block unauthorized access anyway if they try to navigate manually.
+        alert('Access Denied: This portal is for Super and Tenant Admins only. Please use the Staff/Vendor portal.')
+        router.push('/fake-login') // Kept for the UX flow requested in full plan.txt
+      }
+    } catch (err: any) {
+      alert('Authentication error: ' + err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleGoogleLogin = async () => {
