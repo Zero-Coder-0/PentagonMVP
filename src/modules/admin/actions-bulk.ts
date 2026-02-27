@@ -21,14 +21,11 @@ export async function uploadFullSchema(data: { projects: any[], users?: any[], d
     // 1. Process Users First (so they can be linked to projects/visits)
     for (const user of users) {
       try {
-        const parsed = BulkSchemas.UserSchema.parse(user);
+        const { email, ...rest } = BulkSchemas.UserSchema.parse(user);
         await prisma.user.upsert({
-          where: { email: parsed.email },
-          update: parsed,
-          create: {
-            email: parsed.email,
-            ...parsed
-          } as any
+          where: { email },
+          update: rest as any,
+          create: { email, ...rest } as any
         });
         successCount++;
       } catch (err: any) {
