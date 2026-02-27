@@ -7,7 +7,7 @@ const ROLE_PERMISSIONS = {
     salesman: ['/vendor', '/dashboard'],
     tenant_admin: ['/admin', '/vendor', '/dashboard'], // Specifically blocked from /admin/superdashboard verbally, but we'll enforce below if needed
     super_admin: ['/'], // Wildcard access
-    pending: ['/approval'], // For new Google logins waiting for admin assignment
+    pending: ['/approval-pending'], // For new Google logins waiting for admin assignment
 } as const;
 
 export async function proxy(request: NextRequest) {
@@ -61,20 +61,14 @@ export async function proxy(request: NextRequest) {
     }
 
     if (user) {
-        // Basic fallback: if we don't have the advanced JWT setup, we fetch the role here.
-        // NOTE: This runs on the Edge. Supabase Client queries are fast via HTTP.
-        const { data: profile } = await supabase
-            .from('users')
-            .select('role, is_active')
-            .eq('id', user.id)
-            .single()
-
-        const role = profile?.role || 'vendor' // Strangers default to vendor
-        const is_active = profile?.is_active === true // Ensure strictly true
+        // 1. Instantly extract the user's custom claims from their signed JWT cookie
+        // This is injected by the Supabase Custom Access Token Hook at login time
+        const role = user.app_metadata?.role || 'vendor' // Strangers default to vendor
+        const is_active = user.app_metadata?.is_active === true // Ensure strictly true
 
         // 2. Enforce the Waiting Room Constraint for non-active users
-        if (!is_active && path !== '/approval') {
-            return NextResponse.redirect(new URL('/approval', request.url))
+        if (!is_active && path !== '/approval-pending') {
+            return NextResponse.redirect(new URL('/approval-pending', request.url))
         }
 
         // 3. Enforce the Strict Routing Matrix for Approved Users

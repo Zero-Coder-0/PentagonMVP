@@ -18,24 +18,15 @@ export async function GET(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (user) {
-      // Use email to link Google accounts to pre-existing rows in public.users
-      const { data: profile, error: dbError } = await supabase
-        .from('users')
-        .select('role, is_active')
-        .eq('email', user.email)
-        .maybeSingle()
-
-      if (dbError) {
-        console.error('Error fetching user role:', dbError)
-        return NextResponse.redirect(`${origin}/login?error=role_fetch_failed`)
-      }
-
-      const role = profile?.role || 'vendor'
-      const is_active = profile?.is_active === true
+      // Role and is_active are now securely injected into the user's JWT 
+      // cookie by the Supabase Postgres trigger at the exact moment of login.
+      const appMetadata = user.app_metadata || {}
+      const role = appMetadata.role || 'vendor'
+      const is_active = appMetadata.is_active === true
 
       // Quarantine check
       if (!is_active) {
-        return NextResponse.redirect(`${origin}/approval`)
+        return NextResponse.redirect(`${origin}/approval-pending`)
       }
 
       // Role-based routing for active users (Let middleware handle strict enforcement, just do initial push)
@@ -48,7 +39,7 @@ export async function GET(request: Request) {
       } else if (role === 'vendor') {
         return NextResponse.redirect(`${origin}/vendor`)
       } else {
-        return NextResponse.redirect(`${origin}/approval`)
+        return NextResponse.redirect(`${origin}/approval-pending`)
       }
     }
   }
