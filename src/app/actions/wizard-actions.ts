@@ -16,13 +16,6 @@ export async function getVerifiedUser() {
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error || !user) throw new Error('Unauthorized: Not authenticated');
 
-    const isDev = process.env.NODE_ENV === 'development';
-    const DEV_BYPASS_AUTH = process.env.DEV_BYPASS_AUTH === 'true';
-    if (isDev && DEV_BYPASS_AUTH) {
-        const devRole = (process.env.DEV_ROLE as any) || 'super_admin';
-        // Return mock user matching Prisma User type
-        return { id: user.id, role: devRole, is_active: true } as any;
-    }
 
     const dbUser = await prisma.user.findUnique({
         where: { id: user.id },

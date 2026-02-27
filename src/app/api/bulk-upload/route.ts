@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as BulkSchemas from '@/lib/validation/bulkSchemas';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/core/db/server';
+import { createClient as createSupabaseAdmin } from '@supabase/supabase-js';
 import ExcelJS from 'exceljs';
 
 // Helper to parse worksheet
@@ -39,6 +40,13 @@ function parseWorksheet(worksheet: ExcelJS.Worksheet): any[] {
 // POST: Upload and process file
 export async function POST(request: NextRequest) {
   try {
+    // 0. Auth check - strictly only for authenticated users (admin logic can be added later)
+    const authClient = await createClient();
+    const { data: { session } } = await authClient.auth.getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
 
@@ -72,7 +80,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Initialize Supabase with service role
-    const supabase = createClient(
+    const supabase = createSupabaseAdmin(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );

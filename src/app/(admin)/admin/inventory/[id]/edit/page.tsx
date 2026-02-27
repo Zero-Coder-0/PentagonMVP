@@ -15,22 +15,12 @@ export default async function EditLiveProjectPage({ params }: Props) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const devBypass = process.env.DEV_BYPASS_AUTH === 'true';
-
-  let dbUserRole = 'guest';
-  let dbUserActive = false;
-
-  if (devBypass) {
-    dbUserRole = process.env.DEV_ROLE || 'super_admin';
-    dbUserActive = true;
-  } else {
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { role: true, is_active: true },
-    });
-    dbUserRole = dbUser?.role || 'guest';
-    dbUserActive = dbUser?.is_active || false;
-  }
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { role: true, is_active: true },
+  });
+  const dbUserRole = dbUser?.role || 'guest';
+  const dbUserActive = dbUser?.is_active || false;
 
   if (!dbUserActive || !['tenant_admin', 'super_admin'].includes(dbUserRole)) {
     redirect('/admin');
