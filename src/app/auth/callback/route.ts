@@ -18,26 +18,30 @@ export async function GET(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role, is_active')
+      const { data: profile, error: dbError } = await supabase
+        .from('users')
+        .select('role')
         .eq('id', user.id)
         .single()
 
-      // Route based on role and approval status
-      if (!profile || !profile.is_active) {
-        return NextResponse.redirect(`${origin}/approval-pending`)
+      if (dbError) {
+        console.error('Error fetching user role:', dbError)
+        return NextResponse.redirect(`${origin}/login?error=role_fetch_failed`)
       }
 
-      // Role-based routing
-      if (profile.role === 'super_admin') {
-        return NextResponse.redirect(`${origin}/super`)
-      } else if (profile.role === 'tenant_admin') {
+      const role = profile?.role || 'pending'
+
+      // Role-based routing (Let middleware handle strict enforcement, just do initial push)
+      if (role === 'super_admin') {
+        return NextResponse.redirect(`${origin}/`)
+      } else if (role === 'tenant_admin') {
         return NextResponse.redirect(`${origin}/admin`)
-      } else if (profile.role === 'salesman') {
+      } else if (role === 'salesman') {
         return NextResponse.redirect(`${origin}/dashboard`)
-      } else if (profile.role === 'vendor') {
+      } else if (role === 'vendor') {
         return NextResponse.redirect(`${origin}/vendor`)
+      } else {
+        return NextResponse.redirect(`${origin}/approval`)
       }
     }
   }
