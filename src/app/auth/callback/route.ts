@@ -7,15 +7,16 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const { data: { session }, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (error) {
       console.error('Auth error:', error)
       return NextResponse.redirect(`${origin}/login?error=auth_code_error`)
     }
 
-    // Fetch user profile with role
-    const { data: { user } } = await supabase.auth.getUser()
+    // Extract user directly from the exchanged session token
+    // (getUser() fetches from DB and strips JWT custom claims!)
+    const user = session?.user
 
     if (user) {
       // Role and is_active are now securely injected into the user's JWT 

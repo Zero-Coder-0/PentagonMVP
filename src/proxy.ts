@@ -54,20 +54,25 @@ export async function proxy(request: NextRequest) {
         return supabaseResponse
     }
 
+    // getUser() validates the token safely against the server
     const {
         data: { user },
     } = await supabase.auth.getUser()
+
+    // getSession() decodes the local JWT cookie which CONTAINS our injected custom claims!
+    const {
+        data: { session },
+    } = await supabase.auth.getSession()
 
     // If not logged in and trying to access protected routes, redirect to login
     if (!user && path !== '/') {
         return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    if (user) {
+    if (user && session) {
         // 1. Instantly extract the user's custom claims from their signed JWT cookie
-        // This is injected by the Supabase Custom Access Token Hook at login time
-        const role = user.app_metadata?.role || 'vendor' // Strangers default to vendor
-        const is_active = user.app_metadata?.is_active === true // Ensure strictly true
+        const role = session.user.app_metadata?.role || 'vendor' // Strangers default to vendor
+        const is_active = session.user.app_metadata?.is_active === true // Ensure strictly true
 
         // 2. Enforce the Waiting Room Constraint for non-active users
         if (!is_active && path !== '/approval-pending') {
