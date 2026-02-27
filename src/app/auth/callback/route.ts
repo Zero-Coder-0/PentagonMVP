@@ -18,11 +18,12 @@ export async function GET(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (user) {
+      // Use email to link Google accounts to pre-existing rows in public.users
       const { data: profile, error: dbError } = await supabase
         .from('users')
         .select('role')
-        .eq('id', user.id)
-        .single()
+        .eq('email', user.email)
+        .maybeSingle()
 
       if (dbError) {
         console.error('Error fetching user role:', dbError)
