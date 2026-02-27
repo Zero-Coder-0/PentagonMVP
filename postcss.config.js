@@ -1,5 +1,5 @@
 // Ensure this file exists
-module.exports = {
+export default {
   plugins: {
     tailwindcss: {},
     autoprefixer: {},
