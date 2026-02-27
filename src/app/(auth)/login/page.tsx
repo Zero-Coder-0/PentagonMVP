@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/core/db/client'
 import { ShieldCheck, Mail, ArrowRight, Loader2 } from 'lucide-react'
@@ -11,11 +11,15 @@ export default function LoginPage() {
   const router = useRouter()
   const supabase = createClient()
 
+  useEffect(() => {
+    // Basic hydration check
+    console.log('LoginPage: Ready')
+  }, [])
+
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
-    // Check if this email is an Admin using new RPC function
     const { data: isAdmin } = await supabase.rpc('check_is_admin_email', {
       check_email: email
     })
@@ -34,7 +38,6 @@ export default function LoginPage() {
         alert('Magic Link sent! Please check your inbox.')
       }
     } else {
-      // Redirect to decoy for non-admins
       setTimeout(() => {
         router.push('/fake-login')
       }, 1500)
