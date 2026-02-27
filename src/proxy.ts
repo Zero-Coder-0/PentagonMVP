@@ -65,42 +65,39 @@ export async function proxy(request: NextRequest) {
         // NOTE: This runs on the Edge. Supabase Client queries are fast via HTTP.
         const { data: profile } = await supabase
             .from('users')
-            .select('role')
+            .select('role, is_active')
             .eq('id', user.id)
             .single()
 
-        const role = profile?.role || 'pending'
+        const role = profile?.role || 'vendor' // Strangers default to vendor
+        const is_active = profile?.is_active === true // Ensure strictly true
 
-        // 2. Enforce RBAC rules
-
-        // Super Admin gets a free pass everywhere
-        if (role === 'super_admin') {
-            return supabaseResponse
-        }
-
-        // Pending Users
-        if (role === 'pending' && path !== '/approval') {
+        // 2. Enforce the Waiting Room Constraint for non-active users
+        if (!is_active && path !== '/approval') {
             return NextResponse.redirect(new URL('/approval', request.url))
         }
 
-        // Tenant Admin specific blocks
-        if (role === 'tenant_admin' && path.startsWith('/admin/superdashboard')) {
-            return NextResponse.redirect(new URL('/admin', request.url))
-        }
+        // 3. Enforce the Strict Routing Matrix for Approved Users
+        if (is_active) {
+            // Super Admin gets access to everything
+            if (role === 'super_admin') {
+                return supabaseResponse
+            }
 
-        // General Access Checks based on the Map
-        if (role === 'tenant_admin' && path.startsWith('/admin')) return supabaseResponse;
-        if (['tenant_admin', 'salesman'].includes(role) && path.startsWith('/dashboard')) return supabaseResponse;
-        if (['tenant_admin', 'salesman', 'vendor'].includes(role) && path.startsWith('/vendor')) return supabaseResponse;
+            // Tenant Admin: blocked from /superdashboard variants
+            if (role === 'tenant_admin' && path.startsWith('/admin/superdashboard')) {
+                return NextResponse.redirect(new URL('/admin', request.url))
+            }
 
-        // If they reach here and the path is protected but didn't match their allowed routes:
-        if (path.startsWith('/admin') || path.startsWith('/dashboard') || path.startsWith('/vendor')) {
-            // Bounce them to their primary home or fake-login
-            if (role === 'vendor') return NextResponse.redirect(new URL('/vendor', request.url))
-            if (role === 'salesman') return NextResponse.redirect(new URL('/dashboard', request.url))
-            if (role === 'tenant_admin') return NextResponse.redirect(new URL('/admin', request.url))
+            // Salesman: Can visit /dashboard and /vendor. Blocked from /admin
+            if (role === 'salesman' && path.startsWith('/admin')) {
+                return NextResponse.redirect(new URL('/dashboard', request.url))
+            }
 
-            return NextResponse.redirect(new URL('/fake-login', request.url))
+            // Vendor: Can visit /vendor only. Blocked from /admin and /dashboard
+            if (role === 'vendor' && (path.startsWith('/admin') || path.startsWith('/dashboard'))) {
+                return NextResponse.redirect(new URL('/vendor', request.url))
+            }
         }
     }
 

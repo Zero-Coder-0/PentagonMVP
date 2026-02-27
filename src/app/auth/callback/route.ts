@@ -21,7 +21,7 @@ export async function GET(request: Request) {
       // Use email to link Google accounts to pre-existing rows in public.users
       const { data: profile, error: dbError } = await supabase
         .from('users')
-        .select('role')
+        .select('role, is_active')
         .eq('email', user.email)
         .maybeSingle()
 
@@ -30,9 +30,15 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${origin}/login?error=role_fetch_failed`)
       }
 
-      const role = profile?.role || 'pending'
+      const role = profile?.role || 'vendor'
+      const is_active = profile?.is_active === true
 
-      // Role-based routing (Let middleware handle strict enforcement, just do initial push)
+      // Quarantine check
+      if (!is_active) {
+        return NextResponse.redirect(`${origin}/approval`)
+      }
+
+      // Role-based routing for active users (Let middleware handle strict enforcement, just do initial push)
       if (role === 'super_admin') {
         return NextResponse.redirect(`${origin}/`)
       } else if (role === 'tenant_admin') {
