@@ -19,14 +19,18 @@ export async function GET(request: Request) {
     const user = session?.user
 
     if (user) {
-      // Role and is_active are now securely injected into the user's JWT 
-      // cookie by the Supabase Postgres trigger at the exact moment of login.
+      // DEBUG: Verify exactly what the Custom Access Token Hook injected
+      console.log('User metadata in JWT:', JSON.stringify(user.app_metadata, null, 2))
+
       const appMetadata = user.app_metadata || {}
       const role = appMetadata.role || 'vendor'
-      const is_active = appMetadata.is_active === true
+
+      // Use Boolean() to be absolutely sure we catch the TRUE value from JSON
+      const is_active = Boolean(appMetadata.is_active)
 
       // Quarantine check
       if (!is_active) {
+        console.log(`Access denied: User ${user.email} is NOT active. Redirecting.`)
         return NextResponse.redirect(`${origin}/approval-pending`)
       }
 
