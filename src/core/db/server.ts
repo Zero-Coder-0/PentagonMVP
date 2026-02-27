@@ -19,14 +19,14 @@ export async function createClient() {
           try {
             cookieStore.set({ name, value, ...options })
           } catch (error) {
-            // Handle middleware usage
+            // Handle error in Server Component context
           }
         },
         remove(name: string, options: any) {
           try {
             cookieStore.set({ name, value: '', ...options })
           } catch (error) {
-            // Handle middleware usage
+            // Handle error in Server Component context
           }
         },
       },

@@ -9,7 +9,7 @@ export default function AdminOverviewPage() {
     <div className="min-h-screen bg-slate-50">
       {/* Proper Container with Padding */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        
+
         {/* Page Header - WITH SPACING */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-slate-900 mb-2">Dashboard Overview</h1>
@@ -64,8 +64,7 @@ export default function AdminOverviewPage() {
             Development Mode Active
           </h3>
           <p className="text-blue-800 leading-relaxed">
-            You are bypassing <code className="bg-blue-200 px-2 py-1 rounded text-sm font-mono">proxy.ts</code>. 
-            Direct database access is enabled. Navigate to{' '}
+            Authentication bypass is enabled. Direct database access is active. Navigate to{' '}
             <Link href="/admin/inventory" className="font-semibold underline hover:text-blue-600">
               /admin/inventory
             </Link>{' '}
