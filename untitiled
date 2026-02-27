@@ -1,0 +1,8 @@
+git init                   
+git add .                  
+git commit -m "Initial commit of geoestate"                                       
+git config --global user.email "you@example.com"                                  
+git config --global user.name "Your Name"                                         
+git remote add origin https://github.com/Zero-Coder-0/PentagonMVP.git                  
+git branch -M main         
+git push -u origin main --force
