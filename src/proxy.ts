@@ -70,12 +70,16 @@ export async function proxy(request: NextRequest) {
     }
 
     if (user && session) {
+        // DEBUG: Inspect the JWT claims at the middleware layer
+        console.log(`[Proxy] Checking metadata for ${user.email}:`, JSON.stringify(session.user.app_metadata, null, 2))
+
         // 1. Instantly extract the user's custom claims from their signed JWT cookie
         const role = session.user.app_metadata?.role || 'vendor' // Strangers default to vendor
         const is_active = session.user.app_metadata?.is_active === true // Ensure strictly true
 
         // 2. Enforce the Waiting Room Constraint for non-active users
         if (!is_active && path !== '/approval-pending') {
+            console.log(`[Proxy] User ${user.email} is NOT active. Redirecting to approval-pending.`)
             return NextResponse.redirect(new URL('/approval-pending', request.url))
         }
 
