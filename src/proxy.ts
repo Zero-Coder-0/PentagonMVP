@@ -52,7 +52,8 @@ export async function proxy(request: NextRequest) {
 
     try {
         const [, payloadBase64] = session.access_token.split('.')
-        const decoded = JSON.parse(Buffer.from(payloadBase64, 'base64url').toString())
+        // atob() is used here instead of Buffer (not available in Edge Runtime)
+        const decoded = JSON.parse(atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/')))
         const appMetadata = decoded.app_metadata || {}
 
         role = appMetadata.role || 'vendor'
