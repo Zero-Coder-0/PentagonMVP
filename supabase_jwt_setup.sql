@@ -58,32 +58,92 @@ ALTER TABLE public.property_drafts ENABLE ROW LEVEL SECURITY;
 -- Supabase calls this automatically every time it creates a login token.
 -- It safely reads the role from public.users and injects it into the JWT.
 
+-- Grant supabase_auth_admin access to the public schema and users table
+GRANT USAGE ON SCHEMA public TO supabase_auth_admin;
+GRANT SELECT, UPDATE ON public.users TO supabase_auth_admin;
+
+-- Create a logging table to see EXACTLY what happens inside the hook
+CREATE TABLE IF NOT EXISTS public.hook_logs (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  created_at timestamptz DEFAULT now(),
+  user_id uuid,
+  debug_status text,
+  error_msg text,
+  event_payload jsonb
+);
+GRANT ALL ON public.hook_logs TO supabase_auth_admin;
+
 CREATE OR REPLACE FUNCTION public.custom_access_token_hook(event jsonb)
 RETURNS jsonb
 LANGUAGE plpgsql
-STABLE
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
-  claims jsonb;
-  user_role text;
-  user_is_active boolean;
+  claims       jsonb;
+  user_role    text;
+  user_active  boolean;
+  user_email   text;
+  debug_status text := 'started';
+  real_user_id uuid;
 BEGIN
-  -- Read the user's role and active status from YOUR table
-  SELECT role::text, is_active
-  INTO user_role, user_is_active
-  FROM public.users
-  WHERE id = (event->>'user_id')::uuid;
+  real_user_id := (event->>'user_id')::uuid;
 
-  -- Build the custom claims object
+  -- PRIMARY: UUID lookup
+  SELECT role::text, is_active
+  INTO user_role, user_active
+  FROM public.users
+  WHERE id = real_user_id::text;
+
+  IF FOUND THEN
+    debug_status := 'found_by_uuid';
+  ELSE
+    -- FALLBACK: Email lookup
+    user_email := TRIM(LOWER(
+      COALESCE(event->'claims'->>'email', event->'claims'->'user_metadata'->>'email')
+    ));
+    
+    IF user_email IS NOT NULL THEN
+      SELECT role::text, is_active INTO user_role, user_active
+      FROM public.users WHERE TRIM(LOWER(email)) = user_email;
+      
+      IF FOUND THEN
+        debug_status := 'found_by_email_syncing';
+        UPDATE public.users SET id = real_user_id::text WHERE TRIM(LOWER(email)) = user_email;
+      ELSE
+        debug_status := 'not_found_in_public_users';
+      END IF;
+    ELSE
+      debug_status := 'no_email_in_claims';
+    END IF;
+  END IF;
+
+  -- 3. PREPARE THE FULL CLAIMS STAMP (Schema Compliant)
+  -- We take the ORIGINAL claims and only merge our changes into app_metadata
+  -- This ensures mandatory fields like 'aud', 'sub', 'exp' are preserved
   claims := event->'claims';
-  claims := jsonb_set(claims, '{app_metadata}',
-    COALESCE(claims->'app_metadata', '{}'::jsonb) ||
-    jsonb_build_object('role', COALESCE(user_role, 'vendor'), 'is_active', COALESCE(user_is_active, false))
+  claims := claims || jsonb_build_object(
+    'app_metadata', 
+    COALESCE(claims->'app_metadata', '{}'::jsonb) || 
+    jsonb_build_object(
+      'role', COALESCE(user_role, 'vendor'), 
+      'is_active', COALESCE(user_active, false),
+      'hook_debug_status', debug_status
+    )
   );
 
-  -- Return the modified event
-  RETURN jsonb_set(event, '{claims}', claims);
+  -- 4. LOG THE ATTEMPT (For the "Black Box")
+  INSERT INTO public.hook_logs (user_id, debug_status, event_payload)
+  VALUES (real_user_id, debug_status, jsonb_build_object('returned_claims', claims));
+
+  -- 5. RETURN THE WRAPPER (Must contain the full claims object)
+  RETURN jsonb_build_object('claims', claims);
+
+EXCEPTION WHEN OTHERS THEN
+  INSERT INTO public.hook_logs (user_id, debug_status, error_msg, event_payload)
+  VALUES (real_user_id, 'exception', SQLERRM, event);
+  -- If logic fails, return the original claims so the user isn't blocked (just inactive)
+  RETURN jsonb_build_object('claims', event->'claims');
 END;
 $$;
 
