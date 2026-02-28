@@ -63,7 +63,14 @@ export async function proxy(request: NextRequest) {
 
     try {
         const [, payloadB64] = session.access_token.split('.')
-        const decoded = JSON.parse(atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/')))
+
+        // Robust base64url to base64 conversion with mandatory padding for atob()
+        // (Edge runtime / atob requirement)
+        const base64 = payloadB64.replace(/-/g, '+').replace(/_/g, '/')
+        const pad = base64.length % 4
+        const padded = pad ? base64 + '='.repeat(4 - pad) : base64
+
+        const decoded = JSON.parse(atob(padded))
         const meta = decoded.app_metadata || {}
 
         role = meta.role || 'vendor'
