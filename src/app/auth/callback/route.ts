@@ -24,13 +24,14 @@ export async function GET(request: Request) {
 
       const appMetadata = user.app_metadata || {}
       const role = appMetadata.role || 'vendor'
+      const hook_debug = appMetadata.hook_debug_status || 'unknown'
 
       // Use Boolean() to be absolutely sure we catch the TRUE value from JSON
       const is_active = Boolean(appMetadata.is_active)
 
       // Quarantine check
       if (!is_active) {
-        console.log(`Access denied: User ${user.email} is NOT active. Redirecting.`)
+        console.log(`Access denied: User ${user.email} is NOT active (Hook: ${hook_debug}). Redirecting.`)
         return NextResponse.redirect(`${origin}/approval-pending`)
       }
 
