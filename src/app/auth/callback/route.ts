@@ -1,4 +1,4 @@
-import { createClient } from '@/core/db/server' // Fixed import name
+import { createClient } from '@/core/db/server'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
@@ -14,40 +14,36 @@ export async function GET(request: Request) {
       return NextResponse.redirect(`${origin}/login?error=auth_code_error`)
     }
 
-    // Extract user directly from the exchanged session token
-    // (getUser() fetches from DB and strips JWT custom claims!)
-    const user = session?.user
+    if (session?.access_token) {
+      // CRITICAL: Decode the raw JWT access_token to get hook-injected claims.
+      // session.user.app_metadata comes from auth.users table (no custom claims).
+      // The hook injects into the JWT token itself — we must decode it directly.
+      try {
+        const [, payloadBase64] = session.access_token.split('.')
+        const decoded = JSON.parse(Buffer.from(payloadBase64, 'base64url').toString())
+        const appMetadata = decoded.app_metadata || {}
 
-    if (user) {
-      // NUCLEAR DEBUG: Print the ENTIRE user object to catch the claims anywhere
-      console.log('NUCLEAR USER OBJECT:', JSON.stringify(user, null, 2))
+        const role = appMetadata.role || 'vendor'
+        const is_active = Boolean(appMetadata.is_active)
+        const hook_debug = appMetadata.hook_debug_status || 'unknown'
 
-      const appMetadata = user.app_metadata || {}
+        console.log(`[Callback] ${session.user.email} | role=${role} | is_active=${is_active} | hook=${hook_debug}`)
+        console.log('[Callback] Full decoded JWT app_metadata:', JSON.stringify(appMetadata, null, 2))
 
-      // Fallback: Check if hook_debug_status is at the top level or in app_metadata
-      const hook_debug = (appMetadata as any).hook_debug_status || (user as any).hook_debug_status || 'unknown'
-      const role = (appMetadata as any).role || (user as any).role || 'vendor'
+        if (!is_active) {
+          console.log(`Access denied: User ${session.user.email} is NOT active (Hook: ${hook_debug}). Redirecting.`)
+          return NextResponse.redirect(`${origin}/approval-pending`)
+        }
 
-      // Use Boolean() + multiple paths to be ABSOLUTELY sure we catch the TRUE value
-      const is_active = Boolean((appMetadata as any).is_active) || Boolean((user as any).is_active)
+        if (role === 'super_admin') return NextResponse.redirect(`${origin}/`)
+        if (role === 'tenant_admin') return NextResponse.redirect(`${origin}/admin`)
+        if (role === 'salesman') return NextResponse.redirect(`${origin}/dashboard`)
+        if (role === 'vendor') return NextResponse.redirect(`${origin}/vendor`)
 
-      // Quarantine check
-      if (!is_active) {
-        console.log(`Access denied: User ${user.email} is NOT active (Hook: ${hook_debug}). Redirecting.`)
         return NextResponse.redirect(`${origin}/approval-pending`)
-      }
-
-      // Role-based routing for active users (Let middleware handle strict enforcement, just do initial push)
-      if (role === 'super_admin') {
-        return NextResponse.redirect(`${origin}/`)
-      } else if (role === 'tenant_admin') {
-        return NextResponse.redirect(`${origin}/admin`)
-      } else if (role === 'salesman') {
-        return NextResponse.redirect(`${origin}/dashboard`)
-      } else if (role === 'vendor') {
-        return NextResponse.redirect(`${origin}/vendor`)
-      } else {
-        return NextResponse.redirect(`${origin}/approval-pending`)
+      } catch (decodeError) {
+        console.error('[Callback] Failed to decode JWT:', decodeError)
+        return NextResponse.redirect(`${origin}/login?error=jwt_decode_error`)
       }
     }
   }

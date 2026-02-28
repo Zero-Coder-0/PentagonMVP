@@ -23,7 +23,7 @@ export async function proxy(request: NextRequest) {
 
     const path = request.nextUrl.pathname
 
-    // Public routes — MUST be checked BEFORE any session access to prevent
+    // Public routes — checked BEFORE any session access to prevent
     // PKCE code verifier cookie corruption during the /auth/callback flow.
     if (
         path.startsWith('/_next') ||
@@ -37,33 +37,42 @@ export async function proxy(request: NextRequest) {
         return supabaseResponse
     }
 
-    // CRITICAL: Use getSession() ONLY — NOT getUser().
-    // getUser() makes a live server call that returns user data WITHOUT custom JWT claims.
-    // getSession() reads the signed JWT cookie which CONTAINS our injected role and is_active.
     const { data: { session } } = await supabase.auth.getSession()
 
-    // If no session, redirect to login
-    if (!session) {
+    if (!session?.access_token) {
         return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    const appMetadata = session.user.app_metadata || {}
-    const role = (appMetadata as any).role || 'vendor'
-    const is_active = Boolean((appMetadata as any).is_active)
-    const hook_debug = (appMetadata as any).hook_debug_status || 'unknown'
+    // CRITICAL: Decode the raw JWT access_token to get hook-injected claims.
+    // session.user.app_metadata comes from auth.users table, NOT the JWT.
+    // The custom access token hook injects claims INTO the JWT token string directly.
+    let role = 'vendor'
+    let is_active = false
+    let hook_debug = 'decode_error'
 
-    console.log(`[Proxy] ${session.user.email} | role=${role} | is_active=${is_active} | hook=${hook_debug}`)
+    try {
+        const [, payloadBase64] = session.access_token.split('.')
+        const decoded = JSON.parse(Buffer.from(payloadBase64, 'base64url').toString())
+        const appMetadata = decoded.app_metadata || {}
 
-    // Waiting Room: inactive users go to approval-pending
+        role = appMetadata.role || 'vendor'
+        is_active = Boolean(appMetadata.is_active)
+        hook_debug = appMetadata.hook_debug_status || 'unknown'
+
+        console.log(`[Proxy] ${session.user.email} | role=${role} | is_active=${is_active} | hook=${hook_debug}`)
+    } catch (e) {
+        console.error('[Proxy] JWT decode failed:', e)
+        return NextResponse.redirect(new URL('/login', request.url))
+    }
+
+    // Waiting Room: inactive users
     if (!is_active) {
         console.log(`[Proxy] BLOCKED: ${session.user.email} is not active.`)
         return NextResponse.redirect(new URL('/approval-pending', request.url))
     }
 
     // Role-based Route Enforcement
-    if (role === 'super_admin') {
-        return supabaseResponse // Full access
-    }
+    if (role === 'super_admin') return supabaseResponse
 
     if (role === 'tenant_admin' && path.startsWith('/admin/superdashboard')) {
         return NextResponse.redirect(new URL('/admin', request.url))
