@@ -1,15 +1,9 @@
-import { createClient } from '@/core/db/server'
+// Root page — proxy.ts (middleware) handles all routing.
+// If a user lands here with a valid session, they've already been
+// redirected by the callback to the correct role-based route.
+// This redirect acts as a last-resort safety net only.
 import { redirect } from 'next/navigation'
 
-export default async function HomePage() {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-
-  if (!session) {
-    redirect('/login')
-  }
-
-  // If we have a session but hit / (the root), let's push to the admin dashboard
-  // as the safest default for developers/admins.
-  redirect('/admin')
+export default function HomePage() {
+  redirect('/login')
 }

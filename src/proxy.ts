@@ -1,7 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
+// ============================================================
+// PROXY.TS — Centralised Auth & RBAC Guard for all routes
+// This file contains ALL routing/auth logic for the project.
+// src/middleware.ts is just a thin entry point that calls this.
+// ============================================================
+
+export async function proxy(request: NextRequest) {
     let supabaseResponse = NextResponse.next({ request })
 
     const supabase = createServerClient(
@@ -23,8 +29,9 @@ export async function middleware(request: NextRequest) {
 
     const path = request.nextUrl.pathname
 
-    // Public routes — checked BEFORE any session access to prevent
-    // PKCE code verifier cookie corruption during the /auth/callback flow.
+    // ── Public / passthrough routes ───────────────────────────
+    // MUST be checked BEFORE any cookie access to prevent PKCE
+    // code-verifier corruption in the /auth/callback flow.
     if (
         path.startsWith('/_next') ||
         path.startsWith('/api') ||
@@ -37,61 +44,64 @@ export async function middleware(request: NextRequest) {
         return supabaseResponse
     }
 
+    // ── Session Check ─────────────────────────────────────────
+    // getSession() reads the signed JWT cookie (fast, no network).
+    // We then decode the access_token directly to read custom
+    // claims injected by our Supabase hook — because
+    // session.user.app_metadata is sourced from the DB table
+    // (NOT the JWT) and will NOT contain our custom hook claims.
     const { data: { session } } = await supabase.auth.getSession()
 
     if (!session?.access_token) {
+        console.log(`[Proxy] No session for ${path} — redirecting to /login`)
         return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    // CRITICAL: Decode the raw JWT access_token to get hook-injected claims.
-    // session.user.app_metadata comes from auth.users table, NOT the JWT.
-    // The custom access token hook injects claims INTO the JWT token string directly.
+    // ── Decode JWT claims for RBAC ────────────────────────────
     let role = 'vendor'
     let is_active = false
     let hook_debug = 'decode_error'
 
     try {
-        const [, payloadBase64] = session.access_token.split('.')
-        // atob() is used here instead of Buffer (not available in Edge Runtime)
-        const decoded = JSON.parse(atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/')))
-        const appMetadata = decoded.app_metadata || {}
+        // atob() used instead of Buffer — Edge Runtime compatible
+        const [, payloadB64] = session.access_token.split('.')
+        const decoded = JSON.parse(atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/')))
+        const meta = decoded.app_metadata || {}
 
-        role = appMetadata.role || 'vendor'
-        is_active = Boolean(appMetadata.is_active)
-        hook_debug = appMetadata.hook_debug_status || 'unknown'
+        role = meta.role || 'vendor'
+        is_active = Boolean(meta.is_active)
+        hook_debug = meta.hook_debug_status || 'unknown'
 
-        console.log(`[Proxy] ${session.user.email} | role=${role} | is_active=${is_active} | hook=${hook_debug}`)
+        console.log(`[Proxy] ${session.user.email} | role=${role} | active=${is_active} | hook=${hook_debug}`)
     } catch (e) {
-        console.error('[Proxy] JWT decode failed:', e)
+        console.error('[Proxy] JWT decode error:', e)
         return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    // Waiting Room: inactive users
+    // ── Waiting Room ──────────────────────────────────────────
     if (!is_active) {
-        console.log(`[Proxy] BLOCKED: ${session.user.email} is not active.`)
+        console.log(`[Proxy] BLOCKED (inactive): ${session.user.email}`)
         return NextResponse.redirect(new URL('/approval-pending', request.url))
     }
 
-    // Role-based Route Enforcement
+    // ── Role-based Route Enforcement ──────────────────────────
+    // Super Admin — unrestricted
     if (role === 'super_admin') return supabaseResponse
 
+    // Tenant Admin — blocked from /admin/superdashboard
     if (role === 'tenant_admin' && path.startsWith('/admin/superdashboard')) {
         return NextResponse.redirect(new URL('/admin', request.url))
     }
 
+    // Salesman — blocked from /admin
     if (role === 'salesman' && path.startsWith('/admin')) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
+    // Vendor — blocked from /admin and /dashboard
     if (role === 'vendor' && (path.startsWith('/admin') || path.startsWith('/dashboard'))) {
         return NextResponse.redirect(new URL('/vendor', request.url))
     }
 
     return supabaseResponse
-}
-
-export const config = {
-    matcher: [
-        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-    ],
 }
