@@ -19,15 +19,17 @@ export async function GET(request: Request) {
     const user = session?.user
 
     if (user) {
-      // DEBUG: Verify exactly what the Custom Access Token Hook injected
-      console.log('User metadata in JWT:', JSON.stringify(user.app_metadata, null, 2))
+      // NUCLEAR DEBUG: Print the ENTIRE user object to catch the claims anywhere
+      console.log('NUCLEAR USER OBJECT:', JSON.stringify(user, null, 2))
 
       const appMetadata = user.app_metadata || {}
-      const role = appMetadata.role || 'vendor'
-      const hook_debug = appMetadata.hook_debug_status || 'unknown'
 
-      // Use Boolean() to be absolutely sure we catch the TRUE value from JSON
-      const is_active = Boolean(appMetadata.is_active)
+      // Fallback: Check if hook_debug_status is at the top level or in app_metadata
+      const hook_debug = (appMetadata as any).hook_debug_status || (user as any).hook_debug_status || 'unknown'
+      const role = (appMetadata as any).role || (user as any).role || 'vendor'
+
+      // Use Boolean() + multiple paths to be ABSOLUTELY sure we catch the TRUE value
+      const is_active = Boolean((appMetadata as any).is_active) || Boolean((user as any).is_active)
 
       // Quarantine check
       if (!is_active) {
