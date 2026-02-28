@@ -2,9 +2,9 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 // ============================================================
-// PROXY.TS — Centralised Auth & RBAC Guard for all routes
-// This file contains ALL routing/auth logic for the project.
-// src/middleware.ts is just a thin entry point that calls this.
+// PROXY.TS — Next.js 16 convention (renamed from middleware.ts)
+// This is the sole routing guard for the entire application.
+// Docs: https://nextjs.org/docs/app/building-your-application/routing/middleware
 // ============================================================
 
 export async function proxy(request: NextRequest) {
@@ -30,7 +30,7 @@ export async function proxy(request: NextRequest) {
     const path = request.nextUrl.pathname
 
     // ── Public / passthrough routes ───────────────────────────
-    // MUST be checked BEFORE any cookie access to prevent PKCE
+    // MUST be checked BEFORE cookie access to prevent PKCE
     // code-verifier corruption in the /auth/callback flow.
     if (
         path.startsWith('/_next') ||
@@ -45,11 +45,6 @@ export async function proxy(request: NextRequest) {
     }
 
     // ── Session Check ─────────────────────────────────────────
-    // getSession() reads the signed JWT cookie (fast, no network).
-    // We then decode the access_token directly to read custom
-    // claims injected by our Supabase hook — because
-    // session.user.app_metadata is sourced from the DB table
-    // (NOT the JWT) and will NOT contain our custom hook claims.
     const { data: { session } } = await supabase.auth.getSession()
 
     if (!session?.access_token) {
@@ -57,13 +52,16 @@ export async function proxy(request: NextRequest) {
         return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    // ── Decode JWT claims for RBAC ────────────────────────────
+    // ── Decode JWT claims ─────────────────────────────────────
+    // Must decode the raw access_token because session.user.app_metadata
+    // is sourced from the auth.users DB table and does NOT contain
+    // custom claims injected by our Supabase hook.
+    // atob() is used instead of Buffer — Edge Runtime compatible.
     let role = 'vendor'
     let is_active = false
     let hook_debug = 'decode_error'
 
     try {
-        // atob() used instead of Buffer — Edge Runtime compatible
         const [, payloadB64] = session.access_token.split('.')
         const decoded = JSON.parse(atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/')))
         const meta = decoded.app_metadata || {}
@@ -85,23 +83,25 @@ export async function proxy(request: NextRequest) {
     }
 
     // ── Role-based Route Enforcement ──────────────────────────
-    // Super Admin — unrestricted
     if (role === 'super_admin') return supabaseResponse
 
-    // Tenant Admin — blocked from /admin/superdashboard
     if (role === 'tenant_admin' && path.startsWith('/admin/superdashboard')) {
         return NextResponse.redirect(new URL('/admin', request.url))
     }
 
-    // Salesman — blocked from /admin
     if (role === 'salesman' && path.startsWith('/admin')) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
-    // Vendor — blocked from /admin and /dashboard
     if (role === 'vendor' && (path.startsWith('/admin') || path.startsWith('/dashboard'))) {
         return NextResponse.redirect(new URL('/vendor', request.url))
     }
 
     return supabaseResponse
+}
+
+export const config = {
+    matcher: [
+        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    ],
 }
