@@ -90,6 +90,15 @@ export async function proxy(request: NextRequest) {
     }
 
     // ── Role-based Route Enforcement ──────────────────────────
+    // If user hits the root (/), push them to their dashboard
+    if (path === '/') {
+        if (role === 'super_admin') return NextResponse.redirect(new URL('/admin', request.url))
+        if (role === 'tenant_admin') return NextResponse.redirect(new URL('/admin', request.url))
+        if (role === 'salesman') return NextResponse.redirect(new URL('/dashboard', request.url))
+        if (role === 'vendor') return NextResponse.redirect(new URL('/vendor', request.url))
+    }
+
+    // Path-specific enforcement
     if (role === 'super_admin') return supabaseResponse
 
     if (role === 'tenant_admin' && path.startsWith('/admin/superdashboard')) {

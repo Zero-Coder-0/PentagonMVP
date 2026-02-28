@@ -1,9 +1,8 @@
-// Root page — proxy.ts (middleware) handles all routing.
-// If a user lands here with a valid session, they've already been
-// redirected by the callback to the correct role-based route.
-// This redirect acts as a last-resort safety net only.
+// src/app/page.tsx
+// This page is a fallback. proxy.ts (Next.js 16) handles the real routing.
 import { redirect } from 'next/navigation'
 
 export default function HomePage() {
+  // If the proxy allowed the request to hit here, the user is likely a guest
   redirect('/login')
 }
