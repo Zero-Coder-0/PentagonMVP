@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from 'next/server'
  * MIDDLEWARE.TS — Next.js 16 routing guard.
  * This file replaces src/proxy.ts to align with framework standards.
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(

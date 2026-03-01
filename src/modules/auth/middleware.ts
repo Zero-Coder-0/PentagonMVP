@@ -3,4 +3,4 @@
 //   src/proxy.ts  ← edit that file instead
 // ============================================================
 // Re-export for backwards compatibility if anything imports updateSession
-export { proxy as updateSession } from '../../middleware'
+export { proxy as updateSession } from '../../proxy'
