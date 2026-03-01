@@ -8,6 +8,6 @@ export default defineConfig({
   schema: 'prisma/schema.prisma',
   // ADD THIS BLOCK:
   datasource: {
-    url: process.env.DATABASE_URL,
+    url: process.env.DIRECT_URL,
   },
 });

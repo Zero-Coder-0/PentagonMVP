@@ -1,4 +1,9 @@
-import { createServerClient as createSupabaseServerClient } from '@supabase/ssr'
+// Redirect all calls to the centralized singleton to prevent connection leaks
+export { prisma as db } from '@/lib/prisma';
+
+
+
+/*import { createServerClient as createSupabaseServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 export async function createClient() {
@@ -31,3 +36,4 @@ export async function createClient() {
 
   return supabase
 }
+*/
