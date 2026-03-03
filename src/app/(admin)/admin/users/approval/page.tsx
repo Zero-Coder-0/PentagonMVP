@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/core/db/client' // Your Supabase Client
 import { Check, X, Shield, Briefcase, User } from 'lucide-react'
 
-type Profile = {
+type UserRecord = {
   id: string
   email: string
   role: 'salesman' | 'vendor'
@@ -12,7 +12,7 @@ type Profile = {
 }
 
 export default function ApprovalPage() {
-  const [users, setUsers] = useState<Profile[]>([])
+  const [users, setUsers] = useState<UserRecord[]>([])
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
@@ -20,12 +20,12 @@ export default function ApprovalPage() {
   const fetchPending = async () => {
     setLoading(true)
     const { data } = await supabase
-      .from('profiles')
+      .from('users')
       .select('*')
       .eq('is_active', false)
       .order('created_at', { ascending: false })
-    
-    setUsers(data as Profile[] || [])
+
+    setUsers(data as UserRecord[] || [])
     setLoading(false)
   }
 
@@ -34,7 +34,7 @@ export default function ApprovalPage() {
   // Action: Approve User
   const handleApprove = async (userId: string, assignedRole: string) => {
     const { error } = await supabase
-      .from('profiles')
+      .from('users')
       .update({ is_active: true, role: assignedRole })
       .eq('id', userId)
 
@@ -48,14 +48,14 @@ export default function ApprovalPage() {
 
   // Action: Reject User (Delete)
   const handleReject = async (userId: string) => {
-    if(!confirm("Are you sure you want to reject and delete this user?")) return;
-    
+    if (!confirm("Are you sure you want to reject and delete this user?")) return;
+
     // Delete from profiles (Cascade will likely need to be handled if they have auth data, 
     // but usually we delete from public.profiles. 
     // Note: To fully delete Auth user requires a Service Role key or Edge Function, 
     // but deleting the profile prevents them from logging in via Middleware check.)
     const { error } = await supabase
-      .from('profiles')
+      .from('users')
       .delete()
       .eq('id', userId)
 
@@ -69,7 +69,7 @@ export default function ApprovalPage() {
   return (
     <div className="p-8 max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-        <Shield className="text-amber-600"/> Pending Access Requests
+        <Shield className="text-amber-600" /> Pending Access Requests
       </h1>
 
       {users.length === 0 ? (
@@ -89,11 +89,11 @@ export default function ApprovalPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {users.map((user) => (
-                <UserRow 
-                  key={user.id} 
-                  user={user} 
-                  onApprove={handleApprove} 
-                  onReject={handleReject} 
+                <UserRow
+                  key={user.id}
+                  user={user}
+                  onApprove={handleApprove}
+                  onReject={handleReject}
                 />
               ))}
             </tbody>
@@ -120,7 +120,7 @@ function UserRow({ user, onApprove, onReject }: any) {
         </span>
       </td>
       <td className="p-4">
-        <select 
+        <select
           value={role}
           onChange={(e) => setRole(e.target.value)}
           className="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5"
@@ -130,13 +130,13 @@ function UserRow({ user, onApprove, onReject }: any) {
         </select>
       </td>
       <td className="p-4 text-right space-x-2">
-        <button 
+        <button
           onClick={() => onApprove(user.id, role)}
           className="inline-flex items-center px-3 py-2 text-sm font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200"
         >
           <Check size={16} className="mr-1" /> Approve
         </button>
-        <button 
+        <button
           onClick={() => onReject(user.id)}
           className="inline-flex items-center px-3 py-2 text-sm font-medium text-red-700 bg-red-100 rounded-lg hover:bg-red-200"
         >

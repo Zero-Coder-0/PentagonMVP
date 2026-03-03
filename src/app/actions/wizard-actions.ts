@@ -108,7 +108,7 @@ export async function fetchPropertyDrafts(filterStatus: string = 'all') {
         status: d.status,
         admin_notes: d.admin_notes,
         created_at: d.created_at.toISOString(),
-        profiles: {
+        vendor_profile: {
             email: d.vendor?.email || 'Unknown'
         }
     }));

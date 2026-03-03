@@ -10,7 +10,7 @@ export default function ManageUsersPage() {
   useEffect(() => {
     const fetchUsers = async () => {
       const { data } = await supabase
-        .from('profiles')
+        .from('users')
         .select('*')
         .eq('is_active', true)
         .order('role', { ascending: true })
@@ -36,11 +36,11 @@ export default function ManageUsersPage() {
               // --- MASKING LOGIC START ---
               // If user is super_admin, pretend they are tenant_admin for display
               const displayRole = user.role === 'super_admin' ? 'tenant_admin' : user.role;
-              
+
               // Define styles based on the DISPLAY role, not the real one
-              const roleStyles = displayRole === 'tenant_admin' 
+              const roleStyles = displayRole === 'tenant_admin'
                 ? 'bg-gray-100 text-gray-700' // Gray style for Admin
-                : displayRole === 'salesman' 
+                : displayRole === 'salesman'
                   ? 'bg-blue-100 text-blue-700' // Blue style for Sales
                   : 'bg-amber-100 text-amber-700'; // Amber for Vendor
               // --- MASKING LOGIC END ---

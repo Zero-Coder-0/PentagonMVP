@@ -43,6 +43,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         // 1. Get the session (includes the access_token JWT)
         const { data: { session } } = await supabase.auth.getSession();
 
+        // GUARD: If no session yet, stop here to prevent 403 race conditions
+        if (!session) {
+          console.log('[AdminLayout] No session found, deferring initialization');
+          // We keep loading as true or handled by the parent
+          return;
+        }
+
         if (session?.access_token) {
           // 2. Decode the JWT payload (the middle part of the token)
           const [, payloadB64] = session.access_token.split('.');

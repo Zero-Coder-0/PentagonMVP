@@ -11,7 +11,7 @@ interface PropertyDraft {
   status: 'pending' | 'approved' | 'rejected';
   admin_notes?: string;
   created_at: string;
-  profiles?: {
+  vendor_profile?: {
     email: string;
   };
 }
@@ -50,7 +50,7 @@ export default function ApprovalsPage() {
     const confirmed = confirm(
       `✅ QUICK APPROVE\n\n` +
       `Project: ${draft.submission_data.name || draft.submission_data.project_name}\n` +
-      `Submitted by: ${draft.profiles?.email || 'Unknown'}\n\n` +
+      `Submitted by: ${draft.vendor_profile?.email || 'Unknown'}\n\n` +
       `This will:\n` +
       `✓ Move the project to live database (Prisma)\n` +
       `✓ Mark draft as approved\n\n` +
@@ -224,7 +224,7 @@ export default function ApprovalsPage() {
                           <strong>Zone:</strong> {draft.submission_data.zone || draft.submission_data.city_zone || 'N/A'} | <strong>Region:</strong> {draft.submission_data.region || 'N/A'}
                         </p>
                         <p className="text-sm text-slate-500 mb-1">
-                          <strong>Submitted by:</strong> {draft.profiles?.email || 'Unknown vendor'}
+                          <strong>Submitted by:</strong> {draft.vendor_profile?.email || 'Unknown vendor'}
                         </p>
                         <p className="text-sm text-slate-500">
                           <strong>Submitted on:</strong> {new Date(draft.created_at).toLocaleString()}
