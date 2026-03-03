@@ -46,7 +46,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         // GUARD: If no session yet, stop here to prevent 403 race conditions
         if (!session) {
           console.log('[AdminLayout] No session found, deferring initialization');
-          // We keep loading as true or handled by the parent
+          setLoading(false);
           return;
         }
 
@@ -64,17 +64,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           setUserRole(role);
         }
 
-        // 4. Count Pending Approvals
-        const { count: propertyCount, error: propertyError } = await supabase
-          .from('property_drafts')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending');
+        // 4. Count Pending Approvals (Wrapped in separate try/catch for "Mobile Fix")
+        try {
+          const { count: propertyCount, error: propertyError } = await supabase
+            .from('property_drafts')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'pending');
 
-        if (propertyError) {
-          console.warn('Could not fetch property drafts count:', propertyError.message || propertyError);
+          if (propertyError) {
+            console.warn('Mobile Auth Check: Count restricted (likely RLS), but allowing layout load.', propertyError.message);
+            setPendingCount(0);
+          } else {
+            setPendingCount(propertyCount || 0);
+          }
+        } catch (innerErr) {
+          console.error('[AdminLayout] Count fetch failed defensively:', innerErr);
           setPendingCount(0);
-        } else {
-          setPendingCount(propertyCount || 0);
         }
 
       } catch (err) {
