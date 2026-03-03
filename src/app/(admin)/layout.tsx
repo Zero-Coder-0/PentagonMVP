@@ -38,19 +38,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     async function initData() {
       try {
-        // 1. Get Current User Role
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: profile } = await supabase
-            .from('users')
-            .select('role')
-            .eq('id', user.id)
-            .single();
+        setLoading(true);
 
-          setUserRole(profile?.role || null);
+        // 1. Get the session (includes the access_token JWT)
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session?.access_token) {
+          // 2. Decode the JWT payload (the middle part of the token)
+          const [, payloadB64] = session.access_token.split('.');
+          // Using a robust base64url to base64 conversion for atob()
+          const base64 = payloadB64.replace(/-/g, '+').replace(/_/g, '/');
+          const pad = base64.length % 4;
+          const padded = pad ? base64 + '='.repeat(4 - pad) : base64;
+          const decoded = JSON.parse(atob(padded));
+
+          // 3. Extract the role from app_metadata
+          const role = decoded.app_metadata?.role || 'vendor';
+          setUserRole(role);
         }
 
-        // 2. Count Pending Approvals
+        // 4. Count Pending Approvals
         const { count: propertyCount, error: propertyError } = await supabase
           .from('property_drafts')
           .select('*', { count: 'exact', head: true })
@@ -80,7 +87,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         .select('*', { count: 'exact', head: true })
         .eq('status', 'pending')
         .then(({ count }) => setPendingCount(count || 0));
-    }, 30000);
+    }, 3000000);
 
     return () => clearInterval(interval);
   }, []);
