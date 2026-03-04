@@ -6,6 +6,9 @@ import { NextResponse, type NextRequest } from 'next/server'
  * This file replaces src/proxy.ts to align with framework standards.
  */
 export async function proxy(request: NextRequest) {
+  const path = request.nextUrl.pathname
+  console.log(`[TRACE_00] Proxy checking path: ${path}`)
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -31,8 +34,6 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  const path = request.nextUrl.pathname
-
   // 1. PUBLIC ROUTES: Skip authentication for internal assets and auth flow
   if (
     path.startsWith('/_next') ||
@@ -43,6 +44,7 @@ export async function proxy(request: NextRequest) {
     path === '/approval-pending' ||
     path.startsWith('/auth/callback')
   ) {
+    console.log(`[TRACE_01] Path ${path} is public. Skipping auth.`)
     return supabaseResponse
   }
 
@@ -51,6 +53,7 @@ export async function proxy(request: NextRequest) {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
   if (authError || !user) {
+    console.log(`[TRACE_02] Redirecting to /login | authError: ${authError?.message} | user: ${user ? 'present' : 'null'}`)
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
@@ -58,6 +61,7 @@ export async function proxy(request: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession()
 
   if (!session?.access_token) {
+    console.log(`[TRACE_03] Redirecting to /login | session token missing`)
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
@@ -75,19 +79,23 @@ export async function proxy(request: NextRequest) {
     const meta = decoded.app_metadata || {}
     role = meta.role || 'vendor'
     is_active = Boolean(meta.is_active)
+
+    console.log(`[TRACE_04] Decoded JWT | role: ${role} | is_active: ${is_active}`)
   } catch (e) {
-    console.error('[Middleware] JWT decode error:', e)
+    console.error(`[TRACE_05] JWT decode error:`, e)
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
   // 5. WAITING ROOM: Block users who haven't been approved yet
   if (!is_active) {
+    console.log(`[TRACE_06] Redirecting to /approval-pending | user inactive`)
     return NextResponse.redirect(new URL('/approval-pending', request.url))
   }
 
   // 6. ROLE-BASED REDIRECTION: Ensure users stay in their designated areas
   // Handle Root Redirect
   if (path === '/') {
+    console.log(`[TRACE_07] Root path redirect. Role: ${role}`)
     if (role === 'super_admin' || role === 'tenant_admin')
       return NextResponse.redirect(new URL('/admin', request.url))
     if (role === 'salesman')
@@ -101,13 +109,16 @@ export async function proxy(request: NextRequest) {
   const isDashboardPath = path.startsWith('/dashboard')
 
   if (role === 'salesman' && isAdminPath) {
+    console.log(`[TRACE_08] Blocking salesman from admin path`)
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   if (role === 'vendor' && (isAdminPath || isDashboardPath)) {
+    console.log(`[TRACE_09] Blocking vendor from protected path`)
     return NextResponse.redirect(new URL('/vendor', request.url))
   }
 
+  console.log(`[TRACE_10] Auth passed. Proceeding to ${path}`)
   return supabaseResponse
 }
 
