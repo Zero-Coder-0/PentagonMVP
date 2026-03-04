@@ -12,7 +12,7 @@ import {
   Settings,
   Sparkles
 } from 'lucide-react';
-import { createBrowserClient } from '@supabase/ssr';
+import { getAdminLayoutData } from '@/app/actions/gateway-actions';
 
 interface NavItem {
   href: string;
@@ -30,60 +30,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [userRole, setUserRole] = useState<string | null>(null); // To store role
   const [loading, setLoading] = useState(true);
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   useEffect(() => {
     async function initData() {
       try {
         setLoading(true);
 
-        // 1. Get the session (includes the access_token JWT)
-        const { data: { session } } = await supabase.auth.getSession();
+        // Call the secure Server Action instead of the Browser Client
+        const { role, pendingCount: fetchedCount } = await getAdminLayoutData();
 
-        // GUARD: If no session yet, stop here to prevent 403 race conditions
-        if (!session) {
-          console.log('[AdminLayout] No session found, deferring initialization');
-          setLoading(false);
-          return;
-        }
-
-        if (session?.access_token) {
-          // 2. Decode the JWT payload (the middle part of the token)
-          const [, payloadB64] = session.access_token.split('.');
-          // Using a robust base64url to base64 conversion for atob()
-          const base64 = payloadB64.replace(/-/g, '+').replace(/_/g, '/');
-          const pad = base64.length % 4;
-          const padded = pad ? base64 + '='.repeat(4 - pad) : base64;
-          const decoded = JSON.parse(atob(padded));
-
-          // 3. Extract the role from app_metadata
-          const role = decoded.app_metadata?.role || 'vendor';
+        if (role) {
           setUserRole(role);
         }
-
-        // 4. Count Pending Approvals (Wrapped in separate try/catch for "Mobile Fix")
-        try {
-          const { count: propertyCount, error: propertyError } = await supabase
-            .from('property_drafts')
-            .select('*', { count: 'exact', head: true })
-            .eq('status', 'pending');
-
-          if (propertyError) {
-            console.warn('Mobile Auth Check: Count restricted (likely RLS), but allowing layout load.', propertyError.message);
-            setPendingCount(0);
-          } else {
-            setPendingCount(propertyCount || 0);
-          }
-        } catch (innerErr) {
-          console.error('[AdminLayout] Count fetch failed defensively:', innerErr);
-          setPendingCount(0);
-        }
+        setPendingCount(fetchedCount);
 
       } catch (err) {
-        console.error('Error fetching admin data:', err);
+        console.error('Error fetching admin data from server action:', err);
+        setPendingCount(0);
       } finally {
         setLoading(false);
       }
@@ -93,12 +55,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     // Refresh count every 30 seconds
     const interval = setInterval(() => {
-      // Simple re-fetch for counts only
-      supabase
-        .from('property_drafts')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending')
-        .then(({ count }) => setPendingCount(count || 0));
+      getAdminLayoutData().then(({ pendingCount: newCount }) => {
+        setPendingCount(newCount);
+      });
     }, 3000000);
 
     return () => clearInterval(interval);
