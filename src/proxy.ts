@@ -13,10 +13,16 @@ export async function proxy(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() { return request.cookies.getAll() },
+        getAll() {
+          return request.cookies.getAll()
+        },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )
@@ -41,24 +47,31 @@ export async function proxy(request: NextRequest) {
   }
 
   // 2. SECURE SESSION CHECK: Use getUser() for server-side verification [V16 Standard]
-  // Note: We still use getSession() initially to get the raw JWT token for claim decoding.
+  // This is critical for Mobile/Safari which handles cookie synchronization strictly.
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  // 3. GET SESSION DATA: Required for JWT access token to decode custom claims
   const { data: { session } } = await supabase.auth.getSession()
 
   if (!session?.access_token) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // 3. DECODE JWT CLAIMS: Read the cryptographically signed role from the hook
+  // 4. DECODE JWT CLAIMS: Read the cryptographically signed role from the hook
   let role = 'vendor'
   let is_active = false
-  
+
   try {
     const [, payloadB64] = session.access_token.split('.')
     const base64 = payloadB64.replace(/-/g, '+').replace(/_/g, '/')
     const pad = base64.length % 4
     const padded = pad ? base64 + '='.repeat(4 - pad) : base64
     const decoded = JSON.parse(atob(padded))
-    
+
     const meta = decoded.app_metadata || {}
     role = meta.role || 'vendor'
     is_active = Boolean(meta.is_active)
@@ -67,19 +80,19 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // 4. WAITING ROOM: Block users who haven't been approved yet
+  // 5. WAITING ROOM: Block users who haven't been approved yet
   if (!is_active) {
     return NextResponse.redirect(new URL('/approval-pending', request.url))
   }
 
-  // 5. ROLE-BASED REDIRECTION: Ensure users stay in their designated areas
+  // 6. ROLE-BASED REDIRECTION: Ensure users stay in their designated areas
   // Handle Root Redirect
   if (path === '/') {
-    if (role === 'super_admin' || role === 'tenant_admin') 
+    if (role === 'super_admin' || role === 'tenant_admin')
       return NextResponse.redirect(new URL('/admin', request.url))
-    if (role === 'salesman') 
+    if (role === 'salesman')
       return NextResponse.redirect(new URL('/dashboard', request.url))
-    if (role === 'vendor') 
+    if (role === 'vendor')
       return NextResponse.redirect(new URL('/vendor', request.url))
   }
 
@@ -90,7 +103,7 @@ export async function proxy(request: NextRequest) {
   if (role === 'salesman' && isAdminPath) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
-  
+
   if (role === 'vendor' && (isAdminPath || isDashboardPath)) {
     return NextResponse.redirect(new URL('/vendor', request.url))
   }
