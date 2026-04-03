@@ -27,3 +27,29 @@ html, body, :root {
   height: 100% !important;
   font-family: inherit;
 }
+
+/* Mobile Landscape Lock */
+@media screen and (max-height: 600px) and (orientation: portrait) {
+  body {
+    transform: rotate(90deg);
+    transform-origin: top left;
+    width: 100vh;
+    height: 100vw;
+    overflow-x: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
+  
+  html {
+    width: 100vh;
+    height: 100vw;
+  }
+}
+
+/* Prevent zoom on mobile */
+@viewport {
+  width: device-width;
+  zoom: 1.0;
+  user-zoom: fixed;
+}

@@ -12,6 +12,10 @@ import React, {
 import MapContainer from './MapContainer';
 import PropertyListContainer from './PropertyListContainer';
 import MegaPopup from './MegaPopup';
+import MegaPopupContent from './MegaPopupContent';
+import ImageSection from './ImageSection';
+import AlternativesSection from './AlternativesSection';
+import ColumnResizer from './ColumnResizer';
 import DashboardNavbar from './DashboardNavbar';
 import MediaGallery from './MediaGallery';
 
@@ -73,6 +77,9 @@ export function useDashboard() {
 export default function DashboardPage() {
   const [properties, setProperties] = useState<ProjectV7[]>([]);
   const [selectedFullProject, setSelectedFullProject] = useState<ProjectFullV7 | null>(null);
+  const [leftColumnWidth, setLeftColumnWidth] = useState(25);
+  const [middleColumnWidth, setMiddleColumnWidth] = useState(60);
+  const [isDragging, setIsDragging] = useState(false);
   const initialFilters: FilterCriteriaV7 = {
     status: [],
     minPrice: 0,
@@ -236,24 +243,68 @@ export default function DashboardPage() {
       <div className="h-screen w-full flex flex-col overflow-hidden bg-slate-50">
         <DashboardNavbar />
 
-        <div className="flex-1 grid grid-cols-[35%_45%_20%] gap-0 overflow-hidden relative min-h-0">
-          {/* MAP SECTION - 35% width, ensuring it stays within container */}
-          <div className="relative h-full w-full bg-white border-r border-slate-200 z-0 min-h-0">
-            <MapContainer />
+        <div className="flex-1 flex overflow-hidden relative min-h-0">
+          {/* LEFT COLUMN - Dynamic width - 3 vertically stacked components */}
+          <div 
+            className="relative h-full bg-white border-r border-slate-200 z-0 min-h-0 flex flex-col"
+            style={{ width: `${leftColumnWidth}%` }}
+          >
+            {/* MAP - Top section */}
+            <div className="flex-1 min-h-[200px] border-b border-slate-200">
+              <MapContainer />
+            </div>
+            
+            {/* IMAGE SECTION - Middle section */}
+            <div className="flex-1 min-h-[150px] border-b border-slate-200 bg-slate-50">
+              <ImageSection />
+            </div>
+            
+            {/* ALTERNATIVES SECTION - Bottom section */}
+            <div className="flex-1 min-h-[150px] bg-slate-100">
+              <AlternativesSection />
+            </div>
           </div>
 
-          {/* MEDIA GALLERY SECTION - 45% width */}
-          <div className="relative h-full w-full bg-slate-100 border-r border-slate-200 z-10 shadow-lg min-h-0">
-            <MediaGallery />
+          {/* First Resizer */}
+          <ColumnResizer 
+            onResize={(newWidth) => {
+              const containerWidth = 100; // Total width percentage
+              const remainingWidth = containerWidth - newWidth - 15; // 15% for right column
+              setLeftColumnWidth(newWidth);
+              setMiddleColumnWidth(Math.max(30, remainingWidth));
+            }}
+            isDragging={isDragging}
+            setIsDragging={setIsDragging}
+          />
+
+          {/* MIDDLE COLUMN - Dynamic width - Full MegaPopup */}
+          <div 
+            className="relative h-full bg-white border-r border-slate-200 z-10 shadow-lg min-h-0"
+            style={{ width: `${middleColumnWidth}%` }}
+          >
+            <MegaPopupContent />
           </div>
 
-          {/* PROPERTY LIST SECTION - 20% width */}
-          <div className="relative h-full w-full bg-slate-50 z-20 shadow-xl min-h-0">
+          {/* Second Resizer */}
+          <ColumnResizer 
+            onResize={(newWidth) => {
+              const containerWidth = 100;
+              const remainingWidth = containerWidth - leftColumnWidth - newWidth;
+              setMiddleColumnWidth(newWidth);
+              // Right column adjusts automatically
+            }}
+            isDragging={isDragging}
+            setIsDragging={setIsDragging}
+          />
+
+          {/* RIGHT COLUMN - 15% width - Property List */}
+          <div 
+            className="relative h-full bg-slate-50 z-20 shadow-xl min-h-0"
+            style={{ width: `${100 - leftColumnWidth - middleColumnWidth}%` }}
+          >
             <PropertyListContainer />
           </div>
         </div>
-
-        <MegaPopup />
       </div>
     </DashboardContext.Provider>
   );
