@@ -167,10 +167,17 @@ export default function DashboardPage() {
       const minLng = Math.min(...validLocs.map((p) => p.lng as number));
       const maxLng = Math.max(...validLocs.map((p) => p.lng as number));
 
-      setMapBounds([
+      // Check if bounds actually changed before setting to avoid re-renders during resize
+      const newBounds = [
         [minLat === maxLat ? minLat - 0.02 : minLat, minLng === maxLng ? minLng - 0.02 : minLng],
         [minLat === maxLat ? maxLat + 0.02 : maxLat, maxLng === maxLng ? maxLng + 0.02 : maxLng],
-      ]);
+      ] as [[number, number], [number, number]];
+
+      if (!mapBounds || 
+          mapBounds[0][0] !== newBounds[0][0] || 
+          mapBounds[1][0] !== newBounds[1][0]) {
+        setMapBounds(newBounds);
+      }
     }
   }, [filterKey, displayedProperties]); // eslint-disable-line react-hooks/exhaustive-deps
 
