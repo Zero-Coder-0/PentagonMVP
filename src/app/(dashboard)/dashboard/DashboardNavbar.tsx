@@ -108,30 +108,30 @@ export default function DashboardNavbar() {
     };
 
     return (
-        <nav className="flex items-center justify-between px-6 py-3 bg-white border-b border-slate-200 shadow-sm z-50 relative">
+        <nav className="flex items-center justify-between px-4 py-2 bg-white border-b border-slate-200 shadow-sm z-50 relative min-h-[48px]">
             
             {/* 1. Left side - Empty spacer to keep balance */}
             <div className="flex-1"></div>
 
             {/* 2. Middle - GeoEstate Logo (Centered) */}
-            <div className="flex-1 flex justify-center items-center gap-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-blue-200">
+            <div className="flex-1 flex justify-center items-center gap-1.5">
+                <div className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-md shadow-blue-200">
                     G
                 </div>
-                <span className="text-lg font-bold text-slate-900 tracking-tight">GeoEstate</span>
+                <span className="text-base font-bold text-slate-900 tracking-tight">GeoEstate</span>
             </div>
 
             {/* 3. Right side - Controls */}
-            <div className="flex-1 flex justify-end items-center gap-4">
-                <div className="flex items-center bg-slate-50/80 p-1.5 rounded-2xl border border-slate-200 shadow-inner overflow-visible">
+            <div className="flex-1 flex justify-end items-center gap-3">
+                <div className="flex items-center bg-slate-50/80 p-1 rounded-2xl border border-slate-200 shadow-inner overflow-visible">
                     {/* Quick location pills */}
-                    <div className="flex items-center gap-1 pr-3 border-r border-slate-200 mr-2">
+                    <div className="flex items-center gap-1 pr-2 border-r border-slate-200 mr-2">
                         {QUICK_LOCATIONS.map(loc => (
                             <button
                                 key={loc.name}
                                 onClick={() => handleLocationUpdate(loc.lat, loc.lng, loc.name)}
-                                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all ${userLocation?.displayName === loc.name
-                                    ? 'bg-white text-blue-700 shadow-md ring-1 ring-slate-100 scale-105'
+                                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wide transition-all ${userLocation?.displayName === loc.name
+                                    ? 'bg-white text-blue-700 shadow-sm ring-1 ring-slate-100 scale-105'
                                     : 'text-slate-500 hover:bg-white/50 hover:text-slate-900'
                                     }`}
                             >
@@ -142,11 +142,11 @@ export default function DashboardNavbar() {
                     </div>
 
                     {/* Location search */}
-                    <div className="relative w-64 mr-2">
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10">
-                            <Search size={14} strokeWidth={2.5} />
+                    <div className="relative w-56 mr-1">
+                        <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 z-10">
+                            <Search size={12} strokeWidth={2.5} />
                         </div>
-                        <div className="search-input-wrapper [&_input]:pl-9 [&_input]:h-9 [&_input]:text-sm [&_input]:bg-white [&_input]:border-slate-200 [&_input]:rounded-xl [&_input]:w-full focus-within:[&_input]:ring-4 focus-within:[&_input]:ring-blue-100/50 focus-within:[&_input]:border-blue-400 transition-all duration-300">
+                        <div className="search-input-wrapper [&_input]:pl-7 [&_input]:h-7 [&_input]:text-[11px] [&_input]:bg-white [&_input]:border-slate-200 [&_input]:rounded-xl [&_input]:w-full focus-within:[&_input]:ring-2 focus-within:[&_input]:ring-blue-100/50 focus-within:[&_input]:border-blue-400 transition-all duration-300">
                             <LocationSearch
                                 onLocationSelect={(lat, lng, label) => handleLocationUpdate(lat, lng, label)}
                             />
@@ -155,40 +155,41 @@ export default function DashboardNavbar() {
 
                     {/* Active location badge */}
                     {userLocation && (
-                        <div className="flex items-center gap-2 bg-blue-50/50 border border-blue-100 px-3 py-1.5 rounded-xl mr-2 animate-in slide-in-from-right-3 duration-300">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.6)]"></div>
-                            <span className="text-xs font-bold text-blue-800 max-w-[100px] truncate">
-                                {userLocation.displayName}
-                            </span>
+                        <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-100 rounded-full text-blue-700 text-[10px] font-bold shadow-sm whitespace-nowrap ml-1">
+                            <MapPin size={10} className="text-blue-500" />
+                            {userLocation.displayName.split(',')[0]}
                             <button
-                                onClick={handleClearLocation}
-                                className="p-0.5 hover:bg-blue-100 rounded-full text-blue-400 hover:text-blue-600 transition"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setUserLocation(null);
+                                    setMapBounds(undefined);
+                                }}
+                                className="ml-1 hover:bg-blue-200/50 rounded-full p-0.5 transition-colors"
                             >
-                                <X size={12} strokeWidth={3} />
+                                <X size={10} />
                             </button>
                         </div>
                     )}
+                </div>
 
-                    {/* Filter dropdown */}
-                    <div className="relative" ref={dropdownRef}>
-                        <button
-                            onClick={() => setFiltersOpen(!filtersOpen)}
-                            className={`flex items-center gap-2.5 px-5 py-2 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm ml-1 relative overflow-hidden group ${filtersOpen || activeFilterCount > 0
-                                ? 'bg-blue-600 text-white shadow-blue-200'
-                                : 'bg-white text-slate-700 border border-slate-200 hover:border-blue-400 hover:text-blue-600'
-                                }`}
-                        >
-                            <Filter size={14} strokeWidth={2.5} className={filtersOpen ? 'animate-bounce' : 'group-hover:rotate-12 transition-transform'} />
-                            <span>Filters</span>
-                            {activeFilterCount > 0 && (
-                                <span className="bg-white text-blue-600 text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-sm">
-                                    {activeFilterCount}
-                                </span>
-                            )}
-                            <ChevronDown size={14} strokeWidth={2.5} className={`transition-transform duration-300 ${filtersOpen ? 'rotate-180' : ''}`} />
-                        </button>
+                <div className="h-6 w-px bg-slate-200"></div>
 
-                        {filtersOpen && (
+                <button
+                    onClick={() => setFiltersOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl font-bold text-[11px] transition shadow-sm hover:shadow"
+                >
+                    <Filter size={12} />
+                    Filters
+                    {activeFilterCount > 0 && (
+                        <span className="ml-1 bg-blue-600 text-white w-4 h-4 rounded-full flex items-center justify-center text-[9px]">
+                            {activeFilterCount}
+                        </span>
+                    )}
+                    <ChevronDown size={14} strokeWidth={2.5} className={`transition-transform duration-300 ${filtersOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                <div className="relative">
+                    {filtersOpen && (
                             <div className="absolute right-0 top-[calc(100%+12px)] w-[520px] bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100 z-[100] overflow-hidden animate-in fade-in slide-in-from-top-4 duration-300">
                                 {/* Header */}
                                 <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
@@ -418,7 +419,6 @@ export default function DashboardNavbar() {
                                 </div>
                             </div>
                         )}
-                    </div>
                 </div>
             </div>
         </nav>

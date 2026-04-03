@@ -66,97 +66,77 @@ export default function PropertyListContainer() {
                 : 'border-slate-200 hover:border-slate-300 hover:shadow-md'
                 }`}
             >
-              {/* ✅ HORIZONTAL LAYOUT: 40x40 thumbnail + Info */}
-              <div className="flex gap-3 items-start">
+              {/* Info Section (No Image) */}
+              <div className="flex flex-col space-y-2">
 
-                {/* ✅ Thumbnail */}
-                <div className={`relative w-[40px] h-[40px] flex-shrink-0 rounded overflow-hidden ${isSelected ? 'ring-2 ring-blue-500' : 'bg-slate-200'
+                {/* ✅ Project Name */}
+                <h3 className={`font-bold text-sm leading-tight line-clamp-2 ${isSelected ? 'text-blue-900' : 'text-slate-900'
                   }`}>
-                  {property.hero_image ? (
-                    <img
-                      src={property.hero_image}
-                      alt={property.project_name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm">
-                      🏢
-                    </div>
-                  )}
+                  {property.project_name}
+                </h3>
+
+                {/* ✅ Location */}
+                <div className="flex items-start gap-1 text-xs text-slate-500">
+                  <MapPin size={11} className="flex-shrink-0 mt-0.5" />
+                  <span className="line-clamp-2 leading-tight">
+                    {property.address_line || property.region || property.city_zone || 'Bangalore'}
+                  </span>
                 </div>
 
-                {/* Info Section */}
-                <div className="flex-1 min-w-0 space-y-2">
+                {/* ✅ Price + Distance + Selected Check */}
+                <div className="flex items-center justify-between gap-2">
 
-                  {/* ✅ Project Name */}
-                  <h3 className={`font-bold text-sm leading-tight line-clamp-2 ${isSelected ? 'text-blue-900' : 'text-slate-900'
-                    }`}>
-                    {property.project_name}
-                  </h3>
+                  {/* Price */}
+                  <div className="text-sm font-bold text-green-700 truncate flex-shrink">
+                    {property.pricedisplay}
+                  </div>
 
-                  {/* ✅ Location */}
-                  <div className="flex items-start gap-1 text-xs text-slate-500">
-                    <MapPin size={11} className="flex-shrink-0 mt-0.5" />
-                    <span className="line-clamp-2 leading-tight">
-                      {property.address_line || property.region || property.city_zone || 'Bangalore'}
+                  {/* Right side: Distance + Check */}
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {/* Distance Badge */}
+                    {userLocation && distance !== undefined && !isNaN(distance) && (
+                      <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${isSelected
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-blue-50 text-blue-700 border border-blue-200'
+                        }`}>
+                        <Navigation size={10} />
+                        <span>{distance.toFixed(1)}km</span>
+                      </div>
+                    )}
+
+                    {/* Selected Checkmark */}
+                    {isSelected && (
+                      <div className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center">
+                        <Check size={12} strokeWidth={3} />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* ✅ Configurations */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {property.configurations && property.configurations.length > 0 ? (
+                    property.configurations.slice(0, 2).map((config, idx) => (
+                      <span
+                        key={idx}
+                        className={`text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap ${isSelected
+                          ? 'bg-blue-100 text-blue-900 border border-blue-300'
+                          : 'bg-slate-100 text-slate-600 border border-slate-200'
+                          }`}
+                      >
+                        {config}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-slate-400 italic">
+                      Configs TBD
                     </span>
-                  </div>
-
-                  {/* ✅ Price + Distance + Selected Check */}
-                  <div className="flex items-center justify-between gap-2">
-
-                    {/* Price */}
-                    <div className="text-sm font-bold text-green-700 truncate flex-shrink">
-                      {property.pricedisplay}
-                    </div>
-
-                    {/* Right side: Distance + Check */}
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      {/* Distance Badge */}
-                      {userLocation && distance !== undefined && !isNaN(distance) && (
-                        <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${isSelected
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-blue-50 text-blue-700 border border-blue-200'
-                          }`}>
-                          <Navigation size={10} />
-                          <span>{distance.toFixed(1)}km</span>
-                        </div>
-                      )}
-
-                      {/* Selected Checkmark */}
-                      {isSelected && (
-                        <div className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center">
-                          <Check size={12} strokeWidth={3} />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* ✅ Configurations */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {property.configurations && property.configurations.length > 0 ? (
-                      property.configurations.slice(0, 2).map((config, idx) => (
-                        <span
-                          key={idx}
-                          className={`text-xs px-2 py-0.5 rounded font-medium whitespace-nowrap ${isSelected
-                            ? 'bg-blue-100 text-blue-900 border border-blue-300'
-                            : 'bg-slate-100 text-slate-600 border border-slate-200'
-                            }`}
-                        >
-                          {config}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-xs text-slate-400 italic">
-                        Configs TBD
-                      </span>
-                    )}
-                    {property.configurations && property.configurations.length > 2 && (
-                      <span className="text-xs text-slate-500 font-medium">
-                        +{property.configurations.length - 2} more
-                      </span>
-                    )}
-                  </div>
+                  )}
+                  {property.configurations && property.configurations.length > 2 && (
+                    <span className="text-xs text-slate-500 font-medium">
+                      +{property.configurations.length - 2} more
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
