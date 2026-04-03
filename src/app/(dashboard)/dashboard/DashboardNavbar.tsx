@@ -109,14 +109,20 @@ export default function DashboardNavbar() {
 
     return (
         <nav className="flex items-center justify-between px-6 py-3 bg-white border-b border-slate-200 shadow-sm z-50 relative">
-            <div className="flex items-center gap-2">
+            
+            {/* 1. Left side - Empty spacer to keep balance */}
+            <div className="flex-1"></div>
+
+            {/* 2. Middle - GeoEstate Logo (Centered) */}
+            <div className="flex-1 flex justify-center items-center gap-2">
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-blue-200">
                     G
                 </div>
                 <span className="text-lg font-bold text-slate-900 tracking-tight">GeoEstate</span>
             </div>
 
-            <div className="flex items-center gap-4">
+            {/* 3. Right side - Controls */}
+            <div className="flex-1 flex justify-end items-center gap-4">
                 <div className="flex items-center bg-slate-50/80 p-1.5 rounded-2xl border border-slate-200 shadow-inner overflow-visible">
                     {/* Quick location pills */}
                     <div className="flex items-center gap-1 pr-3 border-r border-slate-200 mr-2">

@@ -240,71 +240,77 @@ export default function DashboardPage() {
 
   return (
     <DashboardContext.Provider value={value}>
-      <div className="h-screen w-full flex flex-col overflow-hidden bg-slate-50">
-        <DashboardNavbar />
-
-        <div className="flex-1 flex overflow-hidden relative min-h-0">
-          {/* LEFT COLUMN - Dynamic width - 3 vertically stacked components */}
-          <div 
-            className="relative h-full bg-white border-r border-slate-200 z-0 min-h-0 flex flex-col"
-            style={{ width: `${leftColumnWidth}%` }}
-          >
-            {/* MAP - Top section */}
-            <div className="flex-1 min-h-[200px] border-b border-slate-200">
-              <MapContainer />
-            </div>
-            
-            {/* IMAGE SECTION - Middle section */}
-            <div className="flex-1 min-h-[150px] border-b border-slate-200 bg-slate-50">
-              <ImageSection />
-            </div>
-            
-            {/* ALTERNATIVES SECTION - Bottom section */}
-            <div className="flex-1 min-h-[150px] bg-slate-100">
-              <AlternativesSection />
-            </div>
+      <div className="h-screen w-full flex overflow-hidden bg-slate-50">
+        
+        {/* LEFT COLUMN - Dynamic width - 3 vertically stacked components */}
+        <div 
+          className="relative h-full bg-white border-r border-slate-200 z-0 min-h-0 flex flex-col flex-shrink-0"
+          style={{ width: `${leftColumnWidth}%` }}
+        >
+          {/* MAP - Top section (Now starts from very top) */}
+          <div className="flex-1 min-h-[200px] border-b border-slate-200">
+            <MapContainer />
           </div>
-
-          {/* First Resizer */}
-          <ColumnResizer 
-            onResize={(newWidth) => {
-              const containerWidth = 100; // Total width percentage
-              const remainingWidth = containerWidth - newWidth - 15; // 15% for right column
-              setLeftColumnWidth(newWidth);
-              setMiddleColumnWidth(Math.max(30, remainingWidth));
-            }}
-            isDragging={isDragging}
-            setIsDragging={setIsDragging}
-          />
-
-          {/* MIDDLE COLUMN - Dynamic width - Full MegaPopup */}
-          <div 
-            className="relative h-full bg-white border-r border-slate-200 z-10 shadow-lg min-h-0"
-            style={{ width: `${middleColumnWidth}%` }}
-          >
-            <MegaPopupContent />
+          
+          {/* IMAGE SECTION - Middle section */}
+          <div className="flex-1 min-h-[150px] border-b border-slate-200 bg-slate-50">
+            <ImageSection />
           </div>
-
-          {/* Second Resizer */}
-          <ColumnResizer 
-            onResize={(newWidth) => {
-              const containerWidth = 100;
-              const remainingWidth = containerWidth - leftColumnWidth - newWidth;
-              setMiddleColumnWidth(newWidth);
-              // Right column adjusts automatically
-            }}
-            isDragging={isDragging}
-            setIsDragging={setIsDragging}
-          />
-
-          {/* RIGHT COLUMN - 15% width - Property List */}
-          <div 
-            className="relative h-full bg-slate-50 z-20 shadow-xl min-h-0"
-            style={{ width: `${100 - leftColumnWidth - middleColumnWidth}%` }}
-          >
-            <PropertyListContainer />
+          
+          {/* ALTERNATIVES SECTION - Bottom section */}
+          <div className="flex-1 min-h-[150px] bg-slate-100">
+            <AlternativesSection />
           </div>
         </div>
+
+        {/* First Resizer */}
+        <ColumnResizer 
+          onResize={(newWidth) => {
+            const containerWidth = 100; // Total width percentage
+            const remainingWidth = containerWidth - newWidth - 15; // 15% for right column
+            setLeftColumnWidth(newWidth);
+            setMiddleColumnWidth(Math.max(30, remainingWidth));
+          }}
+          isDragging={isDragging}
+          setIsDragging={setIsDragging}
+        />
+
+        {/* RIGHT SIDE CONTAINER (Navbar + Middle Column + Right Column) */}
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0 h-full">
+          
+          {/* NAVBAR - Now only spans the right side */}
+          <DashboardNavbar />
+
+          <div className="flex-1 flex overflow-hidden relative min-h-0">
+            {/* MIDDLE COLUMN - Dynamic width - Full MegaPopup */}
+            <div 
+              className="relative h-full bg-white border-r border-slate-200 z-10 shadow-lg min-h-0 flex-shrink-0"
+              style={{ width: `${(middleColumnWidth / (100 - leftColumnWidth)) * 100}%` }}
+            >
+              <MegaPopupContent />
+            </div>
+
+            {/* Second Resizer */}
+            <ColumnResizer 
+              onResize={(newMiddleWidthRaw) => {
+                // Calculate based on the total 100% width
+                const maxMiddle = 100 - leftColumnWidth - 10; // Leave at least 10% for right col
+                const constrainedWidth = Math.min(Math.max(20, newMiddleWidthRaw), maxMiddle);
+                setMiddleColumnWidth(constrainedWidth);
+              }}
+              isDragging={isDragging}
+              setIsDragging={setIsDragging}
+            />
+
+            {/* RIGHT COLUMN - Property List */}
+            <div 
+              className="relative h-full bg-slate-50 z-20 shadow-xl min-h-0 flex-1 min-w-0"
+            >
+              <PropertyListContainer />
+            </div>
+          </div>
+        </div>
+
       </div>
     </DashboardContext.Provider>
   );

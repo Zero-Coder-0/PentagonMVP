@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 
 interface ColumnResizerProps {
-  onResize: (newWidth: number) => void;
+  onResize: (newWidthPercentage: number) => void;
   isDragging?: boolean;
   setIsDragging?: (dragging: boolean) => void;
 }
@@ -12,6 +12,8 @@ export default function ColumnResizer({ onResize, isDragging, setIsDragging }: C
   const [isLocalDragging, setIsLocalDragging] = useState(false);
   const startXRef = useRef<number>(0);
   const startWidthRef = useRef<number>(0);
+  const containerWidthRef = useRef<number>(0);
+  const rafRef = useRef<number | null>(null);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -20,9 +22,12 @@ export default function ColumnResizer({ onResize, isDragging, setIsDragging }: C
     startXRef.current = e.clientX;
     
     // Get the current width of the parent container
-    const parent = e.currentTarget.parentElement?.parentElement;
-    if (parent) {
+    const parent = e.currentTarget.previousElementSibling as HTMLElement;
+    const dashboardContainer = document.querySelector('.flex-1.flex.overflow-hidden.relative.min-h-0') as HTMLElement;
+    
+    if (parent && dashboardContainer) {
       startWidthRef.current = parent.offsetWidth;
+      containerWidthRef.current = dashboardContainer.offsetWidth;
     }
   };
 
@@ -30,21 +35,48 @@ export default function ColumnResizer({ onResize, isDragging, setIsDragging }: C
     const handleMouseMove = (e: MouseEvent) => {
       if (!isLocalDragging) return;
       
-      const deltaX = e.clientX - startXRef.current;
-      const newWidth = Math.max(150, Math.min(600, startWidthRef.current + deltaX));
-      onResize(newWidth);
+      // Use requestAnimationFrame to throttle state updates for smoother dragging
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+      
+      rafRef.current = requestAnimationFrame(() => {
+        const deltaX = e.clientX - startXRef.current;
+        const newPixelWidth = startWidthRef.current + deltaX;
+        
+        // Convert back to percentage
+        if (containerWidthRef.current > 0) {
+          const newPercentage = (newPixelWidth / containerWidthRef.current) * 100;
+          onResize(newPercentage);
+        }
+      });
     };
 
     const handleMouseUp = () => {
       setIsLocalDragging(false);
       setIsDragging?.(false);
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
     };
 
     if (isLocalDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mousemove', handleMouseMove, { passive: true });
       document.addEventListener('mouseup', handleMouseUp);
       document.body.style.cursor = 'col-resize';
       document.body.style.userSelect = 'none';
+      
+      // Add an invisible overlay to prevent iframes/maps from capturing mouse events during drag
+      const overlay = document.createElement('div');
+      overlay.id = 'resize-overlay';
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.right = '0';
+      overlay.style.bottom = '0';
+      overlay.style.zIndex = '9999';
+      overlay.style.cursor = 'col-resize';
+      document.body.appendChild(overlay);
     }
 
     return () => {
@@ -52,19 +84,28 @@ export default function ColumnResizer({ onResize, isDragging, setIsDragging }: C
       document.removeEventListener('mouseup', handleMouseUp);
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
+      
+      const overlay = document.getElementById('resize-overlay');
+      if (overlay) {
+        overlay.remove();
+      }
+      
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
     };
   }, [isLocalDragging, onResize]);
 
   return (
     <div
       className={`
-        w-1 bg-slate-200 hover:bg-blue-400 transition-colors cursor-col-resize relative
+        w-2 bg-slate-200 hover:bg-blue-400 transition-colors cursor-col-resize relative z-50
         ${isLocalDragging || isDragging ? 'bg-blue-500' : ''}
       `}
       onMouseDown={handleMouseDown}
     >
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className={`w-1 h-4 bg-slate-400 rounded-full transition-all ${isLocalDragging || isDragging ? 'bg-blue-600' : ''}`} />
+        <div className={`w-1 h-8 bg-slate-400 rounded-full transition-all ${isLocalDragging || isDragging ? 'bg-blue-600 h-12' : ''}`} />
       </div>
     </div>
   );
