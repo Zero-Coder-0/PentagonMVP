@@ -13,10 +13,12 @@ export function filterProjects(
   criteria: FilterCriteriaV7
 ): ProjectV7[] {
   return projects.filter((project) => {
+    // Guard against invalid project data
+    if (!project || !project.id) return false;
 
     // 1. Status — case-insensitive, so "underconstruction" matches "UnderConstruction"
     if (criteria.status?.length) {
-      const projectStatus = normalize(project.projectstatus);
+      const projectStatus = normalize(project.projectstatus || '');
       const hasMatch = criteria.status.some(
         (s) => normalize(s) === projectStatus
       );
@@ -25,7 +27,7 @@ export function filterProjects(
 
     // 2. City Zone — case-insensitive
     if (criteria.city_zones?.length) {
-      const projectZone = normalize(project.city_zone);
+      const projectZone = normalize(project.city_zone || '');
       const hasMatch = criteria.city_zones.some(
         (z) => normalize(z) === projectZone
       );
@@ -45,7 +47,7 @@ export function filterProjects(
     // 4. Configurations — partial match (project may have 2BHK+3BHK, filter for 2BHK should match)
     if (criteria.configurations?.length) {
       const itemConfigs = (project.configurations || []).map(normalize);
-      const itemPropType = normalize(project.property_type);
+      const itemPropType = normalize(project.property_type || '');
 
       const hasMatch = criteria.configurations.some((filterConfig) => {
         const fc = normalize(filterConfig);
@@ -56,7 +58,7 @@ export function filterProjects(
 
     // 5. Builder Grade — case-insensitive
     if (criteria.builderGrades?.length) {
-      const projectGrade = normalize(project.developer_buildergrade);
+      const projectGrade = normalize(project.developer_buildergrade || '');
       const hasMatch = criteria.builderGrades.some(
         (g) => normalize(g) === projectGrade
       );
@@ -92,10 +94,10 @@ export function filterProjects(
 
       const hasMatchingUnit = project.units.some(unit => {
         // Each unit must satisfy ALL active unit-level filters
-        if (criteria.facing?.length && (!unit.facing || !criteria.facing.some(f => normalize(f) === normalize(unit.facing)))) return false;
+        if (criteria.facing?.length && (!unit.facing || !criteria.facing.some(f => normalize(f) === normalize(unit.facing || '')))) return false;
         if (criteria.balconyCount?.length && (!unit.balconycount || !criteria.balconyCount.some(bc => normalize(bc) === normalize(unit.balconycount)))) return false;
         if (criteria.bathroomCount?.length && (!unit.wccount || !criteria.bathroomCount.some(wc => normalize(wc) === normalize(unit.wccount)))) return false;
-        if (criteria.unitVariant?.length && (!unit.type || !criteria.unitVariant.some(uv => normalize(uv) === normalize(unit.type)))) return false;
+        if (criteria.unitVariant?.length && (!unit.type || !criteria.unitVariant.some(uv => normalize(uv) === normalize(unit.type || '')))) return false;
         return true;
       });
 

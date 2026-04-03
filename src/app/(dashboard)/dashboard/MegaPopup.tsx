@@ -31,7 +31,9 @@ export default function MegaPopup() {
   const [waCopied, setWaCopied] = useState(false);
 
   const { selectedFullProject } = useDashboard();
-  const property = selectedFullProject || displayedProperties.find(p => p.id === hoveredRecId) as ProjectFullV7 | undefined;
+  
+  // Only show popup when we have full project data
+  const property = selectedFullProject;
 
   if (!hoveredRecId || !property) return null;
 
@@ -52,8 +54,8 @@ export default function MegaPopup() {
   };
 
   const handleDownload = () => {
-    if (property.brochure_url) {
-      window.open(property.brochure_url, '_blank');
+    if ((property as any).brochure_url) {
+      window.open((property as any).brochure_url, '_blank');
     } else {
       alert("Brochure URL is not available for this project. Please add it via the edit wizard.");
     }
@@ -67,17 +69,17 @@ export default function MegaPopup() {
         onMouseLeave={() => { }}
         onClick={(e) => e.stopPropagation()}
       >
-        <MegaPopupHeader property={property} onClose={() => setHoveredRecId(null)} />
+        <MegaPopupHeader property={property as ProjectFullV7} onClose={() => setHoveredRecId(null)} />
         <MegaPopupTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
         <div className="flex-1 overflow-y-auto bg-slate-50 p-6">
-          {activeTab === 'overview' && <OverviewTab property={property} />}
-          {activeTab === 'units' && <UnitsTab property={property} />}
-          {activeTab === 'amenities' && <AmenitiesTab property={property} />}
-          {activeTab === 'location' && <LocationTab property={property} />}
-          {activeTab === 'specs' && <SpecsTab property={property} />}
-          {activeTab === 'pricing' && <PricingTab property={property} />}
-          {activeTab === 'alternatives' && <AlternativesTab property={property} />}
+          {activeTab === 'overview' && <OverviewTab property={property as ProjectFullV7} />}
+          {activeTab === 'units' && <UnitsTab property={property as ProjectFullV7} />}
+          {activeTab === 'amenities' && <AmenitiesTab property={property as ProjectFullV7} />}
+          {activeTab === 'location' && <LocationTab property={property as ProjectFullV7} />}
+          {activeTab === 'specs' && <SpecsTab property={property as ProjectFullV7} />}
+          {activeTab === 'pricing' && <PricingTab property={property as ProjectFullV7} />}
+          {activeTab === 'alternatives' && <AlternativesTab property={property as ProjectFullV7} />}
         </div>
 
         {/* Action Footer */}

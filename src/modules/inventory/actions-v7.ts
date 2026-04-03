@@ -342,6 +342,11 @@ export const getMapProjectsV7 = cache(
               status: true,
             }
           },
+          developer: {
+            select: {
+              buildergrade: true
+            }
+          }
         },
         orderBy: { created_at: 'desc' },
       });
@@ -349,15 +354,20 @@ export const getMapProjectsV7 = cache(
       return projects.map(p => ({
         id: p.id,
         project_name: p.project_name,
-        region: p.general_location ?? p.city_zone,
-        city_zone: p.city_zone,
-        property_type: p.property_type ?? undefined,
+        projectstatus: p.projectstatus ?? 'UnderConstruction',
+        developer_buildergrade: p.developer?.buildergrade ?? undefined,
+        city_zone: p.city_zone ?? undefined,
+        region: p.general_location ?? p.city_zone ?? undefined,
+        address_line: undefined, // Map projects don't need address
         lat: Number(p.lat),
         lng: Number(p.lng),
-        projectstatus: p.projectstatus ?? 'UnderConstruction',
         pricedisplay: p.pricedisplay ?? 'Price on Request',
         pricemin: p.pricemin ? Number(p.pricemin) : undefined,
         pricemax: p.pricemax ? Number(p.pricemax) : undefined,
+        payment_plan_type: undefined,
+        payment_plan_details: undefined,
+        floor_rise_charges: undefined,
+        rera_registration_no: undefined,
         hero_image: p.hero_image ?? undefined,
         possession_date: p.possession_month && p.possession_year
           ? `${p.possession_month} ${p.possession_year}`

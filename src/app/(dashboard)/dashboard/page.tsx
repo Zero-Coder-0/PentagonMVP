@@ -125,6 +125,9 @@ export default function DashboardPage() {
   }, []);
 
   const displayedProperties = useMemo(() => {
+    // Guard against invalid data
+    if (!Array.isArray(properties)) return [];
+    
     // 1. Apply robust, case-insensitive filter engine
     let items = applyFilters(properties, filters);
 
@@ -148,6 +151,8 @@ export default function DashboardPage() {
     setSelectedFullProject(null);
     setHoveredRecId(null);
 
+    if (!displayedProperties || displayedProperties.length === 0) return;
+
     const validLocs = displayedProperties.filter((p) => typeof p.lat === 'number' && typeof p.lng === 'number');
     if (validLocs.length > 0) {
       const minLat = Math.min(...validLocs.map((p) => p.lat as number));
@@ -160,7 +165,7 @@ export default function DashboardPage() {
         [minLat === maxLat ? maxLat + 0.02 : maxLat, maxLng === maxLng ? maxLng + 0.02 : maxLng],
       ]);
     }
-  }, [filterKey]); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterKey, displayedProperties]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Show popup shell immediately, but only hit the DB after 300ms pause
   // This prevents network spam when users quickly drag the mouse across the list
