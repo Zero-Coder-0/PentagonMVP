@@ -13,7 +13,6 @@ export default function ColumnResizer({ onResize, isDragging, setIsDragging }: C
   const startXRef = useRef<number>(0);
   const startWidthRef = useRef<number>(0);
   const containerWidthRef = useRef<number>(0);
-  const hasMovedRef = useRef<boolean>(false);
   const rafRef = useRef<number | null>(null);
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -21,7 +20,6 @@ export default function ColumnResizer({ onResize, isDragging, setIsDragging }: C
     setIsLocalDragging(true);
     setIsDragging?.(true);
     startXRef.current = e.clientX;
-    hasMovedRef.current = false;
     
     // Get the current width of the preceding sibling (the column being resized)
     const prevSibling = e.currentTarget.previousElementSibling as HTMLElement;
@@ -40,12 +38,6 @@ export default function ColumnResizer({ onResize, isDragging, setIsDragging }: C
       
       const deltaX = e.clientX - startXRef.current;
       
-      // 3px Threshold to prevent accidental moves on simple clicks
-      if (!hasMovedRef.current && Math.abs(deltaX) < 3) {
-        return;
-      }
-      hasMovedRef.current = true;
-
       // Use requestAnimationFrame to throttle state updates for smoother dragging
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
@@ -76,7 +68,7 @@ export default function ColumnResizer({ onResize, isDragging, setIsDragging }: C
       document.body.style.cursor = 'col-resize';
       document.body.style.userSelect = 'none';
       
-      // Add an invisible overlay to prevent iframes/maps from capturing mouse events during drag
+      // Add a high-z-index overlay to grab cursor and prevent iframe interference
       const overlay = document.createElement('div');
       overlay.id = 'resize-overlay';
       overlay.style.position = 'fixed';
@@ -96,26 +88,26 @@ export default function ColumnResizer({ onResize, isDragging, setIsDragging }: C
       document.body.style.userSelect = '';
       
       const overlay = document.getElementById('resize-overlay');
-      if (overlay) {
-        overlay.remove();
-      }
+      if (overlay) overlay.remove();
       
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-      }
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [isLocalDragging, onResize]);
 
   return (
     <div
       className={`
-        w-2 bg-slate-200 hover:bg-blue-400 transition-colors cursor-col-resize relative z-50
-        ${isLocalDragging || isDragging ? 'bg-blue-500' : ''}
+        w-3 bg-slate-100 hover:bg-slate-200 transition-colors cursor-col-resize relative z-[100] group/resizer
+        ${isLocalDragging || isDragging ? 'bg-slate-200' : ''}
       `}
       onMouseDown={handleMouseDown}
     >
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className={`w-1 h-8 bg-slate-400 rounded-full transition-all ${isLocalDragging || isDragging ? 'bg-blue-600 h-12' : ''}`} />
+      {/* The Visual Bar */}
+      <div className={`absolute inset-y-0 left-1/2 -translate-x-1/2 w-0.5 bg-slate-300 group-hover/resizer:bg-blue-500 transition-colors ${isLocalDragging || isDragging ? 'bg-blue-600 w-1' : ''}`} />
+      
+      {/* The Middle Handle Pill */}
+      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center pointer-events-none">
+        <div className={`w-1.5 h-10 bg-slate-400 rounded-full transition-all group-hover/resizer:bg-blue-500 group-hover/resizer:h-14 ${isLocalDragging || isDragging ? 'bg-blue-600 h-16' : ''}`} />
       </div>
     </div>
   );

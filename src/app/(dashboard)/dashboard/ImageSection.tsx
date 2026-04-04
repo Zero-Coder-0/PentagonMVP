@@ -10,7 +10,7 @@ import type { ProjectFullV7 } from '@/modules/inventory/types-v7';
 const GLOBAL_BOOKING_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSf.../viewform";
 
 export default function ImageSection() {
-  const { displayedProperties, selectedId, selectedFullProject } = useDashboard();
+  const { displayedProperties, selectedId, selectedFullProject, leftColumnWidth } = useDashboard();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Modal State
@@ -105,52 +105,55 @@ export default function ImageSection() {
             <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors duration-500" />
             
             {/* TOP BADGE: PROJECT NAME */}
-            <div className="absolute top-4 left-4 z-20">
-              <span className="bg-white/10 backdrop-blur-xl text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl shadow-2xl border border-white/20">
+            <div className="absolute top-4 left-4 z-20 transition-all duration-300 overflow-hidden max-w-[calc(100%-2rem)]">
+              <span className="bg-white/10 backdrop-blur-xl text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl shadow-2xl border border-white/20 whitespace-nowrap block truncate">
                 {property.project_name}
               </span>
             </div>
 
             {/* CENTER: FLOATING ACTION BAND */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-              <div className="flex gap-4 p-3 bg-white/10 backdrop-blur-2xl rounded-[32px] border border-white/20 shadow-2xl translate-y-6 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500 pointer-events-auto">
+              <div className={`flex items-center bg-white/10 backdrop-blur-2xl rounded-[32px] border border-white/20 shadow-2xl translate-y-6 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500 pointer-events-auto ${leftColumnWidth < 20 ? 'gap-2 p-2' : 'gap-4 p-3'}`}>
                 <ActionButton 
-                  icon={<MessageCircle size={22} className="text-[#25D366]" />} 
+                  icon={<MessageCircle size={leftColumnWidth < 20 ? 18 : 22} className="text-[#25D366]" />} 
                   tooltip="Copy Template"
                   onClick={() => setIsModalOpen(true)} 
+                  compact={leftColumnWidth < 20}
                 />
                 <ActionButton 
-                  icon={<CalendarRange size={22} className="text-blue-400" />} 
+                  icon={<CalendarRange size={leftColumnWidth < 20 ? 18 : 22} className="text-blue-400" />} 
                   tooltip="Book Site Visit"
                   onClick={handleBookForm} 
+                  compact={leftColumnWidth < 20}
                 />
                 <ActionButton 
-                  icon={<FileText size={22} className="text-indigo-400" />} 
+                  icon={<FileText size={leftColumnWidth < 20 ? 18 : 22} className="text-indigo-400" />} 
                   tooltip="Download Brochure"
                   onClick={handleDownload} 
+                  compact={leftColumnWidth < 20}
                 />
               </div>
             </div>
 
-            {/* BOTTOM LEFT: CONFIGS */}
-            <div className="absolute bottom-4 left-4 z-20 transition-all duration-500 group-hover:-translate-x-2 group-hover:opacity-0">
+            {/* BOTTOM LEFT: CONFIGS (Hide on very narrow) */}
+            <div className={`absolute bottom-4 left-4 z-20 transition-all duration-500 ${leftColumnWidth < 25 ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 group-hover:-translate-x-2 group-hover:opacity-0'}`}>
                <div className="bg-white/10 backdrop-blur-xl border border-white/20 px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-3">
                   <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center border border-blue-500/30">
                     <Building2 size={16} className="text-blue-400" />
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">Configuration</span>
-                    <span className="text-xs font-bold text-white leading-tight">{property.configurations || '2 & 3 BHK'}</span>
+                    <span className="text-xs font-bold text-white leading-tight whitespace-nowrap">{property.configurations || '2 & 3 BHK'}</span>
                   </div>
                </div>
             </div>
 
-            {/* BOTTOM RIGHT: PRICE */}
-            <div className="absolute bottom-4 right-4 z-20 transition-all duration-500 group-hover:translate-x-2 group-hover:opacity-0">
+            {/* BOTTOM RIGHT: PRICE (Hide on very narrow) */}
+            <div className={`absolute bottom-4 right-4 z-20 transition-all duration-500 ${leftColumnWidth < 25 ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 group-hover:translate-x-2 group-hover:opacity-0'}`}>
                <div className="bg-white/10 backdrop-blur-xl border border-white/20 px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-3">
                   <div className="flex flex-col text-right">
-                    <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">Starting Range</span>
-                    <span className="text-sm font-black text-white tracking-tighter">{property.pricedisplay}</span>
+                    <span className="text-[10px] font-black text-white/50 uppercase tracking-widest leading-none mb-0.5">Starting Range</span>
+                    <span className="text-sm font-black text-white tracking-tighter whitespace-nowrap">{property.pricedisplay}</span>
                   </div>
                   <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center border border-emerald-500/30">
                     <Wallet size={16} className="text-emerald-400" />
@@ -249,18 +252,18 @@ export default function ImageSection() {
   );
 }
 
-function ActionButton({ icon, tooltip, onClick, active }: { icon: React.ReactNode, tooltip: string, onClick: (e: React.MouseEvent) => void, active?: boolean }) {
+function ActionButton({ icon, tooltip, onClick, active, compact }: { icon: React.ReactNode, tooltip: string, onClick: (e: React.MouseEvent) => void, active?: boolean, compact?: boolean }) {
   return (
     <div className="relative group/btn">
       <button 
         onClick={onClick}
-        className={`w-14 h-14 flex items-center justify-center rounded-[20px] transition-all duration-300 transform active:scale-90 hover:scale-110 shadow-2xl border border-white/20 ${active ? 'bg-white' : 'bg-white hover:shadow-white/20'}`}
+        className={`flex items-center justify-center rounded-[20px] transition-all duration-300 transform active:scale-90 hover:scale-110 shadow-2xl border border-white/20 ${active ? 'bg-white' : 'bg-white hover:shadow-white/20'} ${compact ? 'w-10 h-10' : 'w-14 h-14'}`}
       >
         {icon}
       </button>
       
       {/* TOOLTIP */}
-      <div className="absolute left-1/2 -top-12 -translate-x-1/2 px-3 py-1.5 bg-white text-[10px] font-black text-slate-900 whitespace-nowrap rounded-xl opacity-0 group-hover/btn:opacity-100 transition-all duration-300 pointer-events-none scale-50 group-hover/btn:scale-100 origin-bottom shadow-2xl z-[100] uppercase tracking-widest border border-slate-100">
+      <div className={`absolute left-1/2 -translate-x-1/2 px-3 py-1.5 bg-white text-[10px] font-black text-slate-900 whitespace-nowrap rounded-xl opacity-0 group-hover/btn:opacity-100 transition-all duration-300 pointer-events-none scale-50 group-hover/btn:scale-100 origin-bottom shadow-2xl z-[100] uppercase tracking-widest border border-slate-100 ${compact ? '-top-10' : '-top-12'}`}>
         <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-x-4 border-x-transparent border-t-4 border-t-white" />
         {tooltip}
       </div>

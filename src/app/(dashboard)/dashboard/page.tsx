@@ -64,6 +64,9 @@ interface DashboardContextType {
 
   selectedFullProject: ProjectFullV7 | null;
   setSelectedFullProject: (project: ProjectFullV7 | null) => void;
+
+  leftColumnWidth: number;
+  setLeftColumnWidth: (width: number) => void;
 }
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
@@ -243,6 +246,8 @@ export default function DashboardPage() {
     setFiltersOpen,
     selectedFullProject,
     setSelectedFullProject,
+    leftColumnWidth,
+    setLeftColumnWidth,
   };
 
   return (
@@ -271,8 +276,8 @@ export default function DashboardPage() {
         {/* First Resizer (Left -> Middle) */}
         <ColumnResizer 
           onResize={(newWidth) => {
-            // Safer bounds: 10% to 45%
-            const limitedL = Math.min(Math.max(10, newWidth), 45);
+            // User requested max 60% for left section
+            const limitedL = Math.min(Math.max(10, newWidth), 60);
             setLeftColumnWidth(limitedL);
           }}
           isDragging={isDragging}
@@ -298,8 +303,13 @@ export default function DashboardPage() {
         <ColumnResizer 
           onResize={(newMiddleWidthRaw) => {
             const remainingForMAndR = 100 - leftColumnWidth;
-            // Safer bounds for middle: at least 25% of total, and at least 15% left for right column
-            const limitedM = Math.min(Math.max(25, newMiddleWidthRaw), remainingForMAndR - 15);
+            // Left boundary for middle: must be at least 20%
+            // Right boundary for middle: must leave enough room so Right column is at most 60%
+            // But also Right column must be at least 15%
+            const minM = Math.max(20, remainingForMAndR - 60);
+            const maxM = remainingForMAndR - 15;
+            
+            const limitedM = Math.min(Math.max(minM, newMiddleWidthRaw), maxM);
             setMiddleColumnWidth(limitedM);
           }}
           isDragging={isDragging}
