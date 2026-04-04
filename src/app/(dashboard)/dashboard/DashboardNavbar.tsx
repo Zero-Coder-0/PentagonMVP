@@ -108,84 +108,62 @@ export default function DashboardNavbar() {
     };
 
     return (
-        <nav className="flex items-center justify-between px-4 py-2 bg-white border-b border-slate-200 shadow-sm z-50 relative min-h-[48px]">
+        <nav className="flex items-center justify-between px-4 py-2 bg-white border-b border-slate-200 shadow-sm z-50 relative min-h-[56px] w-full">
             
-            {/* 1. Left side - Empty spacer to keep balance */}
-            <div className="flex-1"></div>
-
-            {/* 2. Middle - GeoEstate Logo (Centered) */}
-            <div className="flex-1 flex justify-center items-center gap-1.5">
-                <div className="w-6 h-6 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-md shadow-blue-200">
+            {/* 1. Left side - Logo (Pentagon-like) */}
+            <div className="flex items-center gap-2 mr-4">
+                <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-lg shadow-blue-200 rotate-3 hover:rotate-0 transition-transform">
                     G
                 </div>
-                <span className="text-base font-bold text-slate-900 tracking-tight">GeoEstate</span>
+                <span className="hidden lg:block text-sm font-black text-slate-900 tracking-tight">GeoEstate</span>
             </div>
 
-            {/* 3. Right side - Controls */}
-            <div className="flex-1 flex justify-end items-center gap-3">
-                <div className="flex items-center bg-slate-50/80 p-1 rounded-2xl border border-slate-200 shadow-inner overflow-visible">
+            {/* 2. Middle - Search Controls */}
+            <div className="flex-1 flex justify-center">
+                <div className="flex items-center bg-slate-50 p-1 rounded-2xl border border-slate-200 shadow-inner max-w-xl w-full">
                     {/* Quick location pills */}
-                    <div className="flex items-center gap-1 pr-2 border-r border-slate-200 mr-2">
+                    <div className="hidden xl:flex items-center gap-1 pr-2 border-r border-slate-200 mr-2">
                         {QUICK_LOCATIONS.map(loc => (
                             <button
                                 key={loc.name}
                                 onClick={() => handleLocationUpdate(loc.lat, loc.lng, loc.name)}
-                                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wide transition-all ${userLocation?.displayName === loc.name
-                                    ? 'bg-white text-blue-700 shadow-sm ring-1 ring-slate-100 scale-105'
-                                    : 'text-slate-500 hover:bg-white/50 hover:text-slate-900'
+                                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all ${userLocation?.displayName === loc.name
+                                    ? 'bg-white text-blue-700 shadow-sm ring-1 ring-slate-100'
+                                    : 'text-slate-500 hover:bg-white/50 hover:text-slate-800'
                                     }`}
                             >
-                                {userLocation?.displayName === loc.name && <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />}
                                 {loc.name}
                             </button>
                         ))}
                     </div>
 
                     {/* Location search */}
-                    <div className="relative w-56 mr-1">
-                        <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 z-10">
-                            <Search size={12} strokeWidth={2.5} />
+                    <div className="relative flex-1 min-w-0">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-10">
+                            <Search size={14} strokeWidth={2.5} />
                         </div>
-                        <div className="search-input-wrapper [&_input]:pl-7 [&_input]:h-7 [&_input]:text-[11px] [&_input]:bg-white [&_input]:border-slate-200 [&_input]:rounded-xl [&_input]:w-full focus-within:[&_input]:ring-2 focus-within:[&_input]:ring-blue-100/50 focus-within:[&_input]:border-blue-400 transition-all duration-300">
+                        <div className="search-input-wrapper [&_input]:pl-9 [&_input]:h-8 [&_input]:text-xs [&_input]:bg-transparent [&_input]:border-none [&_input]:w-full focus-within:[&_input]:ring-0 transition-all">
                             <LocationSearch
                                 onLocationSelect={(lat, lng, label) => handleLocationUpdate(lat, lng, label)}
                             />
                         </div>
                     </div>
-
-                    {/* Active location badge */}
-                    {userLocation && (
-                        <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-100 rounded-full text-blue-700 text-[10px] font-bold shadow-sm whitespace-nowrap ml-1">
-                            <MapPin size={10} className="text-blue-500" />
-                            {userLocation.displayName.split(',')[0]}
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setUserLocation(null);
-                                    setMapBounds(undefined);
-                                }}
-                                className="ml-1 hover:bg-blue-200/50 rounded-full p-0.5 transition-colors"
-                            >
-                                <X size={10} />
-                            </button>
-                        </div>
-                    )}
                 </div>
+            </div>
 
-                <div className="h-6 w-px bg-slate-200"></div>
-
+            {/* 3. Right side - Filters */}
+            <div className="ml-4 flex items-center gap-2">
                 <button
-                    onClick={() => setFiltersOpen(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl font-bold text-[11px] transition shadow-sm hover:shadow"
+                    onClick={() => setFiltersOpen(!filtersOpen)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black text-xs transition-all shadow-sm ${filtersOpen ? 'bg-blue-600 text-white shadow-blue-200' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`}
                 >
-                    <Filter size={12} />
-                    Filters
+                    <Filter size={14} />
+                    <span>Filters</span>
                     {activeFilterCount > 0 && (
-                        <span className="ml-1 bg-blue-600 text-white w-4 h-4 rounded-full flex items-center justify-center text-[9px]">
+                        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${filtersOpen ? 'bg-white text-blue-600' : 'bg-blue-600 text-white'}`}>
                             {activeFilterCount}
                         </span>
                     )}
-                    <ChevronDown size={14} strokeWidth={2.5} className={`transition-transform duration-300 ${filtersOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 <div className="relative">

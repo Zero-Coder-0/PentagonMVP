@@ -77,7 +77,7 @@ export function useDashboard() {
 export default function DashboardPage() {
   const [properties, setProperties] = useState<ProjectV7[]>([]);
   const [selectedFullProject, setSelectedFullProject] = useState<ProjectFullV7 | null>(null);
-  const [leftColumnWidth, setLeftColumnWidth] = useState(25);
+  const [leftColumnWidth, setLeftColumnWidth] = useState(20);
   const [middleColumnWidth, setMiddleColumnWidth] = useState(60);
   const [isDragging, setIsDragging] = useState(false);
   const initialFilters: FilterCriteriaV7 = {
@@ -249,71 +249,78 @@ export default function DashboardPage() {
     <DashboardContext.Provider value={value}>
       <div className="h-screen w-full flex overflow-hidden bg-slate-50">
         
-        {/* LEFT COLUMN - Dynamic width - 3 vertically stacked components */}
+        {/* LEFT COLUMN - Map + Images/WhatsApp */}
         <div 
           className="relative h-full bg-white border-r border-slate-200 z-0 min-h-0 flex flex-col flex-shrink-0"
           style={{ width: `${leftColumnWidth}%` }}
         >
-          {/* MAP - Top section (Now starts from very top) */}
-          <div className="flex-1 min-h-[200px] border-b border-slate-200">
+          {/* MAP - Top section */}
+          <div className="flex-[3] min-h-[250px] border-b-2 border-slate-200 relative">
             <MapContainer />
+            <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-black text-slate-400 uppercase tracking-tighter border border-slate-200 shadow-sm z-10">
+              Interactive Map
+            </div>
           </div>
           
-          {/* IMAGE SECTION - Middle section */}
-          <div className="flex-1 min-h-[150px] border-b border-slate-200 bg-slate-50">
+          {/* IMAGE SECTION + WHATSAPP FORM - Bottom section */}
+          <div className="flex-[2] min-h-[300px] bg-slate-50 overflow-hidden">
             <ImageSection />
-          </div>
-          
-          {/* ALTERNATIVES SECTION - Bottom section */}
-          <div className="flex-1 min-h-[150px] bg-slate-100">
-            <AlternativesSection />
           </div>
         </div>
 
-        {/* First Resizer */}
+        {/* First Resizer (Left -> Middle) */}
         <ColumnResizer 
           onResize={(newWidth) => {
-            const containerWidth = 100; // Total width percentage
-            const remainingWidth = containerWidth - newWidth - 15; // 15% for right column
-            setLeftColumnWidth(newWidth);
-            setMiddleColumnWidth(Math.max(30, remainingWidth));
+            // Keep at least 15% for left and 40% for middle+right
+            const limitedL = Math.min(Math.max(15, newWidth), 40);
+            setLeftColumnWidth(limitedL);
           }}
           isDragging={isDragging}
           setIsDragging={setIsDragging}
         />
 
-        {/* RIGHT SIDE CONTAINER (Navbar + Middle Column + Right Column) */}
-        <div className="flex-1 flex flex-col overflow-hidden min-w-0 h-full">
-          
-          {/* NAVBAR - Now only spans the right side */}
+        {/* MIDDLE COLUMN - Navbar + MegaPopup Content */}
+        <div 
+          className="relative h-full bg-white border-r border-slate-200 z-10 shadow-2xl min-h-0 flex flex-col flex-shrink-0 overflow-hidden"
+          style={{ width: `${middleColumnWidth}%` }}
+        >
+          {/* Header Area in Middle Column */}
           <DashboardNavbar />
+          
+          <div className="flex-1 overflow-hidden">
+            <MegaPopupContent />
+          </div>
+        </div>
 
-          <div className="flex-1 flex overflow-hidden relative min-h-0">
-            {/* MIDDLE COLUMN - Dynamic width - Full MegaPopup */}
-            <div 
-              className="relative h-full bg-white border-r border-slate-200 z-10 shadow-lg min-h-0 flex-shrink-0"
-              style={{ width: `${(middleColumnWidth / (100 - leftColumnWidth)) * 100}%` }}
-            >
-              <MegaPopupContent />
+        {/* Second Resizer (Middle -> Right) */}
+        <ColumnResizer 
+          onResize={(newMiddleWidthRaw) => {
+            // Calculate relative to the remaining space
+            const remainingForMAndR = 100 - leftColumnWidth;
+            const limitedM = Math.min(Math.max(30, newMiddleWidthRaw), remainingForMAndR - 15);
+            setMiddleColumnWidth(limitedM);
+          }}
+          isDragging={isDragging}
+          setIsDragging={setIsDragging}
+        />
+
+        {/* RIGHT COLUMN - Property List + Alternatives */}
+        <div className="relative h-full bg-slate-50 z-20 shadow-xl min-h-0 flex-1 flex flex-col overflow-hidden min-w-0">
+          {/* Property List (Top) */}
+          <div className="flex-1 min-h-0 relative">
+            <PropertyListContainer />
+          </div>
+          
+          {/* Alternatives (Bottom) */}
+          <div className="h-1/3 min-h-[220px] bg-white border-t-2 border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+            <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                Smart Alternatives
+              </h3>
             </div>
-
-            {/* Second Resizer */}
-            <ColumnResizer 
-              onResize={(newMiddleWidthRaw) => {
-                // Calculate based on the total 100% width
-                const maxMiddle = 100 - leftColumnWidth - 10; // Leave at least 10% for right col
-                const constrainedWidth = Math.min(Math.max(20, newMiddleWidthRaw), maxMiddle);
-                setMiddleColumnWidth(constrainedWidth);
-              }}
-              isDragging={isDragging}
-              setIsDragging={setIsDragging}
-            />
-
-            {/* RIGHT COLUMN - Property List */}
-            <div 
-              className="relative h-full bg-slate-50 z-20 shadow-xl min-h-0 flex-1 min-w-0"
-            >
-              <PropertyListContainer />
+            <div className="h-full overflow-hidden">
+              <AlternativesSection />
             </div>
           </div>
         </div>
