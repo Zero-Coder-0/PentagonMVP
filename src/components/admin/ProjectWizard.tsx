@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
@@ -788,7 +788,15 @@ export default function ProjectWizardV7({
                 <div><label className="block text-xs font-medium text-slate-700 mb-1">Service Elevators</label><input type="number" {...register("service_elevators_per_tower", { valueAsNumber: true })} className="w-full px-3 py-2 border rounded-lg text-sm" /></div>
 
                 {/* Structure / Walls */}
-                <div><label className="block text-xs font-medium text-slate-700 mb-1">Construction Type</label><input {...register("construction_type")} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. Mivan" /></div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Construction Type</label>
+                  <select {...register("construction_type")} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
+                    <option value="">Select Technology</option>
+                    {CONSTRUCTION_TYPES.map((tech) => (
+                      <option key={tech} value={tech}>{tech}</option>
+                    ))}
+                  </select>
+                </div>
                 <div><label className="block text-xs font-medium text-slate-700 mb-1">Structure Details</label><input {...register("structure_details")} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. RCC Framed" /></div>
                 <div><label className="block text-xs font-medium text-slate-700 mb-1">Interior Walls</label><input {...register("wall_finishing_interior")} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. Emulsion Paint" /></div>
                 <div><label className="block text-xs font-medium text-slate-700 mb-1">Exterior Walls</label><input {...register("wall_finishing_exterior")} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. Weather Coat" /></div>

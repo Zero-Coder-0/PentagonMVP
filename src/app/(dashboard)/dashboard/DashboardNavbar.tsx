@@ -303,7 +303,7 @@ export default function DashboardNavbar() {
                                     <div className="grid grid-cols-2 gap-6">
                                         {/* City Zone — from CITY_ZONES constant */}
                                         <FilterSection title="Zone">
-                                            {CITY_ZONES.slice(0, 5).map((zone) => (
+                                            {CITY_ZONES.map((zone) => (
                                                 <FilterChip
                                                     key={zone}
                                                     label={zone}
@@ -315,7 +315,7 @@ export default function DashboardNavbar() {
 
                                         {/* Construction Tech — from CONSTRUCTION_TYPES constant */}
                                         <FilterSection title="Construction Tech" icon={<HardHat size={12} />}>
-                                            {CONSTRUCTION_TYPES.slice(0, 5).map((tech) => (
+                                            {CONSTRUCTION_TYPES.map((tech) => (
                                                 <FilterChip
                                                     key={tech}
                                                     label={tech}
