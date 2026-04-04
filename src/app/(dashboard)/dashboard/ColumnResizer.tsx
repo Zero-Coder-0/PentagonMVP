@@ -13,6 +13,7 @@ export default function ColumnResizer({ onResize, isDragging, setIsDragging }: C
   const startXRef = useRef<number>(0);
   const startWidthRef = useRef<number>(0);
   const containerWidthRef = useRef<number>(0);
+  const hasMovedRef = useRef<boolean>(false);
   const rafRef = useRef<number | null>(null);
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -20,14 +21,16 @@ export default function ColumnResizer({ onResize, isDragging, setIsDragging }: C
     setIsLocalDragging(true);
     setIsDragging?.(true);
     startXRef.current = e.clientX;
+    hasMovedRef.current = false;
     
-    // Get the current width of the parent container
-    const parent = e.currentTarget.previousElementSibling as HTMLElement;
-    const dashboardContainer = document.querySelector('.flex-1.flex.overflow-hidden.relative.min-h-0') as HTMLElement;
+    // Get the current width of the preceding sibling (the column being resized)
+    const prevSibling = e.currentTarget.previousElementSibling as HTMLElement;
+    // Get the width of the shared parent container
+    const parentContainer = e.currentTarget.parentElement as HTMLElement;
     
-    if (parent && dashboardContainer) {
-      startWidthRef.current = parent.offsetWidth;
-      containerWidthRef.current = dashboardContainer.offsetWidth;
+    if (prevSibling && parentContainer) {
+      startWidthRef.current = prevSibling.offsetWidth;
+      containerWidthRef.current = parentContainer.offsetWidth;
     }
   };
 
@@ -35,16 +38,23 @@ export default function ColumnResizer({ onResize, isDragging, setIsDragging }: C
     const handleMouseMove = (e: MouseEvent) => {
       if (!isLocalDragging) return;
       
+      const deltaX = e.clientX - startXRef.current;
+      
+      // 3px Threshold to prevent accidental moves on simple clicks
+      if (!hasMovedRef.current && Math.abs(deltaX) < 3) {
+        return;
+      }
+      hasMovedRef.current = true;
+
       // Use requestAnimationFrame to throttle state updates for smoother dragging
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
       }
       
       rafRef.current = requestAnimationFrame(() => {
-        const deltaX = e.clientX - startXRef.current;
         const newPixelWidth = startWidthRef.current + deltaX;
         
-        // Convert back to percentage
+        // Convert to percentage of parent container width
         if (containerWidthRef.current > 0) {
           const newPercentage = (newPixelWidth / containerWidthRef.current) * 100;
           onResize(newPercentage);
