@@ -45,7 +45,7 @@ export type ProjectStatus = (typeof PROJECT_STATUS_VALUES)[number];
 
 // ─── City Zones ───────────────────────────────────────────────────────────────
 
-export const CITY_ZONES = ['North', 'South', 'East', 'West', 'Central', 'North-East', 'North-West', 'South-East', 'South-West'] as const;
+export const CITY_ZONES = ['North', 'South', 'East', 'West'] as const;
 export type CityZone = (typeof CITY_ZONES)[number];
 
 // ─── BHK / Configurations ────────────────────────────────────────────────────

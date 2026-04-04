@@ -59,14 +59,14 @@ interface DashboardContextType {
   mapBounds?: [[number, number], [number, number]];
   setMapBounds: (bounds?: [[number, number], [number, number]]) => void;
 
-  filtersOpen: boolean;
-  setFiltersOpen: (open: boolean) => void;
-
   selectedFullProject: ProjectFullV7 | null;
   setSelectedFullProject: (project: ProjectFullV7 | null) => void;
 
   leftColumnWidth: number;
   setLeftColumnWidth: (width: number) => void;
+
+  isWhatsAppModalOpen: boolean;
+  setWhatsAppModalOpen: (open: boolean) => void;
 }
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
@@ -83,6 +83,7 @@ export default function DashboardPage() {
   const [leftColumnWidth, setLeftColumnWidth] = useState(20);
   const [middleColumnWidth, setMiddleColumnWidth] = useState(60);
   const [isDragging, setIsDragging] = useState(false);
+  const [isWhatsAppModalOpen, setWhatsAppModalOpen] = useState(false);
   const initialFilters: FilterCriteriaV7 = {
     status: [],
     minPrice: 0,
@@ -248,6 +249,8 @@ export default function DashboardPage() {
     setSelectedFullProject,
     leftColumnWidth,
     setLeftColumnWidth,
+    isWhatsAppModalOpen,
+    setWhatsAppModalOpen,
   };
 
   return (
@@ -337,8 +340,97 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {isWhatsAppModalOpen && <WhatsAppModal />}
       </div>
     </DashboardContext.Provider>
+  );
+}
+
+import { MessageCircle, Check, X } from 'lucide-react';
+
+function WhatsAppModal() {
+  const { setWhatsAppModalOpen, selectedFullProject: property } = useDashboard();
+  const [waName, setWaName] = useState('');
+  const [waMobile, setWaMobile] = useState('');
+  const [waCopied, setWaCopied] = useState(false);
+
+  if (!property) return null;
+
+  const handleCopyWhatsApp = () => {
+    if (!waName || !waMobile) {
+      alert("Please enter both Name and Mobile Number");
+      return;
+    }
+    
+    // TEMPLATE GENERATOR V7 (Premium Lead Capture)
+    const template = `*PEN-TAGON Lead - Geostat App V7*%0A--------------------------------%0A*Name:* ${waName}%0A*Mobile:* ${waMobile}%0A--------------------------------%0A*Interested In:* ${property.project_name}%0A*Configuration:* ${property.configurations ? property.configurations.join(', ') : 'N/A'}%0A*Location:* ${property.region || 'Bengaluru'}%0A*Price:* ${property.pricedisplay}%0A--------------------------------%0A_Generated via Geostat Dashboard_`;
+    
+    const plainText = template.replace(/%0A/g, '\n').replace(/\*/g, '');
+    navigator.clipboard.writeText(plainText);
+    
+    setWaCopied(true);
+    setTimeout(() => {
+      setWaCopied(false);
+      setWhatsAppModalOpen(false);
+    }, 1500);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+      <div className="bg-white w-full max-w-sm rounded-[32px] p-8 shadow-2xl border border-slate-100 flex flex-col items-center text-center animate-in zoom-in-95 duration-300">
+        <div className="w-16 h-16 bg-green-50 text-[#25D366] rounded-full flex items-center justify-center mb-6">
+          <MessageCircle size={32} />
+        </div>
+        
+        <h3 className="text-xl font-black text-slate-900 mb-2">Ready to Share!</h3>
+        <p className="text-slate-500 text-sm mb-6 px-4">
+          Enter your name and mobile number to generate your personalized WhatsApp template for <span className="font-bold text-slate-800">{property.project_name}</span>.
+        </p>
+
+        <div className="w-full space-y-4 mb-8">
+           <div className="relative group">
+              <input 
+                type="text" 
+                value={waName} 
+                onChange={e => setWaName(e.target.value)} 
+                placeholder="Enter Full Name"
+                className="w-full h-14 bg-slate-50 border border-slate-200 rounded-2xl px-6 font-bold text-slate-800 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400"
+              />
+           </div>
+           <div className="relative group">
+              <input 
+                type="tel" 
+                value={waMobile} 
+                onChange={e => setWaMobile(e.target.value)} 
+                placeholder="Enter Mobile Number"
+                className="w-full h-14 bg-slate-50 border border-slate-200 rounded-2xl px-6 font-bold text-slate-800 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400"
+              />
+           </div>
+        </div>
+
+        <div className="w-full flex gap-3">
+          <button 
+            onClick={() => setWhatsAppModalOpen(false)}
+            className="flex-1 h-16 bg-slate-100 text-slate-600 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all uppercase tracking-widest"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={handleCopyWhatsApp}
+            className={`flex-[2] h-16 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 uppercase tracking-widest ${waCopied ? 'bg-slate-900 text-white' : 'bg-[#25D366] text-white hover:bg-[#1ebd5b] shadow-xl shadow-green-200'}`}
+          >
+            {waCopied ? <><Check size={18} /> Copied!</> : 'Copy Template'}
+          </button>
+        </div>
+        
+        <button 
+          onClick={() => setWhatsAppModalOpen(false)}
+          className="mt-6 text-slate-400 hover:text-slate-600 transition-colors"
+        >
+          <X size={20} />
+        </button>
+      </div>
+    </div>
   );
 }
 

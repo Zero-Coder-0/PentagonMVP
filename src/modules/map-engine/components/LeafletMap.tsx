@@ -15,7 +15,7 @@ const getIconForZone = (zone: ProjectV7['city_zone'], isSelected: boolean) => {
     case 'North': color = 'blue'; break;
     case 'South': color = 'green'; break;
     case 'East': color = 'gold'; break;
-    case 'West': color = 'red'; break; // Re-mapping West to red to keep distinct colors if desired, or keeping it gold too. I will make East Gold and West Red for contrast, or just change East. The prompt specifically asked why East is not yellow, so:
+    case 'West': color = 'red'; break;
     default: color = 'violet';
   }
 
