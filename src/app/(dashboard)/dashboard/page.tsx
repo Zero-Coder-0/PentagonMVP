@@ -59,6 +59,9 @@ interface DashboardContextType {
   mapBounds?: [[number, number], [number, number]];
   setMapBounds: (bounds?: [[number, number], [number, number]]) => void;
 
+  filtersOpen: boolean;
+  setFiltersOpen: (open: boolean) => void;
+
   selectedFullProject: ProjectFullV7 | null;
   setSelectedFullProject: (project: ProjectFullV7 | null) => void;
 
