@@ -135,28 +135,36 @@ export default function ImageSection() {
               </div>
             </div>
 
-            {/* BOTTOM LEFT: CONFIGS (Hide on very narrow) */}
-            <div className={`absolute bottom-4 left-4 z-20 transition-all duration-500 ${leftColumnWidth < 25 ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 group-hover:-translate-x-2 group-hover:opacity-0'}`}>
-               <div className="bg-white/10 backdrop-blur-xl border border-white/20 px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-3">
-                  <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center border border-blue-500/30">
-                    <Building2 size={16} className="text-blue-400" />
+            {/* BOTTOM LEFT: CONFIGS */}
+            <div className={`absolute bottom-4 left-4 z-20 transition-all duration-500 overflow-hidden group-hover:-translate-x-2 group-hover:opacity-0`}>
+               <div className={`bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl flex items-center transition-all duration-300 ${leftColumnWidth < 30 ? 'px-2 py-2 gap-2' : 'px-4 py-2.5 gap-3'}`}>
+                  <div className={`bg-blue-500/20 rounded-lg flex items-center justify-center border border-blue-500/30 transition-all ${leftColumnWidth < 30 ? 'w-6 h-6' : 'w-8 h-8'}`}>
+                    <Building2 size={leftColumnWidth < 30 ? 12 : 16} className="text-blue-400" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">Configuration</span>
-                    <span className="text-xs font-bold text-white leading-tight whitespace-nowrap">{property.configurations || '2 & 3 BHK'}</span>
+                    {leftColumnWidth >= 30 && (
+                      <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">Configuration</span>
+                    )}
+                    <span className={`font-bold text-white leading-tight whitespace-nowrap transition-all ${leftColumnWidth < 30 ? 'text-[10px]' : 'text-xs'}`}>
+                      {property.configurations || '2 & 3 BHK'}
+                    </span>
                   </div>
                </div>
             </div>
 
-            {/* BOTTOM RIGHT: PRICE (Hide on very narrow) */}
-            <div className={`absolute bottom-4 right-4 z-20 transition-all duration-500 ${leftColumnWidth < 25 ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100 group-hover:translate-x-2 group-hover:opacity-0'}`}>
-               <div className="bg-white/10 backdrop-blur-xl border border-white/20 px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-3">
+            {/* BOTTOM RIGHT: PRICE */}
+            <div className={`absolute z-20 transition-all duration-500 overflow-hidden group-hover:translate-x-2 group-hover:opacity-0 ${leftColumnWidth < 30 ? 'bottom-16 left-4' : 'bottom-4 right-4'}`}>
+               <div className={`bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl flex items-center transition-all duration-300 ${leftColumnWidth < 30 ? 'px-2 py-2 gap-2' : 'px-4 py-2.5 gap-3'}`}>
                   <div className="flex flex-col text-right">
-                    <span className="text-[10px] font-black text-white/50 uppercase tracking-widest leading-none mb-0.5">Starting Range</span>
-                    <span className="text-sm font-black text-white tracking-tighter whitespace-nowrap">{property.pricedisplay}</span>
+                    {leftColumnWidth >= 30 && (
+                      <span className="text-[10px] font-black text-white/50 uppercase tracking-widest leading-none mb-0.5 whitespace-nowrap">Starting Range</span>
+                    )}
+                    <span className={`font-black text-white tracking-tighter whitespace-nowrap transition-all ${leftColumnWidth < 30 ? 'text-xs' : 'text-sm'}`}>
+                      {property.pricedisplay}
+                    </span>
                   </div>
-                  <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center border border-emerald-500/30">
-                    <Wallet size={16} className="text-emerald-400" />
+                  <div className={`bg-emerald-500/20 rounded-lg flex items-center justify-center border border-emerald-500/30 transition-all ${leftColumnWidth < 30 ? 'w-6 h-6' : 'w-8 h-8'}`}>
+                    <Wallet size={leftColumnWidth < 30 ? 12 : 16} className="text-emerald-400" />
                   </div>
                </div>
             </div>
