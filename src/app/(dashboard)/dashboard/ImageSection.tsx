@@ -1,7 +1,7 @@
 'use client';
 
 import { useDashboard } from './page';
-import { Image as ImageIcon, ChevronLeft, ChevronRight, MessageCircle, FileText, CalendarRange, Check } from 'lucide-react';
+import { Image as ImageIcon, ChevronLeft, ChevronRight, MessageCircle, FileText, CalendarRange, Check, X, Building2, Wallet } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { generateWhatsAppTemplate } from './MegaPopup/whatsapp-template';
 import type { ProjectFullV7 } from '@/modules/inventory/types-v7';
@@ -13,7 +13,8 @@ export default function ImageSection() {
   const { displayedProperties, selectedId, selectedFullProject } = useDashboard();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // WhatsApp State
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [waName, setWaName] = useState('');
   const [waMobile, setWaMobile] = useState('');
   const [waCopied, setWaCopied] = useState(false);
@@ -29,13 +30,16 @@ export default function ImageSection() {
   const handleCopyWhatsApp = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!waName || !waMobile || !fullProperty) {
-      alert("Please enter both Name and Mobile Number below first!");
+      alert("Please enter both Name and Mobile Number!");
       return;
     }
     const template = generateWhatsAppTemplate(fullProperty as ProjectFullV7, { name: waName, mobile: waMobile });
     navigator.clipboard.writeText(template).then(() => {
       setWaCopied(true);
-      setTimeout(() => setWaCopied(false), 2000);
+      setTimeout(() => {
+        setWaCopied(false);
+        setIsModalOpen(false);
+      }, 2000);
     });
   };
 
@@ -55,15 +59,14 @@ export default function ImageSection() {
 
   if (!property) {
     return (
-      <div className="h-full w-full flex flex-col items-center justify-center bg-slate-50 relative overflow-hidden p-6">
-        <div className="absolute inset-0 opacity-5 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]"></div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 text-center z-10 max-w-xs mx-auto">
+      <div className="h-full w-full flex flex-col items-center justify-center bg-slate-50 p-6">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 text-center max-w-xs mx-auto">
           <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <ImageIcon size={28} />
           </div>
           <h3 className="text-slate-900 font-black text-sm mb-1 uppercase tracking-tight">No Selection</h3>
           <p className="text-slate-500 text-xs leading-relaxed">
-            Select a property from the map or list to interact
+            Select a property to view visuals
           </p>
         </div>
       </div>
@@ -88,119 +91,160 @@ export default function ImageSection() {
   };
 
   return (
-    <div className="h-full w-full flex flex-col bg-white overflow-hidden relative">
+    <div className="h-full w-full flex flex-col bg-slate-900 overflow-hidden relative">
       
-      {/* 1. Square Image Gallery Section with Floating Icons */}
-      <div className="relative aspect-square w-full bg-slate-900 overflow-hidden group flex-shrink-0 border-b border-slate-100">
+      {/* 1. Main Image Section - Strict Containment */}
+      <div className="relative h-full w-full bg-slate-900 overflow-hidden group">
         {images.length > 0 ? (
           <>
             <img
               src={images[currentImageIndex]}
               alt={`${property.project_name}`}
-              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
             />
-            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors duration-500" />
+            <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors duration-500" />
             
-            {/* Header Overlay */}
-            <div className="absolute top-0 left-0 right-0 p-4 translate-y-[-10px] group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
-              <span className="bg-white/90 backdrop-blur-md text-slate-900 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg border border-white/50">
+            {/* TOP BADGE: PROJECT NAME */}
+            <div className="absolute top-4 left-4 z-20">
+              <span className="bg-white/10 backdrop-blur-xl text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl shadow-2xl border border-white/20">
                 {property.project_name}
               </span>
             </div>
 
-            {/* FLOATING ACTION BAND - CENTERED */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="flex gap-4 p-2.5 bg-white/10 backdrop-blur-xl rounded-[24px] border border-white/20 shadow-2xl translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500 pointer-events-auto">
+            {/* CENTER: FLOATING ACTION BAND */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+              <div className="flex gap-4 p-3 bg-white/10 backdrop-blur-2xl rounded-[32px] border border-white/20 shadow-2xl translate-y-6 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500 pointer-events-auto">
                 <ActionButton 
-                  icon={waCopied ? <Check size={20} className="text-white" /> : <MessageCircle size={20} className="text-[#25D366]" />} 
-                  tooltip={waCopied ? "Template Copied!" : "Copy WhatsApp Template"}
-                  onClick={handleCopyWhatsApp} 
-                  active={waCopied}
+                  icon={<MessageCircle size={22} className="text-[#25D366]" />} 
+                  tooltip="Copy Template"
+                  onClick={() => setIsModalOpen(true)} 
                 />
                 <ActionButton 
-                  icon={<CalendarRange size={20} className="text-blue-500" />} 
+                  icon={<CalendarRange size={22} className="text-blue-400" />} 
                   tooltip="Book Site Visit"
                   onClick={handleBookForm} 
                 />
                 <ActionButton 
-                  icon={<FileText size={20} className="text-indigo-500" />} 
+                  icon={<FileText size={22} className="text-indigo-400" />} 
                   tooltip="Download Brochure"
                   onClick={handleDownload} 
                 />
               </div>
             </div>
 
+            {/* BOTTOM LEFT: CONFIGS */}
+            <div className="absolute bottom-4 left-4 z-20 transition-all duration-500 group-hover:-translate-x-2 group-hover:opacity-0">
+               <div className="bg-white/10 backdrop-blur-xl border border-white/20 px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-3">
+                  <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center border border-blue-500/30">
+                    <Building2 size={16} className="text-blue-400" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">Configuration</span>
+                    <span className="text-xs font-bold text-white leading-tight">{property.configurations || '2 & 3 BHK'}</span>
+                  </div>
+               </div>
+            </div>
+
+            {/* BOTTOM RIGHT: PRICE */}
+            <div className="absolute bottom-4 right-4 z-20 transition-all duration-500 group-hover:translate-x-2 group-hover:opacity-0">
+               <div className="bg-white/10 backdrop-blur-xl border border-white/20 px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-3">
+                  <div className="flex flex-col text-right">
+                    <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">Starting Range</span>
+                    <span className="text-sm font-black text-white tracking-tighter">{property.pricedisplay}</span>
+                  </div>
+                  <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center border border-emerald-500/30">
+                    <Wallet size={16} className="text-emerald-400" />
+                  </div>
+               </div>
+            </div>
+
             {/* Navigation Buttons */}
             {hasMultipleImages && (
               <>
-                <button onClick={prevImage} className="absolute left-3 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 backdrop-blur-md text-white p-2 rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100 hover:scale-110 border border-white/10">
-                  <ChevronLeft size={20} />
+                <button onClick={prevImage} className="absolute left-6 top-1/2 -translate-y-1/2 bg-white/5 hover:bg-white/10 backdrop-blur-md text-white w-10 h-10 flex items-center justify-center rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100 border border-white/10">
+                  <ChevronLeft size={24} />
                 </button>
-                <button onClick={nextImage} className="absolute right-3 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 backdrop-blur-md text-white p-2 rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100 hover:scale-110 border border-white/10">
-                  <ChevronRight size={20} />
+                <button onClick={nextImage} className="absolute right-6 top-1/2 -translate-y-1/2 bg-white/5 hover:bg-white/10 backdrop-blur-md text-white w-10 h-10 flex items-center justify-center rounded-full transition-all duration-300 opacity-0 group-hover:opacity-100 border border-white/10">
+                  <ChevronRight size={24} />
                 </button>
               </>
             )}
 
-            {/* Image Counter */}
+            {/* Image Counter Indicators */}
             {hasMultipleImages && (
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 px-2 py-1 bg-black/20 backdrop-blur-sm rounded-full">
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 px-3 py-1.5 bg-black/40 backdrop-blur-sm rounded-full z-20">
                 {images.map((_, i) => (
-                  <div key={i} className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${i === currentImageIndex ? 'bg-white w-4' : 'bg-white/50'}`} />
+                  <div key={i} className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${i === currentImageIndex ? 'bg-white w-5 shadow-[0_0_8px_rgba(255,255,255,0.8)]' : 'bg-white/30'}`} />
                 ))}
               </div>
             )}
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-slate-500 bg-slate-100">
+          <div className="flex flex-col items-center justify-center h-full text-white bg-slate-800">
             <ImageIcon size={32} className="mb-2 opacity-30 animate-pulse" />
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Loading Visuals</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Loading High-Res Visuals</p>
           </div>
         )}
       </div>
 
-      {/* 2. Sharing Form Section - Below Square */}
-      <div className="flex-1 p-5 overflow-y-auto bg-slate-50/50 flex flex-col">
-        <div className="mb-4">
-          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-            <div className="w-1 h-3 bg-blue-500 rounded-full" />
-            Share Property Template
-          </h3>
-          <div className="space-y-3">
-            <div className="group relative">
-              <label className="absolute left-3 -top-2 px-1 bg-slate-50 text-[9px] font-black text-slate-400 uppercase tracking-tighter opacity-0 group-focus-within:opacity-100 transition-opacity">Full Name</label>
-              <input 
-                type="text" 
-                value={waName} 
-                onChange={e => setWaName(e.target.value)} 
-                className="w-full border border-slate-200 bg-white rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 placeholder:text-slate-300 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-sm" 
-                placeholder="Ex. Rahul Sharma" 
-              />
+      {/* WHATSAPP MODAL POPUP */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-sm rounded-[32px] p-8 shadow-2xl border border-slate-100 flex flex-col items-center text-center animate-in zoom-in-95 duration-300">
+            <div className="w-16 h-16 bg-green-50 text-[#25D366] rounded-full flex items-center justify-center mb-6">
+              <MessageCircle size={32} />
             </div>
-            <div className="group relative">
-              <label className="absolute left-3 -top-2 px-1 bg-slate-50 text-[9px] font-black text-slate-400 uppercase tracking-tighter opacity-0 group-focus-within:opacity-100 transition-opacity">Mobile No</label>
-              <input 
-                type="tel" 
-                value={waMobile} 
-                onChange={e => setWaMobile(e.target.value)} 
-                className="w-full border border-slate-200 bg-white rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 placeholder:text-slate-300 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all shadow-sm" 
-                placeholder="+91 91234 56789" 
-              />
-            </div>
-          </div>
-        </div>
+            
+            <h3 className="text-xl font-black text-slate-900 mb-2">Ready to Share!</h3>
+            <p className="text-slate-500 text-sm mb-6 px-4">
+              Enter your name and mobile number to generate your personalized WhatsApp template for <span className="font-bold text-slate-800">{property.project_name}</span>.
+            </p>
 
-        <div className="mt-auto pt-4 flex items-center justify-between">
-          <div className="flex flex-col">
-             <span className="text-[10px] font-black text-slate-300 uppercase tracking-tight">Status</span>
-             <span className="text-[11px] font-bold text-slate-600">{property.projectstatus || 'Available'}</span>
-          </div>
-          <div className="flex flex-col items-end text-right">
-             <span className="text-[10px] font-black text-slate-300 uppercase tracking-tight">Starting At</span>
-             <span className="text-sm font-black text-blue-600 tracking-tighter">{property.pricedisplay}</span>
+            <div className="w-full space-y-4 mb-8">
+               <div className="relative group">
+                  <input 
+                    type="text" 
+                    value={waName} 
+                    onChange={e => setWaName(e.target.value)} 
+                    placeholder="Enter Full Name"
+                    className="w-full h-14 bg-slate-50 border border-slate-200 rounded-2xl px-6 font-bold text-slate-800 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400"
+                  />
+               </div>
+               <div className="relative group">
+                  <input 
+                    type="tel" 
+                    value={waMobile} 
+                    onChange={e => setWaMobile(e.target.value)} 
+                    placeholder="Enter Mobile Number"
+                    className="w-full h-14 bg-slate-50 border border-slate-200 rounded-2xl px-6 font-bold text-slate-800 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400"
+                  />
+               </div>
+            </div>
+
+            <div className="w-full flex gap-3">
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="flex-1 h-16 bg-slate-100 text-slate-600 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all uppercase tracking-widest"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleCopyWhatsApp}
+                className={`flex-[2] h-16 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 uppercase tracking-widest ${waCopied ? 'bg-slate-900 text-white' : 'bg-[#25D366] text-white hover:bg-[#1ebd5b] shadow-xl shadow-green-200'}`}
+              >
+                {waCopied ? <><Check size={18} /> Copied!</> : 'Copy Template'}
+              </button>
+            </div>
+            
+            <button 
+              onClick={() => setIsModalOpen(false)}
+              className="mt-6 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <X size={20} />
+            </button>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -210,14 +254,14 @@ function ActionButton({ icon, tooltip, onClick, active }: { icon: React.ReactNod
     <div className="relative group/btn">
       <button 
         onClick={onClick}
-        className={`w-12 h-12 flex items-center justify-center rounded-[18px] transition-all duration-300 transform active:scale-90 hover:scale-110 shadow-xl border border-white/50 ${active ? 'bg-slate-900 border-slate-800' : 'bg-white hover:bg-slate-50'}`}
+        className={`w-14 h-14 flex items-center justify-center rounded-[20px] transition-all duration-300 transform active:scale-90 hover:scale-110 shadow-2xl border border-white/20 ${active ? 'bg-white' : 'bg-white hover:shadow-white/20'}`}
       >
         {icon}
       </button>
       
       {/* TOOLTIP */}
-      <div className="absolute left-1/2 -bottom-10 -translate-x-1/2 px-2.5 py-1 bg-slate-900 text-[10px] font-bold text-white whitespace-nowrap rounded-lg opacity-0 group-hover/btn:opacity-100 transition-all duration-300 pointer-events-none scale-50 group-hover/btn:scale-100 origin-top shadow-2xl z-[100]">
-        <div className="absolute -top-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-bottom-slate-900" />
+      <div className="absolute left-1/2 -top-12 -translate-x-1/2 px-3 py-1.5 bg-white text-[10px] font-black text-slate-900 whitespace-nowrap rounded-xl opacity-0 group-hover/btn:opacity-100 transition-all duration-300 pointer-events-none scale-50 group-hover/btn:scale-100 origin-bottom shadow-2xl z-[100] uppercase tracking-widest border border-slate-100">
+        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-x-4 border-x-transparent border-t-4 border-t-white" />
         {tooltip}
       </div>
     </div>

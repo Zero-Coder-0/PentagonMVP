@@ -247,23 +247,23 @@ export default function DashboardPage() {
 
   return (
     <DashboardContext.Provider value={value}>
-      <div className="h-screen w-full flex overflow-hidden bg-slate-50">
+      <div className="h-screen w-full flex overflow-hidden bg-slate-50 select-none">
         
         {/* LEFT COLUMN - Map + Images/WhatsApp */}
         <div 
-          className="relative h-full bg-white border-r border-slate-200 z-0 min-h-0 flex flex-col flex-shrink-0"
+          className="relative h-full bg-white border-r border-slate-200 z-0 flex flex-col flex-shrink-0 overflow-hidden"
           style={{ width: `${leftColumnWidth}%` }}
         >
           {/* MAP - Top section */}
-          <div className="flex-[3] min-h-[250px] border-b-2 border-slate-200 relative">
+          <div className="flex-[3] relative border-b-2 border-slate-200 min-h-0">
             <MapContainer />
             <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-black text-slate-400 uppercase tracking-tighter border border-slate-200 shadow-sm z-10">
               Interactive Map
             </div>
           </div>
           
-          {/* IMAGE SECTION + WHATSAPP FORM - Bottom section */}
-          <div className="flex-[2] min-h-[300px] bg-slate-50 overflow-hidden">
+          {/* IMAGE SECTION - Bottom section (No internal scroll per user request) */}
+          <div className="flex-[2] bg-slate-900 border-t border-slate-200 relative min-h-0 overflow-hidden">
             <ImageSection />
           </div>
         </div>
@@ -271,8 +271,8 @@ export default function DashboardPage() {
         {/* First Resizer (Left -> Middle) */}
         <ColumnResizer 
           onResize={(newWidth) => {
-            // Keep at least 15% for left and 40% for middle+right
-            const limitedL = Math.min(Math.max(15, newWidth), 40);
+            // Safer bounds: 10% to 45%
+            const limitedL = Math.min(Math.max(10, newWidth), 45);
             setLeftColumnWidth(limitedL);
           }}
           isDragging={isDragging}
@@ -281,13 +281,15 @@ export default function DashboardPage() {
 
         {/* MIDDLE COLUMN - Navbar + MegaPopup Content */}
         <div 
-          className="relative h-full bg-white border-r border-slate-200 z-10 shadow-2xl min-h-0 flex flex-col flex-shrink-0 overflow-hidden"
+          className="relative h-full bg-white border-r border-slate-200 z-10 shadow-2xl flex flex-col flex-shrink-0 overflow-hidden"
           style={{ width: `${middleColumnWidth}%` }}
         >
           {/* Header Area in Middle Column */}
-          <DashboardNavbar />
+          <div className="flex-shrink-0">
+            <DashboardNavbar />
+          </div>
           
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-hidden">
             <MegaPopupContent />
           </div>
         </div>
@@ -295,9 +297,9 @@ export default function DashboardPage() {
         {/* Second Resizer (Middle -> Right) */}
         <ColumnResizer 
           onResize={(newMiddleWidthRaw) => {
-            // Calculate relative to the remaining space
             const remainingForMAndR = 100 - leftColumnWidth;
-            const limitedM = Math.min(Math.max(30, newMiddleWidthRaw), remainingForMAndR - 15);
+            // Safer bounds for middle: at least 25% of total, and at least 15% left for right column
+            const limitedM = Math.min(Math.max(25, newMiddleWidthRaw), remainingForMAndR - 15);
             setMiddleColumnWidth(limitedM);
           }}
           isDragging={isDragging}
@@ -305,21 +307,21 @@ export default function DashboardPage() {
         />
 
         {/* RIGHT COLUMN - Property List + Alternatives */}
-        <div className="relative h-full bg-slate-50 z-20 shadow-xl min-h-0 flex-1 flex flex-col overflow-hidden min-w-0">
+        <div className="relative h-full bg-slate-50 z-20 shadow-xl flex-1 flex flex-col overflow-hidden min-w-0">
           {/* Property List (Top) */}
-          <div className="flex-1 min-h-0 relative">
+          <div className="flex-1 min-h-0 relative overflow-hidden">
             <PropertyListContainer />
           </div>
           
           {/* Alternatives (Bottom) */}
-          <div className="h-1/3 min-h-[220px] bg-white border-t-2 border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
-            <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div className="flex-shrink-0 h-[30%] bg-white border-t-2 border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] flex flex-col min-h-0">
+            <div className="px-4 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 flex-shrink-0">
               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                 <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
                 Smart Alternatives
               </h3>
             </div>
-            <div className="h-full overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-hidden">
               <AlternativesSection />
             </div>
           </div>
