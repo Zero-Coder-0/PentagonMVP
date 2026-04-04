@@ -113,9 +113,9 @@ export default function DashboardNavbar() {
             {/* 1. Left side - Logo (Pentagon-like) */}
             <div className="flex items-center gap-2 mr-4">
                 <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-lg shadow-blue-200 rotate-3 hover:rotate-0 transition-transform">
-                    G
+                    P
                 </div>
-                <span className="hidden lg:block text-sm font-black text-slate-900 tracking-tight">GeoEstate</span>
+                <span className="hidden lg:block text-sm font-black text-slate-900 tracking-tight">Pentagon Properties</span>
             </div>
 
             {/* 2. Middle - Search Controls */}

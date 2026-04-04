@@ -105,32 +105,28 @@ export default function ImageSection() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none" />
 
             {/* CORNER OVERLAY: CONFIGURATIONS (LEFT BOTTOM) */}
-            <div className={`absolute bottom-6 left-6 z-20 flex flex-col gap-2 transition-all duration-300 ${isCompact ? 'scale-90 origin-bottom-left' : ''}`}>
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-3 flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-500 text-white rounded-xl flex items-center justify-center">
-                  <Info size={20} />
+            <div className={`absolute bottom-6 left-6 z-20 flex flex-col gap-2 transition-all duration-300 ${leftColumnWidth < 25 ? 'scale-75 origin-bottom-left' : 'scale-90 origin-bottom-left'}`}>
+              <div className="bg-white/10 backdrop-blur-md border border-white/30 rounded-2xl p-2.5 flex items-center gap-3 shadow-2xl">
+                <div className="w-9 h-9 bg-blue-500/80 text-white rounded-xl flex items-center justify-center shadow-lg">
+                  <Info size={18} />
                 </div>
-                {!isCompact && (
-                  <div>
-                    <p className="text-[10px] text-white/60 font-bold uppercase tracking-wider">Configurations</p>
-                    <p className="text-sm font-black text-white">{property.configurations?.join(', ') || 'Available'}</p>
-                  </div>
-                )}
+                <div className="pr-2">
+                  <p className="text-[9px] text-white/70 font-bold uppercase tracking-widest leading-none mb-1">Configurations</p>
+                  <p className="text-xs font-black text-white leading-none whitespace-nowrap">{property.configurations?.slice(0, 2).join(', ') || 'Available'}</p>
+                </div>
               </div>
             </div>
 
             {/* CORNER OVERLAY: PRICE (RIGHT BOTTOM) */}
-            <div className={`absolute z-20 flex flex-col gap-2 transition-all duration-300 ${isCompact ? 'bottom-20 left-6 scale-90 origin-bottom-left' : 'bottom-6 right-6 scale-100 origin-bottom-right'}`}>
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-3 flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-500 text-white rounded-xl flex items-center justify-center">
-                  <DollarSign size={20} />
+            <div className={`absolute z-20 flex flex-col gap-2 transition-all duration-300 ${leftColumnWidth < 25 ? 'bottom-20 left-6 scale-75 origin-bottom-left' : 'bottom-6 right-6 scale-90 origin-bottom-right'}`}>
+              <div className="bg-white/10 backdrop-blur-md border border-white/30 rounded-2xl p-2.5 flex items-center gap-3 shadow-2xl">
+                <div className="w-9 h-9 bg-green-500/80 text-white rounded-xl flex items-center justify-center shadow-lg">
+                  <DollarSign size={18} />
                 </div>
-                {!isCompact && (
-                  <div>
-                    <p className="text-[10px] text-white/60 font-bold uppercase tracking-wider">Price Range</p>
-                    <p className="text-sm font-black text-white">{property.pricedisplay || 'On Request'}</p>
-                  </div>
-                )}
+                <div className="pr-2">
+                  <p className="text-[9px] text-white/70 font-bold uppercase tracking-widest leading-none mb-1">Price Range</p>
+                  <p className="text-xs font-black text-white leading-none whitespace-nowrap">{property.pricedisplay || 'On Request'}</p>
+                </div>
               </div>
             </div>
 

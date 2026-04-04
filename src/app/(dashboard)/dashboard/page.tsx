@@ -19,6 +19,8 @@ import ColumnResizer from './ColumnResizer';
 import DashboardNavbar from './DashboardNavbar';
 import MediaGallery from './MediaGallery';
 
+import { generateWhatsAppTemplate } from './MegaPopup/whatsapp-template';
+
 import type { ProjectFullV7, ProjectV7, FilterCriteriaV7 } from '@/modules/inventory/types-v7';
 import {
   getMapProjectsV7 as getMapProjects,
@@ -365,10 +367,11 @@ function WhatsAppModal() {
       return;
     }
     
-    // TEMPLATE GENERATOR V7 (Premium Lead Capture)
-    const template = `*PEN-TAGON Lead - Geostat App V7*%0A--------------------------------%0A*Name:* ${waName}%0A*Mobile:* ${waMobile}%0A--------------------------------%0A*Interested In:* ${property.project_name}%0A*Configuration:* ${property.configurations ? property.configurations.join(', ') : 'N/A'}%0A*Location:* ${property.region || 'Bengaluru'}%0A*Price:* ${property.pricedisplay}%0A--------------------------------%0A_Generated via Geostat Dashboard_`;
+    // Use ORIGINAL PROJECT TEMPLATE (via shared logic)
+    const template = generateWhatsAppTemplate(property, { name: waName, mobile: waMobile });
     
-    const plainText = template.replace(/%0A/g, '\n').replace(/\*/g, '');
+    // Plain text for clipboard
+    const plainText = template;
     navigator.clipboard.writeText(plainText);
     
     setWaCopied(true);
