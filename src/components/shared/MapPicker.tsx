@@ -117,11 +117,17 @@ function MapPickerWithSearch({ lat, lng, onLocationChange }: MapPickerWithSearch
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleSearch();
+              }
+            }}
             className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             placeholder="e.g., Whitefield, Bangalore or 560066"
           />
           <button
+            type="button"
             onClick={handleSearch}
             disabled={searching}
             className={`px-6 py-2 rounded-lg font-medium transition ${
@@ -168,6 +174,7 @@ function MapPickerWithSearch({ lat, lng, onLocationChange }: MapPickerWithSearch
           </div>
         </div>
         <button
+          type="button"
           onClick={handleManualUpdate}
           className="mt-2 w-full px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition text-sm font-medium"
         >
