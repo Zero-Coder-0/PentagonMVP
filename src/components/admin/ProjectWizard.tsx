@@ -87,6 +87,7 @@ export default function ProjectWizardV7({
   const [currentStep, setCurrentStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [activeDraftId, setActiveDraftId] = useState(draftId); // Track the draft being updated
 
   const {
     register,
@@ -254,17 +255,29 @@ export default function ProjectWizardV7({
       // Auto-save progress as a draft whenever moving forward
       if (mode === 'create_draft' || mode === 'edit_draft') {
         const currentData = getValues();
-        await upsertDraft(currentData, draftId);
-        console.log("Draft auto-saved successfully on step transition");
+        const result = await upsertDraft(currentData, activeDraftId);
+        
+        if (result.success && result.draftId) {
+          // Sync state with the latest draft ID
+          if (activeDraftId !== result.draftId) {
+            setActiveDraftId(result.draftId);
+            // Silently update the URL if we just created a new draft,
+            // so a page refresh doesn't lose the draft session.
+            if (mode === 'create_draft') {
+              const newUrl = `/vendor/drafts/${result.draftId}/edit`;
+              window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
+            }
+          }
+          console.log("Draft auto-saved successfully:", result.draftId);
+        }
       }
     } catch (err) {
       console.warn("Silent background save failed:", err);
-      // We don't block the user if auto-save fails (e.g. network blip)
     }
 
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
-      window.scrollTo(0, 0); // Reset scroll position for next step
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
