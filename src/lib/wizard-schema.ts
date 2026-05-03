@@ -265,33 +265,50 @@ export const defaultWizardValues: WizardFormData = {
 
   // 🎾 Amenities
   amenities: [
-    // Pre-filled examples
+    // Pre-filled examples (Original Mock Data)
     { category: 'Sports & Fitness', name: 'Cricket Pitch', description: 'Net practice area with bowling machine', size_specs: '20m x 5m' },
     { category: 'Clubhouse', name: 'Olympic Size Pool', description: 'Temperature controlled pool for all seasons', size_specs: '50m x 25m' },
     { category: 'Leisure & Social', name: 'Mini Theatre', description: 'Plush seating with Dolby Atmos', size_specs: '40 Seater' },
-    // Empty placeholders for user to fill
+
+    // Extended List (Placeholders based on your requirements)
+    // Clubhouse
     { category: 'Clubhouse', name: 'Clubhouse Infrastructure', description: '' },
+    
+    // Sports & Fitness
     { category: 'Sports & Fitness', name: 'Gymnasium & Yoga Area', description: '' },
     { category: 'Sports & Fitness', name: 'Indoor Spa & Sauna', description: '' },
     { category: 'Sports & Fitness', name: 'Squash Court', description: '' },
     { category: 'Sports & Fitness', name: 'Table Tennis & Billiards', description: '' },
-    { category: 'Sports & Fitness', name: 'Badminton Courts', description: '' },
+    { category: 'Sports & Fitness', name: 'Indoor Badminton Courts', description: '' },
     { category: 'Sports & Fitness', name: 'Indoor Pickleball Court', description: '' },
+    { category: 'Sports & Fitness', name: 'Multi-purpose Playground (Football/Cricket)', description: '' },
+    { category: 'Sports & Fitness', name: 'Outdoor Skating Rink', description: '' },
+    { category: 'Sports & Fitness', name: 'Outdoor Gym Station', description: '' },
+    { category: 'Sports & Fitness', name: 'Volleyball / Play Courts', description: '' },
+    
+    // Leisure & Social
     { category: 'Leisure & Social', name: 'Convention Hall / Multi-purpose Hall', description: '' },
-    { category: 'Leisure & Social', name: 'Sports Bar / Lounge', description: '' },
-    { category: 'Sports & Fitness', name: 'Multi-purpose Playground (Cricket/Football)', description: '' },
-    { category: 'Sports & Fitness', name: 'Skating Rink', description: '' },
-    { category: 'Sports & Fitness', name: 'Outdoor Gym', description: '' },
-    { category: 'Leisure & Social', name: 'Amphitheatre', description: '' },
+    { category: 'Leisure & Social', name: 'Open-air Sports Bar', description: '' },
+    { category: 'Leisure & Social', name: 'Amphitheatre (Open Air Theatre)', description: '' },
     { category: 'Leisure & Social', name: 'Party Lawn', description: '' },
-    { category: 'Nature & Parks', name: 'Landscaped Gardens', description: '' },
-    { category: 'Nature & Parks', name: 'Reflexology Path', description: '' },
-    { category: 'Nature & Parks', name: 'Senior Citizens Court', description: '' },
-    { category: 'Kids Zone', name: 'Children’s Play Area', description: '' },
-    { category: 'Kids Zone', name: 'Toddlers Play Area', description: '' },
-    { category: 'Kids Zone', name: 'Toddler Cycling Track', description: '' },
-    { category: 'Nature & Parks', name: 'Pet Play Park & Pet Wash', description: '' },
-    { category: 'Nature & Parks', name: 'Jogging / Pedestrian Track', description: '' },
+    
+    // Nature & Outdoors
+    { category: 'Nature & Outdoors', name: 'Landscaped Gardens', description: '' },
+    { category: 'Nature & Outdoors', name: 'Reflexology Path', description: '' },
+    { category: 'Nature & Outdoors', name: 'Jogging / Pedestrian Track', description: '' },
+    
+    // Kids & Seniors
+    { category: 'Kids & Seniors', name: 'Children’s Play Area & Sandpit', description: '' },
+    { category: 'Kids & Seniors', name: 'Toddlers Play Area', description: '' },
+    { category: 'Kids & Seniors', name: 'Toddler Cycling Track', description: '' },
+    { category: 'Kids & Seniors', name: 'Senior Citizens Court', description: '' },
+    { category: 'Kids & Seniors', name: 'Pet Play Park', description: '' },
+    { category: 'Kids & Seniors', name: 'Pet Wash Area', description: '' },
+
+    // Security & Utilities (Placeholders)
+    { category: 'Security & Utilities', name: '24/7 CCTV Surveillance', description: '' },
+    { category: 'Security & Utilities', name: 'Water Treatment Plant (WTP)', description: '' },
+    { category: 'Security & Utilities', name: 'Sewage Treatment Plant (STP)', description: '' },
   ],
 
   // 🗺️ Landmarks
