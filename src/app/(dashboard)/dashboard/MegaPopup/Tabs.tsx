@@ -1,6 +1,6 @@
 'use client';
 
-import { Info, LayoutGrid, Sparkles, MapPin, Building2, DollarSign, Zap } from 'lucide-react';
+import { Info, LayoutGrid, Sparkles, MapPin, Building2, IndianRupee, Zap } from 'lucide-react';
 
 type TabType = 'overview' | 'units' | 'amenities' | 'location' | 'specs' | 'pricing' | 'alternatives';
 
@@ -46,7 +46,7 @@ export function MegaPopupTabs({ activeTab, onTabChange }: Props) {
         <TabButton
           active={activeTab === 'pricing'}
           onHover={() => onTabChange('pricing')}
-          icon={<DollarSign size={15} />}
+          icon={<IndianRupee size={15} />}
           label="Pricing"
         />
         <TabButton

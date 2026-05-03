@@ -1,6 +1,6 @@
 'use client';
 
-import { DollarSign } from 'lucide-react';
+import { IndianRupee } from 'lucide-react';
 import type { ProjectFullV7, ProjectV7 } from '@/modules/inventory/types-v7';
 
 const getPricingData = (property: ProjectFullV7) => {
@@ -28,7 +28,7 @@ export function PricingTab({ property }: Props) {
       {costExtras.length > 0 && (
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
           <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-            <DollarSign size={14} /> Additional Costs
+            <IndianRupee size={14} /> Additional Costs
           </h4>
           <div className="space-y-2">
             {costExtras.map((extra, i) => (

@@ -10,7 +10,7 @@ import {
   BookOpen, 
   Download,
   Info,
-  DollarSign,
+  IndianRupee,
   Maximize2
 } from 'lucide-react';
 
@@ -121,7 +121,7 @@ export default function ImageSection() {
             <div className={`absolute z-20 flex flex-col gap-2 transition-all duration-300 ${leftColumnWidth < 25 ? 'bottom-20 left-6 scale-75 origin-bottom-left' : 'bottom-6 right-6 scale-90 origin-bottom-right'}`}>
               <div className="bg-white/10 backdrop-blur-md border border-white/30 rounded-2xl p-2.5 flex items-center gap-3 shadow-2xl">
                 <div className="w-9 h-9 bg-green-500/80 text-white rounded-xl flex items-center justify-center shadow-lg">
-                  <DollarSign size={18} />
+                  <IndianRupee size={18} />
                 </div>
                 <div className="pr-2">
                   <p className="text-[9px] text-white/70 font-bold uppercase tracking-widest leading-none mb-1">Price Range</p>
