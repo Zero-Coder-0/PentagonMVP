@@ -79,7 +79,7 @@ export default function PropertyListContainer() {
                 <div className="flex items-start gap-1 text-xs text-slate-500">
                   <MapPin size={11} className="flex-shrink-0 mt-0.5" />
                   <span className="line-clamp-2 leading-tight">
-                    {property.address_line || property.region || property.city_zone || 'Bangalore'}
+                    {[property.address_line, property.region, property.city_zone].find(x => x && x !== 'Unknown') || 'Bangalore'}
                   </span>
                 </div>
 

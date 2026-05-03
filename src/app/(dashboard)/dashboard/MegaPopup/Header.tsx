@@ -5,7 +5,9 @@ import type { ProjectV7 } from '@/modules/inventory/types-v7';
 
 const getHeaderData = (property: ProjectV7) => {
   const pFull = property as any; // Cast to access full fields
-  const locationParts = [pFull.region || property.address_line, pFull.city || pFull.district].filter(Boolean);
+  const validRegion = [pFull.region, property.address_line].find(x => x && x !== 'Unknown');
+  const validCity = [pFull.city, pFull.district].find(x => x && x !== 'Unknown');
+  const locationParts = [validRegion, validCity].filter(Boolean);
 
   return {
     name: property.project_name,

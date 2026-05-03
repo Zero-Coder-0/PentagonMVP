@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from 'react-le
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { ProjectV7, CityZone as Zone } from '../../inventory/types-v7'; // Using your correct types
+import { getZoneFromCoordinates } from '../utils/geo-zone';
 
 // ==========================================
 // 1. ICONS
@@ -182,11 +183,17 @@ const LeafletMap: React.FC<LeafletMapProps> = ({
         )
         .map((item) => {
           const isSelected = selectedId === item.id;
+          
+          // Use DB zone, or calculate on the fly if missing or "Unknown"
+          const effectiveZone = (!item.city_zone || item.city_zone === 'Unknown') 
+            ? getZoneFromCoordinates(item.lat as number, item.lng as number) 
+            : item.city_zone;
+
           return (
             <Marker
               key={item.id}
               position={[item.lat as number, item.lng as number]}
-              icon={getIconForZone(item.city_zone, isSelected)}
+              icon={getIconForZone(effectiveZone, isSelected)}
               zIndexOffset={isSelected ? 1000 : 0} // Selected pin always on top
               opacity={selectedId === item.id ? 1.0 : 0.8}
               eventHandlers={{
