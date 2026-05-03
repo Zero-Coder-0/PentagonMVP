@@ -67,11 +67,18 @@ export default function ProjectWizardV7({
 }: ProjectWizardProps) {
   // Helper Component for the Review Tab (Defined inside to ensure scope)
   const ReviewItem = ({ label, value, fullWidth }: { label: string; value: any; fullWidth?: boolean }) => {
-    if (value === undefined || value === null || value === '') return null;
+    if (value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0)) return null;
+    
+    // Format value for display
+    let displayValue = String(value);
+    if (Array.isArray(value)) {
+      displayValue = value.join(', ');
+    }
+
     return (
-      <div className={`${fullWidth ? 'col-span-full' : ''} border-b border-slate-100 pb-2`}>
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">{label}</p>
-        <p className="text-sm font-medium text-slate-900">{String(value)}</p>
+      <div className={`${fullWidth ? 'col-span-full' : ''} border-b border-slate-100 pb-3`}>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+        <p className="text-sm font-medium text-slate-800 break-words whitespace-normal leading-relaxed">{displayValue}</p>
       </div>
     );
   };
@@ -243,8 +250,22 @@ export default function ProjectWizardV7({
   };
 
   const nextStep = async () => {
-    // You can optionally add partial validation per step here
-    if (currentStep < steps.length) setCurrentStep(currentStep + 1);
+    try {
+      // Auto-save progress as a draft whenever moving forward
+      if (mode === 'create_draft' || mode === 'edit_draft') {
+        const currentData = getValues();
+        await upsertDraft(currentData, draftId);
+        console.log("Draft auto-saved successfully on step transition");
+      }
+    } catch (err) {
+      console.warn("Silent background save failed:", err);
+      // We don't block the user if auto-save fails (e.g. network blip)
+    }
+
+    if (currentStep < steps.length) {
+      setCurrentStep(currentStep + 1);
+      window.scrollTo(0, 0); // Reset scroll position for next step
+    }
   };
 
   const prevStep = () => {
@@ -1284,9 +1305,9 @@ export default function ProjectWizardV7({
                     <div className="space-y-2">
                       {commercialFields.map((c: any, i) => (
                         <div key={c.field_id} className="flex flex-col p-2 bg-white rounded border border-slate-200">
-                          <div className="flex justify-between items-center">
-                            <span className="text-slate-700 font-bold">{c.name}</span>
-                            <span className="font-bold text-slate-900">₹{c.amount?.toLocaleString()}</span>
+                          <div className="flex justify-between items-start gap-2">
+                            <span className="text-slate-700 font-bold break-words whitespace-normal flex-1">{c.name}</span>
+                            <span className="font-bold text-slate-900 shrink-0">₹{c.amount?.toLocaleString()}</span>
                           </div>
                           <div className="flex justify-between text-[10px] text-slate-500 uppercase mt-1">
                             <span>{c.cost_type}</span>
@@ -1309,11 +1330,11 @@ export default function ProjectWizardV7({
                     <div className="flex flex-col gap-2">
                       {amenityFields.map((a: any) => (
                         <div key={a.field_id} className="p-3 bg-white border border-slate-200 rounded-lg">
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="font-bold text-slate-800">{a.name}</span>
-                            <span className="px-2 py-0.5 bg-green-50 text-green-700 rounded text-[10px] uppercase font-bold">{a.category}</span>
+                          <div className="flex justify-between items-start gap-4 mb-1">
+                            <span className="font-bold text-slate-800 break-words whitespace-normal flex-1">{a.name}</span>
+                            <span className="px-2 py-0.5 bg-green-50 text-green-700 rounded text-[10px] uppercase font-bold shrink-0">{a.category}</span>
                           </div>
-                          <div className="text-xs text-slate-500">{a.description} <br /> <strong className="text-slate-700">{a.size_specs}</strong></div>
+                          <div className="text-xs text-slate-500 break-words whitespace-normal leading-relaxed">{a.description} <br /> <strong className="text-slate-700">{a.size_specs}</strong></div>
                         </div>
                       ))}
                       {amenityFields.length === 0 && <p className="text-slate-500 italic">No amenities added</p>}
@@ -1427,13 +1448,13 @@ export default function ProjectWizardV7({
                       <div>
                         <h4 className="text-sm font-bold text-green-800 mb-2 underline">Strengths (Pros)</h4>
                         <ul className="list-disc list-inside text-sm text-slate-700 space-y-1">
-                          {(getValues('pros') as string[] || []).map((p, i) => <li key={i}>{p}</li>)}
+                          {(getValues('pros') as string[] || []).map((p, i) => <li key={i} className="break-words whitespace-normal">{p}</li>)}
                         </ul>
                       </div>
                       <div>
                         <h4 className="text-sm font-bold text-red-800 mb-2 underline">Considerations (Cons)</h4>
                         <ul className="list-disc list-inside text-sm text-slate-700 space-y-1">
-                          {(getValues('cons') as string[] || []).map((c, i) => <li key={i}>{c}</li>)}
+                          {(getValues('cons') as string[] || []).map((c, i) => <li key={i} className="break-words whitespace-normal">{c}</li>)}
                         </ul>
                       </div>
                     </div>
@@ -1442,13 +1463,13 @@ export default function ProjectWizardV7({
                       <div>
                         <h4 className="text-sm font-bold text-blue-800 mb-2 underline">USP Highlights</h4>
                         <ul className="list-disc list-inside text-sm text-slate-700 space-y-1">
-                          {(getValues('usp_highlights') as string[] || []).map((h, i) => <li key={i}>{h}</li>)}
+                          {(getValues('usp_highlights') as string[] || []).map((h, i) => <li key={i} className="break-words whitespace-normal">{h}</li>)}
                         </ul>
                       </div>
                       <div>
                         <h4 className="text-sm font-bold text-slate-800 mb-2 underline">Competitors</h4>
                         <ul className="list-disc list-inside text-sm text-slate-700 space-y-1">
-                          {getValues('competitors')?.map((c: any, i) => <li key={i}><strong>{c.name}</strong> - {c.price_range}</li>)}
+                          {getValues('competitors')?.map((c: any, i) => <li key={i} className="break-words whitespace-normal"><strong>{c.name}</strong> - {c.price_range}</li>)}
                         </ul>
                       </div>
                     </div>
