@@ -500,16 +500,10 @@ export default function ProjectWizardV7({
           {/* STEP 3: UNITS */}
           {currentStep === 3 && (
             <div className="space-y-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-slate-900">🏠 Property Units</h2>
-                <button type="button" onClick={() => appendUnit({ config: '2BHK', type: 'Standard', status: 'Available' })} className="px-4 py-2 bg-blue-600 text-white rounded-lg">
-                  + Add Unit
-                </button>
-              </div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-4">🏢 Project Inventory (Units)</h2>
 
               {unitFields.map((field, index) => (
-                <div key={field.field_id} className="border-2 border-slate-200 rounded-lg p-6 bg-slate-50 relative">
-                  <button type="button" onClick={() => removeUnit(index)} className="absolute top-4 right-4 text-red-600 font-medium text-sm">Remove</button>
+                <div key={field.field_id} className="border-2 border-slate-200 rounded-lg p-6 bg-slate-50 relative group">
                   <div className="flex flex-col gap-6">
                     {/* ROW 1: PRIMARY FINANCIAL DATA */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -670,6 +664,33 @@ export default function ProjectWizardV7({
                         </select>
                       </div>
                     </div>
+                    {/* ACTION BUTTONS */}
+                    <div className="flex justify-end gap-3 mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentData = getValues(`units.${index}`);
+                          appendUnit({ ...currentData });
+                        }}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-md hover:bg-indigo-600 hover:text-white transition-all text-[10px] font-bold border border-indigo-100"
+                      >
+                        📋 COPY
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => appendUnit({ config: '2BHK', status: 'Available' })}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-md hover:bg-emerald-600 hover:text-white transition-all text-[10px] font-bold border border-emerald-100"
+                      >
+                        ➕ ADD
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeUnit(index)}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-md hover:bg-red-600 hover:text-white transition-all text-[10px] font-bold border border-red-100"
+                      >
+                        🗑️ REMOVE
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -715,37 +736,34 @@ export default function ProjectWizardV7({
               <div className="mt-8">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-bold text-slate-900">Commercials (Mandatory Costs)</h3>
-                  <button type="button" onClick={() => appendCommercial({ name: '', cost_type: 'Mandatory' })} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">
-                    + Add Commercial
-                  </button>
                 </div>
                 {commercialFields.map((field, index) => (
-                  <div key={field.field_id} className="border border-slate-200 rounded-lg p-4 bg-white mb-2 flex gap-4">
-                    <div className="flex-1 grid grid-cols-2 lg:grid-cols-3 gap-3">
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700">Cost Name</label>
-                        <input {...register(`commercials.${index}.name`)} placeholder="e.g. Car Parking" className="w-full px-3 py-2 border rounded-lg text-sm" />
+                  <div key={field.field_id} className="border border-slate-200 rounded-lg p-4 bg-white mb-4 relative group">
+                    <div className="flex flex-col gap-4">
+                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-slate-700">Cost Name</label>
+                          <input {...register(`commercials.${index}.name`)} placeholder="e.g. Car Parking" className="w-full px-3 py-2 border rounded-lg text-sm" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-700">Amount (₹)</label>
+                          <input type="number" {...register(`commercials.${index}.amount`, { valueAsNumber: true })} className="w-full px-3 py-2 border rounded-lg text-sm" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-slate-700">Type</label>
+                          <select {...register(`commercials.${index}.cost_type`)} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
+                            <option value="">Select Type</option>
+                            {COST_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                          </select>
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700">Amount (₹)</label>
-                        <input type="number" {...register(`commercials.${index}.amount`, { valueAsNumber: true })} className="w-full px-3 py-2 border rounded-lg text-sm" />
+                      
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button type="button" onClick={() => appendCommercial(getValues(`commercials.${index}`))} className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded text-[10px] font-bold border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all">📋 COPY</button>
+                        <button type="button" onClick={() => appendCommercial({ name: '', cost_type: 'Mandatory' })} className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-[10px] font-bold border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all">➕ ADD</button>
+                        <button type="button" onClick={() => removeCommercial(index)} className="px-2 py-1 bg-red-50 text-red-600 rounded text-[10px] font-bold border border-red-100 hover:bg-red-600 hover:text-white transition-all">🗑️ REMOVE</button>
                       </div>
-                      <div>
-                        <label className="block text-xs font-medium text-slate-700">Type</label>
-                        <select {...register(`commercials.${index}.cost_type`)} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
-                          <option value="">Select Type</option>
-                          {COST_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                        </select>
-                      </div>
-                      {/* <div>
-                        <label className="block text-xs font-medium text-slate-700">Payment Milestone</label>
-                        <select {...register(`commercials.${index}.payment_milestone`)} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
-                          <option value="">Select Milestone</option>
-                          {PAYMENT_MILESTONES.map(m => <option key={m} value={m}>{m}</option>)}
-                        </select>
-                      </div> */}
                     </div>
-                    <button type="button" onClick={() => removeCommercial(index)} className="text-red-500 mt-5">🗑️</button>
                   </div>
                 ))}
               </div>
@@ -757,15 +775,12 @@ export default function ProjectWizardV7({
             <div className="space-y-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-bold text-slate-900">🎾 Amenities & Facilities</h2>
-                <button type="button" onClick={() => appendAmenity({ category: 'Sports & Fitness', name: '' })} className="px-4 py-2 bg-blue-600 text-white rounded-lg">
-                  + Add Amenity
-                </button>
               </div>
 
               {amenityFields.map((field, index) => (
-                <div key={field.field_id} className="border border-slate-200 rounded-lg p-4 bg-white mb-3">
-                  <div className="flex gap-4 items-start">
-                    <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div key={field.field_id} className="border border-slate-200 rounded-lg p-4 bg-white mb-3 group">
+                  <div className="flex flex-col gap-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                       <div>
                         <label className="block text-xs font-medium text-slate-700">Category</label>
                         <select {...register(`amenities.${index}.category`)} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
@@ -786,7 +801,11 @@ export default function ProjectWizardV7({
                         <textarea {...register(`amenities.${index}.description`)} rows={1} placeholder="e.g. Temperature controlled" className="w-full px-3 py-2 border rounded-lg text-sm" />
                       </div>
                     </div>
-                    <button type="button" onClick={() => removeAmenity(index)} className="text-red-500 mt-6">🗑️</button>
+                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button type="button" onClick={() => appendAmenity(getValues(`amenities.${index}`))} className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded text-[10px] font-bold border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all">📋 COPY</button>
+                      <button type="button" onClick={() => appendAmenity({ category: 'Sports & Fitness', name: '' })} className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-[10px] font-bold border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all">➕ ADD</button>
+                      <button type="button" onClick={() => removeAmenity(index)} className="px-2 py-1 bg-red-50 text-red-600 rounded text-[10px] font-bold border border-red-100 hover:bg-red-600 hover:text-white transition-all">🗑️ REMOVE</button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -822,15 +841,12 @@ export default function ProjectWizardV7({
 
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-bold text-slate-900">🗺️ Nearby Landmarks</h2>
-                <button type="button" onClick={() => appendLandmark({ category: 'Education', name: '' })} className="px-4 py-2 bg-blue-600 text-white rounded-lg">
-                  + Add Landmark
-                </button>
               </div>
 
               {landmarkFields.map((field, index) => (
-                <div key={field.field_id} className="border border-slate-200 rounded-lg p-4 bg-white mb-3">
-                  <div className="flex gap-4 items-start">
-                    <div className="flex-1 grid grid-cols-4 gap-3">
+                <div key={field.field_id} className="border border-slate-200 rounded-lg p-4 bg-white mb-3 group">
+                  <div className="flex flex-col gap-4">
+                    <div className="grid grid-cols-4 gap-3">
                       <div>
                         <label className="block text-xs font-medium text-slate-700">Category</label>
                         <select {...register(`landmarks.${index}.category`)} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
@@ -851,7 +867,11 @@ export default function ProjectWizardV7({
                         <input {...register(`landmarks.${index}.travel_time`)} placeholder="e.g. 10 mins" className="w-full px-3 py-2 border rounded-lg text-sm" />
                       </div>
                     </div>
-                    <button type="button" onClick={() => removeLandmark(index)} className="text-red-500 mt-6">🗑️</button>
+                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button type="button" onClick={() => appendLandmark(getValues(`landmarks.${index}`))} className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded text-[10px] font-bold border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all">📋 COPY</button>
+                      <button type="button" onClick={() => appendLandmark({ category: 'Education', name: '' })} className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-[10px] font-bold border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all">➕ ADD</button>
+                      <button type="button" onClick={() => removeLandmark(index)} className="px-2 py-1 bg-red-50 text-red-600 rounded text-[10px] font-bold border border-red-100 hover:bg-red-600 hover:text-white transition-all">🗑️ REMOVE</button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -1010,24 +1030,34 @@ export default function ProjectWizardV7({
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <label className="block text-sm font-medium text-green-700">✅ Strengths (Pros)</label>
-                    <button type="button" onClick={() => appendPro("")} className="text-xs bg-green-100 text-green-700 px-2 rounded">+ Add</button>
                   </div>
                   {proFields.map((field, index) => (
-                    <div key={field.field_id} className="flex gap-2 mb-2">
-                      <input {...register(`pros.${index}` as const)} className="w-full px-2 py-1 border rounded" />
-                      <button type="button" onClick={() => removePro(index)} className="text-red-500">✕</button>
+                    <div key={field.field_id} className="flex flex-col gap-1 mb-3 group">
+                      <div className="flex gap-2">
+                        <input {...register(`pros.${index}` as const)} className="w-full px-2 py-1 border rounded" />
+                      </div>
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button type="button" onClick={() => appendPro(getValues(`pros.${index}`))} className="text-[10px] text-indigo-600 font-bold">📋 COPY</button>
+                        <button type="button" onClick={() => appendPro("")} className="text-[10px] text-emerald-600 font-bold">➕ ADD</button>
+                        <button type="button" onClick={() => removePro(index)} className="text-[10px] text-red-600 font-bold">🗑️ REMOVE</button>
+                      </div>
                     </div>
                   ))}
                 </div>
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <label className="block text-sm font-medium text-red-700">⚠️ Considerations (Cons)</label>
-                    <button type="button" onClick={() => appendCon("")} className="text-xs bg-red-100 text-red-700 px-2 rounded">+ Add</button>
                   </div>
                   {conFields.map((field, index) => (
-                    <div key={field.field_id} className="flex gap-2 mb-2">
-                      <input {...register(`cons.${index}` as const)} className="w-full px-2 py-1 border rounded" />
-                      <button type="button" onClick={() => removeCon(index)} className="text-red-500">✕</button>
+                    <div key={field.field_id} className="flex flex-col gap-1 mb-3 group">
+                      <div className="flex gap-2">
+                        <input {...register(`cons.${index}` as const)} className="w-full px-2 py-1 border rounded" />
+                      </div>
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button type="button" onClick={() => appendCon(getValues(`cons.${index}`))} className="text-[10px] text-indigo-600 font-bold">📋 COPY</button>
+                        <button type="button" onClick={() => appendCon("")} className="text-[10px] text-emerald-600 font-bold">➕ ADD</button>
+                        <button type="button" onClick={() => removeCon(index)} className="text-[10px] text-red-600 font-bold">🗑️ REMOVE</button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1036,21 +1066,26 @@ export default function ProjectWizardV7({
               <div className="mt-8 border-t-2 pt-6">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-bold">👥 Direct Competitors</h3>
-                  <button type="button" onClick={() => appendCompetitor({ name: '', price_range: '' })} className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium">
-                    + Add Competitor
-                  </button>
                 </div>
                 {competitorFields.map((field, index) => (
-                  <div key={field.field_id} className="flex gap-4 mb-3 border p-3 rounded-lg bg-slate-50">
-                    <div className="flex-1">
-                      <label className="block text-xs font-medium text-slate-700">Competitor Name</label>
-                      <input {...register(`competitors.${index}.name` as const)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. Sobha Dream Acres" />
+                  <div key={field.field_id} className="border p-3 rounded-lg bg-slate-50 mb-3 group">
+                    <div className="flex flex-col gap-3">
+                      <div className="flex gap-4">
+                        <div className="flex-1">
+                          <label className="block text-xs font-medium text-slate-700">Competitor Name</label>
+                          <input {...register(`competitors.${index}.name` as const)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. Sobha Dream Acres" />
+                        </div>
+                        <div className="flex-1">
+                          <label className="block text-xs font-medium text-slate-700">Price Range</label>
+                          <input {...register(`competitors.${index}.price_range` as const)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. ₹1.1Cr - 2.2Cr" />
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button type="button" onClick={() => appendCompetitor(getValues(`competitors.${index}`))} className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded text-[10px] font-bold border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all">📋 COPY</button>
+                        <button type="button" onClick={() => appendCompetitor({ name: '', price_range: '' })} className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-[10px] font-bold border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all">➕ ADD</button>
+                        <button type="button" onClick={() => removeCompetitor(index)} className="px-2 py-1 bg-red-50 text-red-600 rounded text-[10px] font-bold border border-red-100 hover:bg-red-600 hover:text-white transition-all">🗑️ REMOVE</button>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <label className="block text-xs font-medium text-slate-700">Price Range</label>
-                      <input {...register(`competitors.${index}.price_range` as const)} className="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. ₹1.1Cr - 2.2Cr" />
-                    </div>
-                    <button type="button" onClick={() => removeCompetitor(index)} className="text-red-500 mt-5">🗑️</button>
                   </div>
                 ))}
               </div>
@@ -1058,16 +1093,19 @@ export default function ProjectWizardV7({
               <div className="mt-8 border-t-2 pt-6">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-bold">Media URLs</h3>
-                  <button type="button" onClick={() => appendImage("")} className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium">
-                    + Add Gallery Image
-                  </button>
                 </div>
 
                 <div className="space-y-3 mt-4 mb-6">
                   {imageFields.map((field, index) => (
-                    <div key={field.field_id} className="flex gap-2">
-                      <input {...register(`images.${index}` as const)} className="w-full px-4 py-2 border-2 rounded-lg text-sm" placeholder="Gallery Image URL https://..." />
-                      <button type="button" onClick={() => removeImage(index)} className="px-4 py-2 bg-red-100 text-red-600 rounded-lg">Remove</button>
+                    <div key={field.field_id} className="flex flex-col gap-1 group">
+                      <div className="flex gap-2">
+                        <input {...register(`images.${index}` as const)} className="w-full px-4 py-2 border-2 rounded-lg text-sm" placeholder="Gallery Image URL https://..." />
+                      </div>
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button type="button" onClick={() => appendImage(getValues(`images.${index}`))} className="text-[10px] text-indigo-600 font-bold">📋 COPY</button>
+                        <button type="button" onClick={() => appendImage("")} className="text-[10px] text-emerald-600 font-bold">➕ ADD</button>
+                        <button type="button" onClick={() => removeImage(index)} className="text-[10px] text-red-600 font-bold">🗑️ REMOVE</button>
+                      </div>
                     </div>
                   ))}
                 </div>
