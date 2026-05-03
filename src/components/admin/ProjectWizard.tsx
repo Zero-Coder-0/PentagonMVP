@@ -193,11 +193,31 @@ export default function ProjectWizardV7({
     }
   }, [currentLat, currentLng, setValue]);
 
+  const triggerSilentSave = () => {
+    // Only auto-save in draft modes
+    if (mode === 'create_draft' || mode === 'edit_draft') {
+      const currentData = getValues();
+      upsertDraft(currentData, activeDraftId).then((result) => {
+        if (result.success && result.draftId) {
+          if (activeDraftId !== result.draftId) {
+            setActiveDraftId(result.draftId);
+            // Silently update the URL if we just created a new draft
+            if (mode === 'create_draft') {
+              const newUrl = `/vendor/drafts/${result.draftId}/edit`;
+              window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
+            }
+          }
+        }
+      }).catch(err => console.warn("Silent background save failed:", err));
+    }
+  };
+
   const handleLocationChange = (lat: number, lng: number, address?: string) => {
     setValue('lat', lat);
     setValue('lng', lng);
-    // city_zone is now automatically calculated by the useEffect watcher above
     if (address) setValue('address_line', address);
+    // Auto-save whenever location is updated
+    triggerSilentSave();
   };
 
   const onSubmitForm = async (flatFormData: WizardFormData) => {
@@ -257,21 +277,8 @@ export default function ProjectWizardV7({
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // 2. Fire background auto-save (do not 'await' so we don't block the UI)
-    if (mode === 'create_draft' || mode === 'edit_draft') {
-      const currentData = getValues();
-      upsertDraft(currentData, activeDraftId).then((result) => {
-        if (result.success && result.draftId) {
-          if (activeDraftId !== result.draftId) {
-            setActiveDraftId(result.draftId);
-            if (mode === 'create_draft') {
-              const newUrl = `/vendor/drafts/${result.draftId}/edit`;
-              window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
-            }
-          }
-        }
-      }).catch(err => console.warn("Silent background save failed:", err));
-    }
+    // 2. Fire background auto-save
+    triggerSilentSave();
   };
 
   const prevStep = () => {
@@ -692,32 +699,39 @@ export default function ProjectWizardV7({
                       </div>
                     </div>
                     {/* ACTION BUTTONS */}
-                    <div className="flex justify-end gap-3 mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const currentData = getValues(`units.${index}`);
-                          appendUnit({ ...currentData });
-                        }}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-md hover:bg-indigo-600 hover:text-white transition-all text-[10px] font-bold border border-indigo-100"
-                      >
-                        📋 COPY
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => appendUnit({ config: '2BHK', status: 'Available' })}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-md hover:bg-emerald-600 hover:text-white transition-all text-[10px] font-bold border border-emerald-100"
-                      >
-                        ➕ ADD
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removeUnit(index)}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-md hover:bg-red-600 hover:text-white transition-all text-[10px] font-bold border border-red-100"
-                      >
-                        🗑️ REMOVE
-                      </button>
-                    </div>
+                      <div className="flex justify-end gap-3 mt-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentData = getValues(`units.${index}`);
+                            appendUnit({ ...currentData });
+                            triggerSilentSave();
+                          }}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-md hover:bg-indigo-600 hover:text-white transition-all text-[10px] font-bold border border-indigo-100"
+                        >
+                          📋 COPY
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            appendUnit({ config: '2BHK', status: 'Available' });
+                            triggerSilentSave();
+                          }}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-md hover:bg-emerald-600 hover:text-white transition-all text-[10px] font-bold border border-emerald-100"
+                        >
+                          ➕ ADD
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            removeUnit(index);
+                            triggerSilentSave();
+                          }}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-md hover:bg-red-600 hover:text-white transition-all text-[10px] font-bold border border-red-100"
+                        >
+                          🗑️ REMOVE
+                        </button>
+                      </div>
                   </div>
                 </div>
               ))}
@@ -786,9 +800,9 @@ export default function ProjectWizardV7({
                       </div>
                       
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button type="button" onClick={() => appendCommercial(getValues(`commercials.${index}`))} className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded text-[10px] font-bold border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all">📋 COPY</button>
-                        <button type="button" onClick={() => appendCommercial({ name: '', cost_type: 'Mandatory' })} className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-[10px] font-bold border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all">➕ ADD</button>
-                        <button type="button" onClick={() => removeCommercial(index)} className="px-2 py-1 bg-red-50 text-red-600 rounded text-[10px] font-bold border border-red-100 hover:bg-red-600 hover:text-white transition-all">🗑️ REMOVE</button>
+                        <button type="button" onClick={() => { appendCommercial(getValues(`commercials.${index}`)); triggerSilentSave(); }} className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded text-[10px] font-bold border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all">📋 COPY</button>
+                        <button type="button" onClick={() => { appendCommercial({ name: '', cost_type: 'Mandatory' }); triggerSilentSave(); }} className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-[10px] font-bold border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all">➕ ADD</button>
+                        <button type="button" onClick={() => { removeCommercial(index); triggerSilentSave(); }} className="px-2 py-1 bg-red-50 text-red-600 rounded text-[10px] font-bold border border-red-100 hover:bg-red-600 hover:text-white transition-all">🗑️ REMOVE</button>
                       </div>
                     </div>
                   </div>
@@ -829,9 +843,9 @@ export default function ProjectWizardV7({
                       </div>
                     </div>
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button type="button" onClick={() => appendAmenity(getValues(`amenities.${index}`))} className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded text-[10px] font-bold border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all">📋 COPY</button>
-                      <button type="button" onClick={() => appendAmenity({ category: 'Sports & Fitness', name: '' })} className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-[10px] font-bold border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all">➕ ADD</button>
-                      <button type="button" onClick={() => removeAmenity(index)} className="px-2 py-1 bg-red-50 text-red-600 rounded text-[10px] font-bold border border-red-100 hover:bg-red-600 hover:text-white transition-all">🗑️ REMOVE</button>
+                      <button type="button" onClick={() => { appendAmenity(getValues(`amenities.${index}`)); triggerSilentSave(); }} className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded text-[10px] font-bold border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all">📋 COPY</button>
+                      <button type="button" onClick={() => { appendAmenity({ category: 'Sports & Fitness', name: '' }); triggerSilentSave(); }} className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-[10px] font-bold border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all">➕ ADD</button>
+                      <button type="button" onClick={() => { removeAmenity(index); triggerSilentSave(); }} className="px-2 py-1 bg-red-50 text-red-600 rounded text-[10px] font-bold border border-red-100 hover:bg-red-600 hover:text-white transition-all">🗑️ REMOVE</button>
                     </div>
                   </div>
                 </div>
@@ -895,9 +909,9 @@ export default function ProjectWizardV7({
                       </div>
                     </div>
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button type="button" onClick={() => appendLandmark(getValues(`landmarks.${index}`))} className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded text-[10px] font-bold border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all">📋 COPY</button>
-                      <button type="button" onClick={() => appendLandmark({ category: 'Education', name: '' })} className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-[10px] font-bold border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all">➕ ADD</button>
-                      <button type="button" onClick={() => removeLandmark(index)} className="px-2 py-1 bg-red-50 text-red-600 rounded text-[10px] font-bold border border-red-100 hover:bg-red-600 hover:text-white transition-all">🗑️ REMOVE</button>
+                      <button type="button" onClick={() => { appendLandmark(getValues(`landmarks.${index}`)); triggerSilentSave(); }} className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded text-[10px] font-bold border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all">📋 COPY</button>
+                      <button type="button" onClick={() => { appendLandmark({ category: 'Education', name: '' }); triggerSilentSave(); }} className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-[10px] font-bold border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all">➕ ADD</button>
+                      <button type="button" onClick={() => { removeLandmark(index); triggerSilentSave(); }} className="px-2 py-1 bg-red-50 text-red-600 rounded text-[10px] font-bold border border-red-100 hover:bg-red-600 hover:text-white transition-all">🗑️ REMOVE</button>
                     </div>
                   </div>
                 </div>
@@ -1064,9 +1078,9 @@ export default function ProjectWizardV7({
                         <input {...register(`pros.${index}` as const)} className="w-full px-2 py-1 border rounded" />
                       </div>
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button type="button" onClick={() => appendPro(getValues(`pros.${index}`))} className="text-[10px] text-indigo-600 font-bold">📋 COPY</button>
-                        <button type="button" onClick={() => appendPro("")} className="text-[10px] text-emerald-600 font-bold">➕ ADD</button>
-                        <button type="button" onClick={() => removePro(index)} className="text-[10px] text-red-600 font-bold">🗑️ REMOVE</button>
+                        <button type="button" onClick={() => { appendPro(getValues(`pros.${index}`)); triggerSilentSave(); }} className="text-[10px] text-indigo-600 font-bold">📋 COPY</button>
+                        <button type="button" onClick={() => { appendPro(""); triggerSilentSave(); }} className="text-[10px] text-emerald-600 font-bold">➕ ADD</button>
+                        <button type="button" onClick={() => { removePro(index); triggerSilentSave(); }} className="text-[10px] text-red-600 font-bold">🗑️ REMOVE</button>
                       </div>
                     </div>
                   ))}
@@ -1081,9 +1095,9 @@ export default function ProjectWizardV7({
                         <input {...register(`cons.${index}` as const)} className="w-full px-2 py-1 border rounded" />
                       </div>
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button type="button" onClick={() => appendCon(getValues(`cons.${index}`))} className="text-[10px] text-indigo-600 font-bold">📋 COPY</button>
-                        <button type="button" onClick={() => appendCon("")} className="text-[10px] text-emerald-600 font-bold">➕ ADD</button>
-                        <button type="button" onClick={() => removeCon(index)} className="text-[10px] text-red-600 font-bold">🗑️ REMOVE</button>
+                        <button type="button" onClick={() => { appendCon(getValues(`cons.${index}`)); triggerSilentSave(); }} className="text-[10px] text-indigo-600 font-bold">📋 COPY</button>
+                        <button type="button" onClick={() => { appendCon(""); triggerSilentSave(); }} className="text-[10px] text-emerald-600 font-bold">➕ ADD</button>
+                        <button type="button" onClick={() => { removeCon(index); triggerSilentSave(); }} className="text-[10px] text-red-600 font-bold">🗑️ REMOVE</button>
                       </div>
                     </div>
                   ))}
@@ -1108,9 +1122,9 @@ export default function ProjectWizardV7({
                         </div>
                       </div>
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button type="button" onClick={() => appendCompetitor(getValues(`competitors.${index}`))} className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded text-[10px] font-bold border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all">📋 COPY</button>
-                        <button type="button" onClick={() => appendCompetitor({ name: '', price_range: '' })} className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-[10px] font-bold border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all">➕ ADD</button>
-                        <button type="button" onClick={() => removeCompetitor(index)} className="px-2 py-1 bg-red-50 text-red-600 rounded text-[10px] font-bold border border-red-100 hover:bg-red-600 hover:text-white transition-all">🗑️ REMOVE</button>
+                        <button type="button" onClick={() => { appendCompetitor(getValues(`competitors.${index}`)); triggerSilentSave(); }} className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded text-[10px] font-bold border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all">📋 COPY</button>
+                        <button type="button" onClick={() => { appendCompetitor({ name: '', price_range: '' }); triggerSilentSave(); }} className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-[10px] font-bold border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all">➕ ADD</button>
+                        <button type="button" onClick={() => { removeCompetitor(index); triggerSilentSave(); }} className="px-2 py-1 bg-red-50 text-red-600 rounded text-[10px] font-bold border border-red-100 hover:bg-red-600 hover:text-white transition-all">🗑️ REMOVE</button>
                       </div>
                     </div>
                   </div>
