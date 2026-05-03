@@ -510,82 +510,165 @@ export default function ProjectWizardV7({
               {unitFields.map((field, index) => (
                 <div key={field.field_id} className="border-2 border-slate-200 rounded-lg p-6 bg-slate-50 relative">
                   <button type="button" onClick={() => removeUnit(index)} className="absolute top-4 right-4 text-red-600 font-medium text-sm">Remove</button>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700">Unit Number</label>
-                      <input {...register(`units.${index}.unitnumber`)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700">Tower</label>
-                      <input {...register(`units.${index}.tower`)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="e.g. Tower A" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700">Floor</label>
-                      <input type="number" {...register(`units.${index}.floornumber`, { valueAsNumber: true })} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700">Unit Type / Config</label>
-                      <select {...register(`units.${index}.config`)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">
-                        <option value="">Select Config</option>
-                        {BHK_CONFIGS.map(c => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700">Variant/Tier</label>
-                      <select {...register(`units.${index}.type`)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">
-                        <option value="">Select Variant</option>
-                        {UNIT_VARIANTS.map(v => <option key={v} value={v}>{v}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700">Actual SBA (sqft)</label>
-                      <input type="number" {...register(`units.${index}.actualsba`, { valueAsNumber: true })} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700">Carpet Area (sqft)</label>
-                      <input type="number" {...register(`units.${index}.carpetarea`, { valueAsNumber: true })} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700">Facing</label>
-                      <select {...register(`units.${index}.facing`)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">
-                        <option value="">Select Facing</option>
-                        {UNIT_FACINGS.map(f => <option key={f} value={f}>{f}</option>)}
-                      </select>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
+                  <div className="flex flex-col gap-6">
+                    {/* ROW 1: PRIMARY FINANCIAL DATA */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                       <div>
-                        <label className="block text-xs font-medium text-slate-700">Bath</label>
-                        <select {...register(`units.${index}.wccount`)} className="w-full px-2 py-2 border border-slate-300 rounded-lg text-xs bg-white">
-                          <option value="">-</option>
-                          {BATHROOM_COUNTS.map(c => <option key={c} value={c}>{c}</option>)}
+                        <label className="block text-xs font-medium text-slate-700 mb-1">Unit Type / Config</label>
+                        <select {...register(`units.${index}.config`)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white font-medium">
+                          <option value="">Select Config</option>
+                          {BHK_CONFIGS.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-slate-700 mb-1">Actual SBA (sqft)</label>
+                        <input
+                          type="number"
+                          {...register(`units.${index}.actualsba`, {
+                            valueAsNumber: true,
+                            onChange: (e) => {
+                              const sba = parseFloat(e.target.value);
+                              const rate = parseFloat(getValues(`units.${index}.pricepersqft` as any) || 0);
+                              if (sba && rate) setValue(`units.${index}.pricetotal` as any, sba * rate);
+                            }
+                          })}
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                          placeholder="e.g. 1200"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-slate-700 mb-1">Price/Sqft (₹)</label>
+                        <input
+                          type="number"
+                          {...register(`units.${index}.pricepersqft`, {
+                            valueAsNumber: true,
+                            onChange: (e) => {
+                              const rate = parseFloat(e.target.value);
+                              const sba = parseFloat(getValues(`units.${index}.actualsba` as any) || 0);
+                              const total = parseFloat(getValues(`units.${index}.pricetotal` as any) || 0);
+                              if (rate && sba) setValue(`units.${index}.pricetotal` as any, rate * sba);
+                              else if (rate && total) setValue(`units.${index}.actualsba` as any, Math.round(total / rate));
+                            }
+                          })}
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                          placeholder="e.g. 5500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-slate-700 mb-1">UDS (Land Share)</label>
+                        <div className="flex gap-0">
+                          <input
+                            type="number"
+                            step="any"
+                            placeholder="Value"
+                            className="w-full px-2 py-2 border border-slate-300 rounded-l-lg text-sm outline-none"
+                            onChange={(e) => {
+                              const val = parseFloat(e.target.value);
+                              const modeSelect = document.getElementById(`uds-mode-${index}`) as HTMLSelectElement;
+                              const mode = modeSelect?.value;
+                              const sba = parseFloat(getValues(`units.${index}.actualsba` as any) || 0);
+                              if (mode === '%' && sba) {
+                                setValue(`units.${index}.udsarea` as any, Math.round((val / 100) * sba));
+                              } else {
+                                setValue(`units.${index}.udsarea` as any, val);
+                              }
+                            }}
+                          />
+                          <select 
+                            id={`uds-mode-${index}`}
+                            className="px-1 border border-l-0 border-slate-300 rounded-r-lg text-[10px] bg-slate-100 outline-none cursor-pointer"
+                            onChange={(e) => {
+                              const mode = e.target.value;
+                              const input = (e.target.previousElementSibling as HTMLInputElement);
+                              const val = parseFloat(input.value);
+                              const sba = parseFloat(getValues(`units.${index}.actualsba` as any) || 0);
+                              if (mode === '%' && sba && val) {
+                                setValue(`units.${index}.udsarea` as any, Math.round((val / 100) * sba));
+                              } else if (val) {
+                                setValue(`units.${index}.udsarea` as any, val);
+                              }
+                            }}
+                          >
+                            <option value="sqft">sqft</option>
+                            <option value="%">%</option>
+                          </select>
+                        </div>
+                        <input type="hidden" {...register(`units.${index}.udsarea`, { valueAsNumber: true })} />
+                        <div className="text-[10px] text-slate-400 mt-0.5">Final: {watch(`units.${index}.udsarea`) || 0} sqft</div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-orange-700 mb-1 font-bold">Total Price (₹)</label>
+                        <input
+                          type="number"
+                          {...register(`units.${index}.pricetotal`, {
+                            valueAsNumber: true,
+                            onChange: (e) => {
+                              const total = parseFloat(e.target.value);
+                              const rate = parseFloat(getValues(`units.${index}.pricepersqft` as any) || 0);
+                              const sba = parseFloat(getValues(`units.${index}.actualsba` as any) || 0);
+                              if (total && rate) setValue(`units.${index}.actualsba` as any, Math.round(total / rate));
+                              else if (total && sba) setValue(`units.${index}.pricepersqft` as any, Math.round(total / sba));
+                            }
+                          })}
+                          className="w-full px-3 py-2 border-2 border-orange-200 bg-orange-50 rounded-lg text-sm font-bold text-orange-900"
+                          placeholder="Calculated"
+                        />
+                      </div>
+                    </div>
+
+                    {/* ROW 2: SECONDARY DETAILS */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 pt-4 border-t border-slate-200">
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-500 uppercase">Unit No.</label>
+                        <input {...register(`units.${index}.unitnumber`)} className="w-full px-2 py-1.5 border border-slate-300 rounded text-xs" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-500 uppercase">Tower</label>
+                        <input {...register(`units.${index}.tower`)} className="w-full px-2 py-1.5 border border-slate-300 rounded text-xs" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-500 uppercase">Floor</label>
+                        <input type="number" {...register(`units.${index}.floornumber`, { valueAsNumber: true })} className="w-full px-2 py-1.5 border border-slate-300 rounded text-xs" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-500 uppercase">Variant</label>
+                        <select {...register(`units.${index}.type`)} className="w-full px-2 py-1.5 border border-slate-300 rounded text-xs bg-white">
+                          {UNIT_VARIANTS.map(v => <option key={v} value={v}>{v}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-slate-700">Balc</label>
-                        <select {...register(`units.${index}.balconycount`)} className="w-full px-2 py-2 border border-slate-300 rounded-lg text-xs bg-white">
+                        <label className="block text-[10px] font-semibold text-slate-500 uppercase">Facing</label>
+                        <select {...register(`units.${index}.facing`)} className="w-full px-2 py-1.5 border border-slate-300 rounded text-xs bg-white">
                           <option value="">-</option>
-                          {BALCONY_COUNTS.map(c => <option key={c} value={c}>{c}</option>)}
+                          {UNIT_FACINGS.map(f => <option key={f} value={f}>{f}</option>)}
                         </select>
                       </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700">Total Price</label>
-                      <input type="number" {...register(`units.${index}.pricetotal`, { valueAsNumber: true })} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700">UDS Area (sqft)</label>
-                      <input type="number" {...register(`units.${index}.udsarea`, { valueAsNumber: true })} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700">Price/Sqft</label>
-                      <input type="number" {...register(`units.${index}.pricepersqft`, { valueAsNumber: true })} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-700">Status</label>
-                      <select {...register(`units.${index}.status`)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">
-                        <option value="">Select Status</option>
-                        {UNIT_STATUS_VALUES.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
+                      <div className="grid grid-cols-2 gap-1">
+                        <div>
+                          <label className="block text-[10px] font-semibold text-slate-500 uppercase text-center">Bath</label>
+                          <select {...register(`units.${index}.wccount`)} className="w-full px-1 py-1.5 border border-slate-300 rounded text-xs bg-white text-center">
+                            <option value="">-</option>
+                            {BATHROOM_COUNTS.map(c => <option key={c} value={c}>{c}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-semibold text-slate-500 uppercase text-center">Balc</label>
+                          <select {...register(`units.${index}.balconycount`)} className="w-full px-1 py-1.5 border border-slate-300 rounded text-xs bg-white text-center">
+                            <option value="">-</option>
+                            {BALCONY_COUNTS.map(c => <option key={c} value={c}>{c}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-500 uppercase">Status</label>
+                        <select {...register(`units.${index}.status`)} className="w-full px-2 py-1.5 border border-slate-300 rounded text-xs bg-white">
+                          {UNIT_STATUS_VALUES.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -638,7 +721,7 @@ export default function ProjectWizardV7({
                 </div>
                 {commercialFields.map((field, index) => (
                   <div key={field.field_id} className="border border-slate-200 rounded-lg p-4 bg-white mb-2 flex gap-4">
-                    <div className="flex-1 grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className="flex-1 grid grid-cols-2 lg:grid-cols-3 gap-3">
                       <div>
                         <label className="block text-xs font-medium text-slate-700">Cost Name</label>
                         <input {...register(`commercials.${index}.name`)} placeholder="e.g. Car Parking" className="w-full px-3 py-2 border rounded-lg text-sm" />
@@ -654,13 +737,13 @@ export default function ProjectWizardV7({
                           {COST_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                       </div>
-                      <div>
+                      {/* <div>
                         <label className="block text-xs font-medium text-slate-700">Payment Milestone</label>
                         <select {...register(`commercials.${index}.payment_milestone`)} className="w-full px-3 py-2 border rounded-lg text-sm bg-white">
                           <option value="">Select Milestone</option>
                           {PAYMENT_MILESTONES.map(m => <option key={m} value={m}>{m}</option>)}
                         </select>
-                      </div>
+                      </div> */}
                     </div>
                     <button type="button" onClick={() => removeCommercial(index)} className="text-red-500 mt-5">🗑️</button>
                   </div>
@@ -1169,7 +1252,7 @@ export default function ProjectWizardV7({
                           </div>
                           <div className="flex justify-between text-[10px] text-slate-500 uppercase mt-1">
                             <span>{c.cost_type}</span>
-                            <span>When: {c.payment_milestone}</span>
+                            {/* <span>When: {c.payment_milestone}</span> */}
                           </div>
                         </div>
                       ))}

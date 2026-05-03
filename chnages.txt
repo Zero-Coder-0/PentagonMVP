@@ -1,0 +1,32 @@
+unit 
+ modify ui in this format of first row or first column 
+        Unit type 
+        Actual SBA
+        Price/Sqft
+        Total Price
+        uds(number and percentage both options)
+modify calculations of the 
+        Actual SBA
+        Price/Sqft
+        Total Price
+copying the current data filled block so we can replicate multiple units
+
+
+pricing
+    remove payment milestones
+    and add more default options as per docs
+
+
+ Amenities & Facilities
+    Category        Amenity Name            Size / Specifications           Description
+    give options    more options dropdown   default 0                       default no text
+
+Direct Competitors
+Nearby Landmarks
+Amenities & Facilities
+
+wherever redundant work is there 
+add buttons near the last row is feasible option and also copy button for copying the current data filled block
+
+once the next button is clicked it should be saved ?
+

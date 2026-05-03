@@ -45,8 +45,18 @@ export const unitSchema = z.object({
   carpetarea: optNum,
   udsarea: optNum,
   facing: z.preprocess((val) => val === "" ? undefined : val, z.enum(UNIT_FACINGS as any).optional()),
-  wccount: z.preprocess((val) => val === "" ? undefined : val, z.enum(BATHROOM_COUNTS as any).optional()),
-  balconycount: z.preprocess((val) => val === "" ? undefined : val, z.enum(BALCONY_COUNTS as any).optional()),
+  wccount: z.preprocess((val) => {
+    if (val === "" || val === null || val === undefined) return undefined;
+    const s = String(val);
+    if (s === '6') return '6+';
+    return s;
+  }, z.enum(BATHROOM_COUNTS as any).optional()),
+  balconycount: z.preprocess((val) => {
+    if (val === "" || val === null || val === undefined) return undefined;
+    const s = String(val);
+    if (s === '5') return '5+';
+    return s;
+  }, z.enum(BALCONY_COUNTS as any).optional()),
   pricepersqft: optNum,
   pricetotal: optNum,
   status: z.preprocess((val) => val === "" ? undefined : val, z.enum(UNIT_STATUS_VALUES as any).optional()),
