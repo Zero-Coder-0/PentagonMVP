@@ -205,7 +205,6 @@ export const projectWizardSchema = z.object({
 export type WizardFormData = z.infer<typeof projectWizardSchema>;
 
 // Default empty state for the wizard
-// Default empty state for the wizard - Now pre-filled with MOCK DATA for user guidance
 export const defaultWizardValues: WizardFormData = {
   // 📋 Basic Info
   project_name: 'Prestige Lakeside Habitat',
@@ -232,13 +231,6 @@ export const defaultWizardValues: WizardFormData = {
   lat: 12.9538,
   lng: 77.7471,
 
-  // 🚕 Connectivity
-  distancetomainroad: '0.5 km',
-  airportdistance: '42 km',
-  railwaystationdistance: '18 km',
-  metrostationdistance: '4.5 km',
-  busstopdistance: '0.2 km',
-
   // 🏠 Units
   units: [
     { config: '2BHK', type: 'Standard', unitnumber: 'A-101', tower: 'Tower A', floornumber: 5, actualsba: 1216, carpetarea: 850, udsarea: 450, pricepersqft: 8500, pricetotal: 10336000, status: 'Available', facing: 'East', wccount: '2', balconycount: '1' },
@@ -254,16 +246,52 @@ export const defaultWizardValues: WizardFormData = {
   floor_rise_charges: '₹50 per sqft per floor from 4th floor onwards',
 
   commercials: [
+    // Pre-filled examples
     { name: 'Covered Car Parking', amount: 350000, cost_type: 'Mandatory', payment_milestone: 'Booking' },
     { name: 'Clubhouse Membership', amount: 250000, cost_type: 'Mandatory', payment_milestone: 'Possession' },
     { name: 'BESCOM / BWSSB Charges', amount: 150000, cost_type: 'Government Tax', payment_milestone: 'Possession' },
+    // Empty placeholders for user to fill
+    { name: 'Gas Connection / Reticulated Piping', amount: undefined, cost_type: 'Mandatory' },
+    { name: 'Generator / Power Backup Charges', amount: undefined, cost_type: 'Mandatory' },
+    { name: 'Infrastructure Development Charges', amount: undefined, cost_type: 'Mandatory' },
+    { name: 'Advance Maintenance (12 Months)', amount: undefined, cost_type: 'Maintenance' },
+    { name: 'Sinking Fund / Corpus Fund', amount: undefined, cost_type: 'Maintenance' },
+    { name: 'Property Assessment & Sub-Numbering', amount: undefined, cost_type: 'Government Tax' },
+    { name: 'Legal & Documentation Fees', amount: undefined, cost_type: 'Mandatory' },
+    { name: 'GST', amount: undefined, cost_type: 'Government Tax' },
+    { name: 'Stamp Duty & Registration', amount: undefined, cost_type: 'Government Tax' },
+    { name: 'TDS (1% for >50L)', amount: undefined, cost_type: 'Government Tax' },
   ],
 
   // 🎾 Amenities
   amenities: [
+    // Pre-filled examples
     { category: 'Sports & Fitness', name: 'Cricket Pitch', description: 'Net practice area with bowling machine', size_specs: '20m x 5m' },
     { category: 'Clubhouse', name: 'Olympic Size Pool', description: 'Temperature controlled pool for all seasons', size_specs: '50m x 25m' },
     { category: 'Leisure & Social', name: 'Mini Theatre', description: 'Plush seating with Dolby Atmos', size_specs: '40 Seater' },
+    // Empty placeholders for user to fill
+    { category: 'Clubhouse', name: 'Clubhouse Infrastructure', description: '' },
+    { category: 'Sports & Fitness', name: 'Gymnasium & Yoga Area', description: '' },
+    { category: 'Sports & Fitness', name: 'Indoor Spa & Sauna', description: '' },
+    { category: 'Sports & Fitness', name: 'Squash Court', description: '' },
+    { category: 'Sports & Fitness', name: 'Table Tennis & Billiards', description: '' },
+    { category: 'Sports & Fitness', name: 'Badminton Courts', description: '' },
+    { category: 'Sports & Fitness', name: 'Indoor Pickleball Court', description: '' },
+    { category: 'Leisure & Social', name: 'Convention Hall / Multi-purpose Hall', description: '' },
+    { category: 'Leisure & Social', name: 'Sports Bar / Lounge', description: '' },
+    { category: 'Sports & Fitness', name: 'Multi-purpose Playground (Cricket/Football)', description: '' },
+    { category: 'Sports & Fitness', name: 'Skating Rink', description: '' },
+    { category: 'Sports & Fitness', name: 'Outdoor Gym', description: '' },
+    { category: 'Leisure & Social', name: 'Amphitheatre', description: '' },
+    { category: 'Leisure & Social', name: 'Party Lawn', description: '' },
+    { category: 'Nature & Parks', name: 'Landscaped Gardens', description: '' },
+    { category: 'Nature & Parks', name: 'Reflexology Path', description: '' },
+    { category: 'Nature & Parks', name: 'Senior Citizens Court', description: '' },
+    { category: 'Kids Zone', name: 'Children’s Play Area', description: '' },
+    { category: 'Kids Zone', name: 'Toddlers Play Area', description: '' },
+    { category: 'Kids Zone', name: 'Toddler Cycling Track', description: '' },
+    { category: 'Nature & Parks', name: 'Pet Play Park & Pet Wash', description: '' },
+    { category: 'Nature & Parks', name: 'Jogging / Pedestrian Track', description: '' },
   ],
 
   // 🗺️ Landmarks
