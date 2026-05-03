@@ -294,7 +294,10 @@ export default function ProjectWizardV7({
             <React.Fragment key={step.num}>
               <button
                 type="button"
-                onClick={() => setCurrentStep(step.num)}
+                onClick={() => {
+                  triggerSilentSave();
+                  setCurrentStep(step.num);
+                }}
                 className={`flex flex-col items-center ${currentStep >= step.num ? 'opacity-100' : 'opacity-40'}`}
               >
                 <div
@@ -1035,12 +1038,12 @@ export default function ProjectWizardV7({
                 <div className="md:col-span-2">
                   <div className="flex justify-between items-center mb-2">
                     <label className="block text-sm font-medium text-slate-700">🌟 USP Highlights</label>
-                    <button type="button" onClick={() => appendUspHighlight("")} className="text-xs bg-blue-100 text-blue-700 px-2 rounded">+ Add</button>
+                    <button type="button" onClick={() => { appendUspHighlight(""); triggerSilentSave(); }} className="text-xs bg-blue-100 text-blue-700 px-2 rounded">+ Add</button>
                   </div>
                   {uspHighlightFields.map((field, index) => (
                     <div key={field.field_id} className="flex gap-2 mb-2">
                       <input {...register(`usp_highlights.${index}` as const)} className="w-full px-2 py-1 border rounded" placeholder="e.g. 50,000 sqft Clubhouse" />
-                      <button type="button" onClick={() => removeUspHighlight(index)} className="text-red-500">✕</button>
+                      <button type="button" onClick={() => { removeUspHighlight(index); triggerSilentSave(); }} className="text-red-500">✕</button>
                     </div>
                   ))}
                 </div>
@@ -1143,9 +1146,9 @@ export default function ProjectWizardV7({
                         <input {...register(`images.${index}` as const)} className="w-full px-4 py-2 border-2 rounded-lg text-sm" placeholder="Gallery Image URL https://..." />
                       </div>
                       <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button type="button" onClick={() => appendImage(getValues(`images.${index}`))} className="text-[10px] text-indigo-600 font-bold">📋 COPY</button>
-                        <button type="button" onClick={() => appendImage("")} className="text-[10px] text-emerald-600 font-bold">➕ ADD</button>
-                        <button type="button" onClick={() => removeImage(index)} className="text-[10px] text-red-600 font-bold">🗑️ REMOVE</button>
+                        <button type="button" onClick={() => { appendImage(getValues(`images.${index}`)); triggerSilentSave(); }} className="text-[10px] text-indigo-600 font-bold">📋 COPY</button>
+                        <button type="button" onClick={() => { appendImage(""); triggerSilentSave(); }} className="text-[10px] text-emerald-600 font-bold">➕ ADD</button>
+                        <button type="button" onClick={() => { removeImage(index); triggerSilentSave(); }} className="text-[10px] text-red-600 font-bold">🗑️ REMOVE</button>
                       </div>
                     </div>
                   ))}
