@@ -185,7 +185,7 @@ const LeafletMap: React.FC<LeafletMapProps> = ({
           const isSelected = selectedId === item.id;
           
           // Use DB zone, or calculate on the fly if missing or "Unknown"
-          const effectiveZone = (!item.city_zone || item.city_zone === 'Unknown') 
+          const effectiveZone = (!item.city_zone || (item.city_zone as string) === 'Unknown') 
             ? getZoneFromCoordinates(item.lat as number, item.lng as number) 
             : item.city_zone;
 
