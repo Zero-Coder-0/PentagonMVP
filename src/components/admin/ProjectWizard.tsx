@@ -210,8 +210,8 @@ export default function ProjectWizardV7({
 
       // 2. CONTEXTUAL ROUTING (The Switchboard)
       if (mode === 'create_draft' || mode === 'edit_draft') {
-        await upsertDraft(payloadWithMediaUrls, draftId);
-        alert(mode === 'create_draft' ? "Draft submitted successfully!" : "Draft updated successfully!");
+        await upsertDraft(payloadWithMediaUrls, activeDraftId);
+        alert("✅ Project Draft Saved Successfully!");
         router.push('/vendor');
       }
       else if (mode === 'approve_draft') {
@@ -251,33 +251,26 @@ export default function ProjectWizardV7({
   };
 
   const nextStep = async () => {
-    try {
-      // Auto-save progress as a draft whenever moving forward
-      if (mode === 'create_draft' || mode === 'edit_draft') {
-        const currentData = getValues();
-        const result = await upsertDraft(currentData, activeDraftId);
-        
+    // 1. Move to next step IMMEDIATELY for snappy UI
+    if (currentStep < steps.length) {
+      setCurrentStep(currentStep + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 2. Fire background auto-save (do not 'await' so we don't block the UI)
+    if (mode === 'create_draft' || mode === 'edit_draft') {
+      const currentData = getValues();
+      upsertDraft(currentData, activeDraftId).then((result) => {
         if (result.success && result.draftId) {
-          // Sync state with the latest draft ID
           if (activeDraftId !== result.draftId) {
             setActiveDraftId(result.draftId);
-            // Silently update the URL if we just created a new draft,
-            // so a page refresh doesn't lose the draft session.
             if (mode === 'create_draft') {
               const newUrl = `/vendor/drafts/${result.draftId}/edit`;
               window.history.replaceState({ ...window.history.state, as: newUrl, url: newUrl }, '', newUrl);
             }
           }
-          console.log("Draft auto-saved successfully:", result.draftId);
         }
-      }
-    } catch (err) {
-      console.warn("Silent background save failed:", err);
-    }
-
-    if (currentStep < steps.length) {
-      setCurrentStep(currentStep + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      }).catch(err => console.warn("Silent background save failed:", err));
     }
   };
 
