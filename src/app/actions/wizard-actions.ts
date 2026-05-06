@@ -281,7 +281,7 @@ export async function approveDraftToLive(
                     closing_pitch: flatFormData.closing_pitch,
                     target_customer: flatFormData.target_customer,
                     objection_handling: flatFormData.objection_handling
-                        ? JSON.parse(flatFormData.objection_handling)
+                        ? JSON.stringify(flatFormData.objection_handling)
                         : undefined,
                     legal_notes: flatFormData.legal_notes,
                     timeline_risk: flatFormData.timeline_risk,
@@ -539,7 +539,7 @@ export async function updateLiveProject(
             usp_highlights: flatFormData.usp_highlights ?? [],
             closing_pitch: flatFormData.closing_pitch,
             target_customer: flatFormData.target_customer,
-            objection_handling: flatFormData.objection_handling ? JSON.parse(flatFormData.objection_handling) : undefined,
+            objection_handling: flatFormData.objection_handling ? JSON.stringify(flatFormData.objection_handling) : undefined,
             legal_notes: flatFormData.legal_notes,
             timeline_risk: flatFormData.timeline_risk,
             overall_rating: flatFormData.overall_rating,
@@ -552,7 +552,7 @@ export async function updateLiveProject(
             usp_highlights: flatFormData.usp_highlights ?? [],
             closing_pitch: flatFormData.closing_pitch,
             target_customer: flatFormData.target_customer,
-            objection_handling: flatFormData.objection_handling ? JSON.parse(flatFormData.objection_handling) : undefined,
+            objection_handling: flatFormData.objection_handling ? JSON.stringify(flatFormData.objection_handling) : undefined,
             legal_notes: flatFormData.legal_notes,
             timeline_risk: flatFormData.timeline_risk,
             overall_rating: flatFormData.overall_rating,

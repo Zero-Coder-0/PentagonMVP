@@ -543,7 +543,7 @@ export default function ProjectWizardV7({
                 <div key={field.field_id} className="border-2 border-slate-200 rounded-lg p-6 bg-slate-50 relative group">
                   <div className="flex flex-col gap-6">
                     {/* ROW 1: PRIMARY FINANCIAL DATA */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                       <div>
                         <label className="block text-xs font-medium text-slate-700 mb-1">Unit Type / Config</label>
                         <select {...register(`units.${index}.config`)} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white font-medium">
@@ -566,6 +566,16 @@ export default function ProjectWizardV7({
                           })}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
                           placeholder="e.g. 1200"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-slate-700 mb-1">Carpet Area (sqft)</label>
+                        <input
+                          type="number"
+                          {...register(`units.${index}.carpetarea`, { valueAsNumber: true })}
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                          placeholder="e.g. 850"
                         />
                       </div>
 
@@ -597,11 +607,14 @@ export default function ProjectWizardV7({
                             placeholder="Value"
                             className="w-full px-2 py-2 border border-slate-300 rounded-l-lg text-sm outline-none"
                             onChange={(e) => {
-                              const val = parseFloat(e.target.value);
+                              const valStr = e.target.value;
+                              const val = valStr ? parseFloat(valStr) : undefined;
                               const modeSelect = document.getElementById(`uds-mode-${index}`) as HTMLSelectElement;
                               const mode = modeSelect?.value;
                               const sba = parseFloat(getValues(`units.${index}.actualsba` as any) || 0);
-                              if (mode === '%' && sba) {
+                              if (val === undefined || isNaN(val)) {
+                                setValue(`units.${index}.udsarea` as any, undefined);
+                              } else if (mode === '%' && sba) {
                                 setValue(`units.${index}.udsarea` as any, Math.round((val / 100) * sba));
                               } else {
                                 setValue(`units.${index}.udsarea` as any, val);
@@ -614,11 +627,14 @@ export default function ProjectWizardV7({
                             onChange={(e) => {
                               const mode = e.target.value;
                               const input = (e.target.previousElementSibling as HTMLInputElement);
-                              const val = parseFloat(input.value);
+                              const valStr = input.value;
+                              const val = valStr ? parseFloat(valStr) : undefined;
                               const sba = parseFloat(getValues(`units.${index}.actualsba` as any) || 0);
-                              if (mode === '%' && sba && val) {
+                              if (val === undefined || isNaN(val)) {
+                                setValue(`units.${index}.udsarea` as any, undefined);
+                              } else if (mode === '%' && sba) {
                                 setValue(`units.${index}.udsarea` as any, Math.round((val / 100) * sba));
-                              } else if (val) {
+                              } else {
                                 setValue(`units.${index}.udsarea` as any, val);
                               }
                             }}
@@ -628,7 +644,7 @@ export default function ProjectWizardV7({
                           </select>
                         </div>
                         <input type="hidden" {...register(`units.${index}.udsarea`, { valueAsNumber: true })} />
-                        <div className="text-[10px] text-slate-400 mt-0.5">Final: {watch(`units.${index}.udsarea`) || 0} sqft</div>
+                        <div className="text-[10px] text-slate-400 mt-0.5">Final: {watch(`units.${index}.udsarea`) ?? 'Blank'}</div>
                       </div>
 
                       <div>
@@ -1266,8 +1282,11 @@ export default function ProjectWizardV7({
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                          {unitFields.map((u: any, i) => (
-                            <tr key={u.field_id}>
+                          {unitFields.map((field: any, i) => {
+                            const u = watch(`units.${i}`);
+                            if (!u) return null;
+                            return (
+                            <tr key={field.field_id}>
                               <td className="px-4 py-2 text-slate-600">
                                 {u.unitnumber || 'N/A'}<br />
                                 <span className="text-xs text-blue-600 font-bold">{u.status}</span>
@@ -1292,7 +1311,8 @@ export default function ProjectWizardV7({
                                 <div className="text-xs font-normal text-slate-500">@ ₹{u.pricepersqft}/sqft</div>
                               </td>
                             </tr>
-                          ))}
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
