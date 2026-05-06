@@ -605,6 +605,7 @@ export default function ProjectWizardV7({
                             type="number"
                             step="any"
                             placeholder="Value"
+                            defaultValue={field.udsarea ?? watch(`units.${index}.udsarea`)}
                             className="w-full px-2 py-2 border border-slate-300 rounded-l-lg text-sm outline-none"
                             onChange={(e) => {
                               const valStr = e.target.value;
@@ -671,7 +672,11 @@ export default function ProjectWizardV7({
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 pt-4 border-t border-slate-200">
                       <div>
                         <label className="block text-[10px] font-semibold text-slate-500 uppercase">Unit No.</label>
-                        <input {...register(`units.${index}.unitnumber`)} className="w-full px-2 py-1.5 border border-slate-300 rounded text-xs" />
+                        <input 
+                          {...register(`units.${index}.unitnumber`)} 
+                          placeholder="e.g. A-101"
+                          className="w-full px-2 py-1.5 border border-slate-300 rounded text-xs" 
+                        />
                       </div>
                       <div>
                         <label className="block text-[10px] font-semibold text-slate-500 uppercase">Tower</label>
@@ -690,7 +695,7 @@ export default function ProjectWizardV7({
                       <div>
                         <label className="block text-[10px] font-semibold text-slate-500 uppercase">Facing</label>
                         <select {...register(`units.${index}.facing`)} className="w-full px-2 py-1.5 border border-slate-300 rounded text-xs bg-white">
-                          <option value="">-</option>
+                          <option value="">Select...</option>
                           {UNIT_FACINGS.map(f => <option key={f} value={f}>{f}</option>)}
                         </select>
                       </div>
@@ -698,14 +703,14 @@ export default function ProjectWizardV7({
                         <div>
                           <label className="block text-[10px] font-semibold text-slate-500 uppercase text-center">Bath</label>
                           <select {...register(`units.${index}.wccount`)} className="w-full px-1 py-1.5 border border-slate-300 rounded text-xs bg-white text-center">
-                            <option value="">-</option>
+                            <option value="">Select</option>
                             {BATHROOM_COUNTS.map(c => <option key={c} value={c}>{c}</option>)}
                           </select>
                         </div>
                         <div>
                           <label className="block text-[10px] font-semibold text-slate-500 uppercase text-center">Balc</label>
                           <select {...register(`units.${index}.balconycount`)} className="w-full px-1 py-1.5 border border-slate-300 rounded text-xs bg-white text-center">
-                            <option value="">-</option>
+                            <option value="">Select</option>
                             {BALCONY_COUNTS.map(c => <option key={c} value={c}>{c}</option>)}
                           </select>
                         </div>
