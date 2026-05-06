@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle2, AlertCircle, Star } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Star, ExternalLink } from 'lucide-react';
 import type { ProjectFullV7, ProjectV7 } from '@/modules/inventory/types-v7';
 
 interface Props {
@@ -51,7 +51,20 @@ export function OverviewTab({ property }: Props) {
             )}
             <div>
               <h4 className="font-bold text-slate-800 text-lg">{property.developer_name}</h4>
-              <p className="text-xs text-slate-500">{property.developer_website ? <a href={property.developer_website} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">{property.developer_website}</a> : 'Reputed Developer'}</p>
+              <div className="mt-1">
+                {property.developer_website ? (
+                  <a 
+                    href={property.developer_website} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px] font-bold hover:bg-blue-600 hover:text-white transition-colors border border-blue-100"
+                  >
+                    VISIT WEBSITE <ExternalLink size={10} />
+                  </a>
+                ) : (
+                  <p className="text-xs text-slate-500 italic">Reputed Developer</p>
+                )}
+              </div>
             </div>
           </div>
           {property.developer_description && (
