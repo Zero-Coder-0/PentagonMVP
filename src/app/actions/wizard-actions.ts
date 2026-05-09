@@ -171,21 +171,11 @@ export async function deletePropertyDraft(draftId: string) {
 // Maps flat draft JSON → nested Prisma create, marks draft "approved"
 // ============================================================================
 
-export async function approveDraftToLive(
-    draftId: string,
+export async function createLiveProjectDirectly(
     flatFormData: WizardFormData,
-): Promise<{ success: boolean; projectId: string }> {
-    const user = await getVerifiedUser();
-    requireRole(user.role, [UserRole.tenant_admin, UserRole.super_admin]);
-
-    const draft = await prisma.propertyDraft.findUnique({ where: { id: draftId } });
-    if (!draft) throw new Error('Draft not found');
-    if (draft.status === 'approved') throw new Error('Draft already approved');
-
-    // ── Mapper: flat → nested Prisma create ──────────────────────────────────
-    const dbUserExists = await prisma.user.findUnique({ where: { id: user.id } });
-
-    const project = await prisma.project.create({
+    createdByUserId: string | null
+) {
+    return prisma.project.create({
         data: {
             project_name: flatFormData.project_name,
             property_type: flatFormData.property_type,
@@ -219,7 +209,7 @@ export async function approveDraftToLive(
             virtual_tour_url: flatFormData.virtual_tour_url,
             brochure_url: flatFormData.brochure_url,
             rera_registration_no: flatFormData.rera_registration_no,
-            created_by: dbUserExists ? user.id : null,
+            created_by: createdByUserId,
 
             // ── Developer relation ────────────────────────────────────────────────
             ...(flatFormData.developer_name ? {
@@ -371,6 +361,25 @@ export async function approveDraftToLive(
             } : {}),
         },
     });
+}
+
+// ============================================================================
+
+export async function approveDraftToLive(
+    draftId: string,
+    flatFormData: WizardFormData,
+): Promise<{ success: boolean; projectId: string }> {
+    const user = await getVerifiedUser();
+    requireRole(user.role, [UserRole.tenant_admin, UserRole.super_admin]);
+
+    const draft = await prisma.propertyDraft.findUnique({ where: { id: draftId } });
+    if (!draft) throw new Error('Draft not found');
+    if (draft.status === 'approved') throw new Error('Draft already approved');
+
+    // ── Mapper: flat → nested Prisma create ──────────────────────────────────
+    const dbUserExists = await prisma.user.findUnique({ where: { id: user.id } });
+
+    const project = await createLiveProjectDirectly(flatFormData, dbUserExists ? user.id : null);
 
     // Mark draft as approved
     await prisma.propertyDraft.update({
