@@ -32,6 +32,18 @@ async function generate() {
     const competitorsSheet = workbook.getWorksheet('Competitors');
     const connectivitySheet = workbook.getWorksheet('Connectivity');
 
+    // Set columns so addRow(object) works
+    [projectsSheet, developerSheet, analysisSheet, unitsSheet, specsSheet, amenitiesSheet, landmarksSheet, commercialsSheet, competitorsSheet, connectivitySheet].forEach(sheet => {
+        if (!sheet) return;
+        const headers = sheet.getRow(1).values;
+        if (Array.isArray(headers)) {
+            sheet.columns = headers.slice(1).map((h, i) => ({
+                header: h.toString(),
+                key: h.toString().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
+            }));
+        }
+    });
+
     const projects = [
         {
             name: "Rainbow Mayfair", devName: "Rainbow Properties",
