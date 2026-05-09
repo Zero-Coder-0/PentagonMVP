@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 // Helper for fields that can be null in Excel but should be treated as optional strings
 const optString = z.preprocess(val => val === null ? undefined : val, z.string().optional());
-const optNumber = z.preprocess(val => (val === null || val === '') ? undefined : Number(val), z.number().optional());
+const optNumber = z.preprocess(val => (val === null || val === undefined || val === '') ? undefined : Number(val), z.number().optional());
 // Helper to parse comma‑separated strings into string arrays, also handling nulls
 const csvString = z.preprocess(val => val === null ? undefined : val, z.string().optional())
     .transform(val => val ? val.split(',').map(s => s.trim()).filter(Boolean) : []);

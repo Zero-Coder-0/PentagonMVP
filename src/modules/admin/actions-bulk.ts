@@ -76,6 +76,16 @@ export async function uploadFullSchema(data: { projects: any[], users?: any[], d
           throw new Error('Project Name is missing or invalid.');
         }
 
+        // 3.1.5 Check for duplicate and SKIP
+        const existingProject = await prisma.project.findFirst({
+          where: { project_name: coreData.project_name }
+        });
+
+        if (existingProject) {
+          errors.push(`Skipped: Project "${coreData.project_name}" already exists.`);
+          continue; // Skip this project
+        }
+
         // 3.2 Extract/validate relations
         const units = Array.isArray(project.units)
           ? project.units.map((u: any) => { const { project_name, ...rest } = BulkSchemas.ProjectUnitSchema.parse(u); return rest; })
