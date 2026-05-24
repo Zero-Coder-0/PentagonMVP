@@ -39,6 +39,27 @@ function parseNumber(val: any): number | null {
     return isNaN(num) ? null : num;
 }
 
+function cleanStringifiedJson(val: any): string {
+    if (val === null || val === undefined) return '';
+    let current = val;
+    while (typeof current === 'string') {
+        try {
+            const trimmed = current.trim();
+            if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || 
+                (trimmed.startsWith('[') && trimmed.endsWith(']')) || 
+                (trimmed.startsWith('"') && trimmed.endsWith('"'))) {
+                const parsed = JSON.parse(current);
+                current = parsed;
+            } else {
+                break;
+            }
+        } catch (e) {
+            break;
+        }
+    }
+    return typeof current === 'string' ? current : JSON.stringify(current);
+}
+
 // ============================================================================
 // ACTION A: upsertDraft
 // Allowed: vendor, salesman
@@ -276,9 +297,7 @@ export async function createLiveProjectDirectly(
                     usp_highlights: flatFormData.usp_highlights ?? [],
                     closing_pitch: flatFormData.closing_pitch,
                     target_customer: flatFormData.target_customer,
-                    objection_handling: flatFormData.objection_handling
-                        ? JSON.stringify(flatFormData.objection_handling)
-                        : undefined,
+                    objection_handling: flatFormData.objection_handling || null,
                     legal_notes: flatFormData.legal_notes,
                     timeline_risk: flatFormData.timeline_risk,
                     overall_rating: parseNumber(flatFormData.overall_rating),
@@ -525,7 +544,7 @@ export async function updateLiveProject(
             usp_highlights: flatFormData.usp_highlights ?? [],
             closing_pitch: flatFormData.closing_pitch || null,
             target_customer: flatFormData.target_customer || null,
-            objection_handling: flatFormData.objection_handling ? JSON.parse(JSON.stringify(flatFormData.objection_handling)) : null,
+            objection_handling: flatFormData.objection_handling || null,
             legal_notes: flatFormData.legal_notes || null,
             timeline_risk: flatFormData.timeline_risk || null,
             overall_rating: parseNumber(flatFormData.overall_rating),
@@ -750,7 +769,7 @@ export async function flattenLiveProjectForWizard(projectId: string): Promise<Wi
         closing_pitch: p.analysis?.closing_pitch ?? undefined,
         target_customer: p.analysis?.target_customer ?? undefined,
         objection_handling: p.analysis?.objection_handling
-            ? JSON.stringify(p.analysis.objection_handling)
+            ? cleanStringifiedJson(p.analysis.objection_handling)
             : undefined,
         legal_notes: p.analysis?.legal_notes ?? undefined,
         timeline_risk: p.analysis?.timeline_risk ?? undefined,
