@@ -1,8 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { unstable_cache as cache } from 'next/cache';
-import { revalidatePath } from 'next/cache';
+import { unstable_cache as cache, revalidatePath, revalidateTag } from 'next/cache';
 
 import type {
   ProjectV7,
@@ -540,14 +539,17 @@ export async function searchProjectsV7(searchTerm: string) {
 
 // Cache invalidation helpers
 export async function invalidateProjectCache(projectId?: string) {
+  // @ts-ignore
+  revalidateTag('projects');
   revalidatePath('/dashboard');
-  revalidatePath('/admin/inventory');
   if (projectId) {
     revalidatePath(`/admin/inventory/${projectId}`);
   }
 }
 
 export async function invalidateMasterDataCache() {
+  // @ts-ignore
+  revalidateTag('projects');
   revalidatePath('/dashboard');
   revalidatePath('/admin');
 }
