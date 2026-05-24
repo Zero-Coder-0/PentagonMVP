@@ -341,24 +341,30 @@ export async function createLiveProjectDirectly(
             // ── Units (array) ─────────────────────────────────────────────────────
             ...(flatFormData.units?.length ? {
                 projectunits: {
-                    create: flatFormData.units.map(u => ({
-                        unitnumber: u.phase && u.phase.trim()
-                            ? `${(u.unitnumber || '').trim()}(${u.phase.trim()})`
-                            : (u.unitnumber || 'NA').trim(),
-                        tower: u.tower || null,
-                        config: u.config || null,
-                        type: u.type || null,
-                        floornumber: u.floornumber !== undefined && !isNaN(Number(u.floornumber)) ? Number(u.floornumber) : null,
-                        actualsba: u.actualsba !== undefined && !isNaN(Number(u.actualsba)) ? Number(u.actualsba) : null,
-                        carpetarea: u.carpetarea !== undefined && !isNaN(Number(u.carpetarea)) ? Number(u.carpetarea) : null,
-                        udsarea: u.udsarea !== undefined && !isNaN(Number(u.udsarea)) ? Number(u.udsarea) : null,
-                        facing: u.facing || null,
-                        wccount: u.wccount ? (u.wccount === '6+' ? 6 : parseInt(u.wccount, 10)) : null,
-                        balconycount: u.balconycount ? (u.balconycount === '5+' ? 5 : parseInt(u.balconycount, 10)) : null,
-                        pricepersqft: u.pricepersqft !== undefined && !isNaN(Number(u.pricepersqft)) ? Number(Number(u.pricepersqft)) : null,
-                        pricetotal: u.pricetotal !== undefined && !isNaN(Number(u.pricetotal)) ? Number(u.pricetotal) : null,
-                        status: u.status ?? 'Available',
-                    })),
+                    create: flatFormData.units.map(u => {
+                        let phaseStr = (u.phase || '').trim();
+                        if (phaseStr && /^\d+$/.test(phaseStr)) {
+                            phaseStr = `Phase ${phaseStr}`;
+                        }
+                        return {
+                            unitnumber: phaseStr
+                                ? `${(u.unitnumber || '').trim()}(${phaseStr})`
+                                : (u.unitnumber || 'NA').trim(),
+                            tower: u.tower || null,
+                            config: u.config || null,
+                            type: u.type || null,
+                            floornumber: u.floornumber !== undefined && !isNaN(Number(u.floornumber)) ? Number(u.floornumber) : null,
+                            actualsba: u.actualsba !== undefined && !isNaN(Number(u.actualsba)) ? Number(u.actualsba) : null,
+                            carpetarea: u.carpetarea !== undefined && !isNaN(Number(u.carpetarea)) ? Number(u.carpetarea) : null,
+                            udsarea: u.udsarea !== undefined && !isNaN(Number(u.udsarea)) ? Number(u.udsarea) : null,
+                            facing: u.facing || null,
+                            wccount: u.wccount ? (u.wccount === '6+' ? 6 : parseInt(u.wccount, 10)) : null,
+                            balconycount: u.balconycount ? (u.balconycount === '5+' ? 5 : parseInt(u.balconycount, 10)) : null,
+                            pricepersqft: u.pricepersqft !== undefined && !isNaN(Number(u.pricepersqft)) ? Number(Number(u.pricepersqft)) : null,
+                            pricetotal: u.pricetotal !== undefined && !isNaN(Number(u.pricetotal)) ? Number(u.pricetotal) : null,
+                            status: u.status ?? 'Available',
+                        };
+                    }),
                 },
             } : {}),
         },
@@ -647,25 +653,31 @@ export async function updateLiveProject(
     await prisma.projectUnit.deleteMany({ where: { project_id: projectId } });
     if (flatFormData.units?.length) {
         await prisma.projectUnit.createMany({
-            data: flatFormData.units.map(u => ({
-                project_id: projectId,
-                unitnumber: u.phase && u.phase.trim()
-                    ? `${(u.unitnumber || '').trim()}(${u.phase.trim()})`
-                    : (u.unitnumber || 'NA').trim(),
-                tower: u.tower || null,
-                config: u.config || null,
-                type: u.type || null,
-                floornumber: u.floornumber !== undefined && !isNaN(Number(u.floornumber)) ? Number(u.floornumber) : null,
-                actualsba: u.actualsba !== undefined && !isNaN(Number(u.actualsba)) ? Number(u.actualsba) : null,
-                carpetarea: u.carpetarea !== undefined && !isNaN(Number(u.carpetarea)) ? Number(u.carpetarea) : null,
-                udsarea: u.udsarea !== undefined && !isNaN(Number(u.udsarea)) ? Number(u.udsarea) : null,
-                facing: u.facing || null,
-                wccount: u.wccount ? (u.wccount === '6+' ? 6 : parseInt(u.wccount, 10)) : null,
-                balconycount: u.balconycount ? (u.balconycount === '5+' ? 5 : parseInt(u.balconycount, 10)) : null,
-                pricepersqft: u.pricepersqft !== undefined && !isNaN(Number(u.pricepersqft)) ? Number(u.pricepersqft) : null,
-                pricetotal: u.pricetotal !== undefined && !isNaN(Number(u.pricetotal)) ? Number(u.pricetotal) : null,
-                status: u.status ?? 'Available',
-            })),
+            data: flatFormData.units.map(u => {
+                let phaseStr = (u.phase || '').trim();
+                if (phaseStr && /^\d+$/.test(phaseStr)) {
+                    phaseStr = `Phase ${phaseStr}`;
+                }
+                return {
+                    project_id: projectId,
+                    unitnumber: phaseStr
+                        ? `${(u.unitnumber || '').trim()}(${phaseStr})`
+                        : (u.unitnumber || 'NA').trim(),
+                    tower: u.tower || null,
+                    config: u.config || null,
+                    type: u.type || null,
+                    floornumber: u.floornumber !== undefined && !isNaN(Number(u.floornumber)) ? Number(u.floornumber) : null,
+                    actualsba: u.actualsba !== undefined && !isNaN(Number(u.actualsba)) ? Number(u.actualsba) : null,
+                    carpetarea: u.carpetarea !== undefined && !isNaN(Number(u.carpetarea)) ? Number(u.carpetarea) : null,
+                    udsarea: u.udsarea !== undefined && !isNaN(Number(u.udsarea)) ? Number(u.udsarea) : null,
+                    facing: u.facing || null,
+                    wccount: u.wccount ? (u.wccount === '6+' ? 6 : parseInt(u.wccount, 10)) : null,
+                    balconycount: u.balconycount ? (u.balconycount === '5+' ? 5 : parseInt(u.balconycount, 10)) : null,
+                    pricepersqft: u.pricepersqft !== undefined && !isNaN(Number(u.pricepersqft)) ? Number(u.pricepersqft) : null,
+                    pricetotal: u.pricetotal !== undefined && !isNaN(Number(u.pricetotal)) ? Number(u.pricetotal) : null,
+                    status: u.status ?? 'Available',
+                };
+            }),
         });
     }
 
