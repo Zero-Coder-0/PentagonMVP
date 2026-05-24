@@ -306,8 +306,7 @@ export async function getProjectByIdV7(projectId: string): Promise<ProjectFullV7
 )(projectId);
 }
 
-export const getMapProjectsV7 = cache(
-  async (): Promise<ProjectV7[]> => {
+export async function getMapProjectsV7(): Promise<ProjectV7[]> {
     try {
       const projects = await prisma.project.findMany({
         where: {
@@ -389,13 +388,9 @@ export const getMapProjectsV7 = cache(
       console.error('Error fetching map projects:', error);
       return [];
     }
-  },
-  ['map-projects-v7'],
-  { revalidate: 300, tags: ['projects'] }
-);
+}
 
-export const getFilterOptionsV7 = cache(
-  async () => {
+export async function getFilterOptionsV7() {
     try {
       const [zones, statuses, grades, years, types, configsResult] = await Promise.all([
         prisma.project.findMany({
@@ -464,8 +459,7 @@ export const getFilterOptionsV7 = cache(
         technologies: [],
       };
     }
-  }
-);
+}
 
 export const getAllDevelopersV7 = cache(
   async () => {
