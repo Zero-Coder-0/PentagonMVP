@@ -537,7 +537,19 @@ export default function ProjectWizardV7({
           {/* STEP 3: UNITS */}
           {currentStep === 3 && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-slate-900 mb-4">🏢 Project Inventory (Units)</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold text-slate-900">🏢 Project Inventory (Units)</h2>
+                <button
+                  type="button"
+                  onClick={() => {
+                    appendUnit({ config: '2BHK', status: 'Available' });
+                    triggerSilentSave();
+                  }}
+                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 shadow-sm transition"
+                >
+                  ➕ Add Unit
+                </button>
+              </div>
 
               {unitFields.map((field, index) => (
                 <div key={field.field_id} className="border-2 border-slate-200 rounded-lg p-6 bg-slate-50 relative group">
@@ -669,12 +681,20 @@ export default function ProjectWizardV7({
                     </div>
 
                     {/* ROW 2: SECONDARY DETAILS */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 pt-4 border-t border-slate-200">
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 pt-4 border-t border-slate-200">
                       <div>
                         <label className="block text-[10px] font-semibold text-slate-500 uppercase">Unit No.</label>
                         <input 
                           {...register(`units.${index}.unitnumber`)} 
                           placeholder="e.g. A-101"
+                          className="w-full px-2 py-1.5 border border-slate-300 rounded text-xs" 
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold text-slate-500 uppercase">Phase</label>
+                        <input 
+                          {...register(`units.${index}.phase`)} 
+                          placeholder="e.g. Phase 1"
                           className="w-full px-2 py-1.5 border border-slate-300 rounded text-xs" 
                         />
                       </div>
@@ -801,6 +821,16 @@ export default function ProjectWizardV7({
               <div className="mt-8">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-bold text-slate-900">Commercials (Mandatory Costs)</h3>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      appendCommercial({ name: '', cost_type: 'Mandatory' });
+                      triggerSilentSave();
+                    }}
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 shadow-sm transition"
+                  >
+                    ➕ Add Cost
+                  </button>
                 </div>
                 {commercialFields.map((field, index) => (
                   <div key={field.field_id} className="border border-slate-200 rounded-lg p-4 bg-white mb-4 relative group">
@@ -840,6 +870,16 @@ export default function ProjectWizardV7({
             <div className="space-y-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-bold text-slate-900">🎾 Amenities & Facilities</h2>
+                <button
+                  type="button"
+                  onClick={() => {
+                    appendAmenity({ category: 'Sports & Fitness', name: '' });
+                    triggerSilentSave();
+                  }}
+                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 shadow-sm transition"
+                >
+                  ➕ Add Amenity
+                </button>
               </div>
 
               {amenityFields.map((field, index) => (
@@ -906,6 +946,16 @@ export default function ProjectWizardV7({
 
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-bold text-slate-900">🗺️ Nearby Landmarks</h2>
+                <button
+                  type="button"
+                  onClick={() => {
+                    appendLandmark({ category: 'Education', name: '' });
+                    triggerSilentSave();
+                  }}
+                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 shadow-sm transition"
+                >
+                  ➕ Add Landmark
+                </button>
               </div>
 
               {landmarkFields.map((field, index) => (
@@ -1095,6 +1145,16 @@ export default function ProjectWizardV7({
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <label className="block text-sm font-medium text-green-700">✅ Strengths (Pros)</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        appendPro("");
+                        triggerSilentSave();
+                      }}
+                      className="text-xs bg-green-100 text-green-700 hover:bg-green-200 px-2 py-1 rounded transition font-semibold"
+                    >
+                      ➕ Add Pro
+                    </button>
                   </div>
                   {proFields.map((field, index) => (
                     <div key={field.field_id} className="flex flex-col gap-1 mb-3 group">
@@ -1112,6 +1172,16 @@ export default function ProjectWizardV7({
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <label className="block text-sm font-medium text-red-700">⚠️ Considerations (Cons)</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        appendCon("");
+                        triggerSilentSave();
+                      }}
+                      className="text-xs bg-red-100 text-red-700 hover:bg-red-200 px-2 py-1 rounded transition font-semibold"
+                    >
+                      ➕ Add Con
+                    </button>
                   </div>
                   {conFields.map((field, index) => (
                     <div key={field.field_id} className="flex flex-col gap-1 mb-3 group">
@@ -1131,6 +1201,16 @@ export default function ProjectWizardV7({
               <div className="mt-8 border-t-2 pt-6">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-bold">👥 Direct Competitors</h3>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      appendCompetitor({ name: '', price_range: '' });
+                      triggerSilentSave();
+                    }}
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 shadow-sm transition"
+                  >
+                    ➕ Add Competitor
+                  </button>
                 </div>
                 {competitorFields.map((field, index) => (
                   <div key={field.field_id} className="border p-3 rounded-lg bg-slate-50 mb-3 group">
@@ -1158,6 +1238,16 @@ export default function ProjectWizardV7({
               <div className="mt-8 border-t-2 pt-6">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-bold">Media URLs</h3>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      appendImage("");
+                      triggerSilentSave();
+                    }}
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 shadow-sm transition"
+                  >
+                    ➕ Add Gallery Image
+                  </button>
                 </div>
 
                 <div className="space-y-3 mt-4 mb-6">

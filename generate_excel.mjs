@@ -121,7 +121,7 @@ async function generate() {
         // 1. Projects Sheet
         projectsSheet.addRow({
             project_name: pName,
-            created_by: "Admin",
+            created_by: undefined,
             general_location: rp["Project Address"],
             address_line: rp["Project Address"], // Maps to address_line
             district: "Bengaluru", // Extrapolated from location data

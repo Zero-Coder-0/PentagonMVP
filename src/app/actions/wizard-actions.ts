@@ -342,19 +342,21 @@ export async function createLiveProjectDirectly(
             ...(flatFormData.units?.length ? {
                 projectunits: {
                     create: flatFormData.units.map(u => ({
-                        unitnumber: u.unitnumber,
-                        tower: u.tower,
-                        config: u.config,
-                        type: u.type,
-                        floornumber: u.floornumber,
-                        actualsba: u.actualsba,
-                        carpetarea: u.carpetarea,
-                        udsarea: u.udsarea,
-                        facing: u.facing,
-                        wccount: u.wccount,
-                        balconycount: u.balconycount,
-                        pricepersqft: u.pricepersqft,
-                        pricetotal: u.pricetotal,
+                        unitnumber: u.phase && u.phase.trim()
+                            ? `${(u.unitnumber || '').trim()}(${u.phase.trim()})`
+                            : (u.unitnumber || 'NA').trim(),
+                        tower: u.tower || null,
+                        config: u.config || null,
+                        type: u.type || null,
+                        floornumber: u.floornumber !== undefined && !isNaN(Number(u.floornumber)) ? Number(u.floornumber) : null,
+                        actualsba: u.actualsba !== undefined && !isNaN(Number(u.actualsba)) ? Number(u.actualsba) : null,
+                        carpetarea: u.carpetarea !== undefined && !isNaN(Number(u.carpetarea)) ? Number(u.carpetarea) : null,
+                        udsarea: u.udsarea !== undefined && !isNaN(Number(u.udsarea)) ? Number(u.udsarea) : null,
+                        facing: u.facing || null,
+                        wccount: u.wccount ? (u.wccount === '6+' ? 6 : parseInt(u.wccount, 10)) : null,
+                        balconycount: u.balconycount ? (u.balconycount === '5+' ? 5 : parseInt(u.balconycount, 10)) : null,
+                        pricepersqft: u.pricepersqft !== undefined && !isNaN(Number(u.pricepersqft)) ? Number(Number(u.pricepersqft)) : null,
+                        pricetotal: u.pricetotal !== undefined && !isNaN(Number(u.pricetotal)) ? Number(u.pricetotal) : null,
                         status: u.status ?? 'Available',
                     })),
                 },
@@ -641,6 +643,32 @@ export async function updateLiveProject(
         });
     }
 
+    // ── Units (array) ── Wipe and recreate dynamically for live project edits (prevents zombie units)
+    await prisma.projectUnit.deleteMany({ where: { project_id: projectId } });
+    if (flatFormData.units?.length) {
+        await prisma.projectUnit.createMany({
+            data: flatFormData.units.map(u => ({
+                project_id: projectId,
+                unitnumber: u.phase && u.phase.trim()
+                    ? `${(u.unitnumber || '').trim()}(${u.phase.trim()})`
+                    : (u.unitnumber || 'NA').trim(),
+                tower: u.tower || null,
+                config: u.config || null,
+                type: u.type || null,
+                floornumber: u.floornumber !== undefined && !isNaN(Number(u.floornumber)) ? Number(u.floornumber) : null,
+                actualsba: u.actualsba !== undefined && !isNaN(Number(u.actualsba)) ? Number(u.actualsba) : null,
+                carpetarea: u.carpetarea !== undefined && !isNaN(Number(u.carpetarea)) ? Number(u.carpetarea) : null,
+                udsarea: u.udsarea !== undefined && !isNaN(Number(u.udsarea)) ? Number(u.udsarea) : null,
+                facing: u.facing || null,
+                wccount: u.wccount ? (u.wccount === '6+' ? 6 : parseInt(u.wccount, 10)) : null,
+                balconycount: u.balconycount ? (u.balconycount === '5+' ? 5 : parseInt(u.balconycount, 10)) : null,
+                pricepersqft: u.pricepersqft !== undefined && !isNaN(Number(u.pricepersqft)) ? Number(u.pricepersqft) : null,
+                pricetotal: u.pricetotal !== undefined && !isNaN(Number(u.pricetotal)) ? Number(u.pricetotal) : null,
+                status: u.status ?? 'Available',
+            })),
+        });
+    }
+
     revalidatePath(`/admin/inventory/${projectId}`);
     return { success: true };
 }
@@ -799,22 +827,35 @@ export async function flattenLiveProjectForWizard(projectId: string): Promise<Wi
             name: c.name ?? undefined,
             price_range: c.price_range ?? undefined,
         })),
-        units: p.projectunits.map(u => ({
-            id: u.id,
-            unitnumber: u.unitnumber,
-            tower: typeof (u as any).tower === 'string' ? (u as any).tower : undefined,
-            config: u.config ?? undefined,
-            type: u.type ?? undefined,
-            floornumber: u.floornumber ?? undefined,
-            actualsba: u.actualsba ?? undefined,
-            carpetarea: u.carpetarea ?? undefined,
-            udsarea: u.udsarea ?? undefined,
-            facing: u.facing ?? undefined,
-            wccount: u.wccount !== null && u.wccount !== undefined ? (u.wccount >= 6 ? '6+' : String(u.wccount)) : undefined,
-            balconycount: u.balconycount !== null && u.balconycount !== undefined ? (u.balconycount >= 5 ? '5+' : String(u.balconycount)) : undefined,
-            pricepersqft: u.pricepersqft ?? undefined,
-            pricetotal: u.pricetotal ? Number(u.pricetotal) : undefined,
-            status: u.status ?? undefined,
-        })),
+        units: p.projectunits.map(u => {
+            let normalizedConfig = u.config ?? undefined;
+            if (normalizedConfig) {
+                normalizedConfig = normalizedConfig.replace(/\s+/g, '') as any;
+            }
+
+            const rawUnitNo = u.unitnumber || '';
+            const match = rawUnitNo.match(/^([^(]+)(?:\(([^)]+)\))?$/);
+            const parsedUnitNo = match ? match[1].trim() : rawUnitNo;
+            const parsedPhase = match && match[2] ? match[2].trim() : undefined;
+
+            return {
+                id: u.id,
+                unitnumber: parsedUnitNo,
+                phase: parsedPhase,
+                tower: typeof (u as any).tower === 'string' ? (u as any).tower : undefined,
+                config: normalizedConfig,
+                type: u.type ?? undefined,
+                floornumber: u.floornumber ?? undefined,
+                actualsba: u.actualsba ?? undefined,
+                carpetarea: u.carpetarea ?? undefined,
+                udsarea: u.udsarea ?? undefined,
+                facing: u.facing ?? undefined,
+                wccount: u.wccount !== null && u.wccount !== undefined ? (u.wccount >= 6 ? '6+' : String(u.wccount)) : undefined,
+                balconycount: u.balconycount !== null && u.balconycount !== undefined ? (u.balconycount >= 5 ? '5+' : String(u.balconycount)) : undefined,
+                pricepersqft: u.pricepersqft ?? undefined,
+                pricetotal: u.pricetotal ? Number(u.pricetotal) : undefined,
+                status: u.status ?? undefined,
+            };
+        }),
     };
 }

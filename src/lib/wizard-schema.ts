@@ -37,6 +37,7 @@ const optNum = z.coerce.number().catch(undefined).optional();
 export const unitSchema = z.object({
   id: z.string().optional(),
   unitnumber: z.string().optional(),
+  phase: z.string().optional(),
   config: z.preprocess((val) => val === "" ? undefined : val, z.enum(BHK_CONFIGS as any).optional()),
   type: z.preprocess((val) => val === "" ? undefined : val, z.enum(UNIT_VARIANTS as any).optional()),
   floornumber: optNum,
