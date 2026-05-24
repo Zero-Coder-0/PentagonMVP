@@ -89,22 +89,30 @@ export async function createProjectAction(wizardData: any) {
       // ============ 2. PROJECT UNITS (Detailed Floor Plans & Inventory) ============
       if (wizardData.units?.length > 0) {
         await tx.projectUnit.createMany({
-          data: wizardData.units.map((u: any) => ({
-            project_id: projectId,
-            unitnumber: u.unitnumber || 'TBD',
-            floornumber: u.floornumber ? parseInt(u.floornumber.toString()) : null,
-            config: u.config || 'Standard',
-            type: u.type || 'Standard',
-            actualsba: u.actualsba ? parseInt(u.actualsba.toString()) : null,
-            carpetarea: u.carpetarea ? parseInt(u.carpetarea.toString()) : null,
-            udsarea: u.udsarea ? parseInt(u.udsarea.toString()) : null,
-            facing: u.facing || null,
-            wccount: u.wccount || u.wc_count ? parseInt((u.wccount || u.wc_count).toString()) : null,
-            balconycount: u.balconycount || u.balcony_count ? parseInt((u.balconycount || u.balcony_count).toString()) : null,
-            pricepersqft: u.pricepersqft ? parseInt(u.pricepersqft.toString()) : null,
-            pricetotal: u.pricetotal ? parseFloat(u.pricetotal.toString()) : null,
-            status: u.status || 'Available'
-          }))
+          data: wizardData.units.map((u: any) => {
+            let phaseStr = (u.phase || '').trim();
+            if (phaseStr && /^\d+$/.test(phaseStr)) {
+                phaseStr = `Phase ${phaseStr}`;
+            }
+            return {
+              project_id: projectId,
+              unitnumber: phaseStr
+                ? `${(u.unitnumber || '').trim()}(${phaseStr})`
+                : (u.unitnumber || 'NA').trim(),
+              floornumber: u.floornumber ? parseInt(u.floornumber.toString()) : null,
+              config: u.config || null,
+              type: u.type || null,
+              actualsba: u.actualsba ? parseInt(u.actualsba.toString()) : null,
+              carpetarea: u.carpetarea ? parseInt(u.carpetarea.toString()) : null,
+              udsarea: u.udsarea ? parseInt(u.udsarea.toString()) : null,
+              facing: u.facing || null,
+              wccount: (u.wccount !== undefined && u.wccount !== null && u.wccount !== '') ? (u.wccount === '6+' ? 6 : parseInt(String(u.wccount), 10)) : null,
+              balconycount: (u.balconycount !== undefined && u.balconycount !== null && u.balconycount !== '') ? (u.balconycount === '5+' ? 5 : parseInt(String(u.balconycount), 10)) : null,
+              pricepersqft: u.pricepersqft ? parseInt(u.pricepersqft.toString()) : null,
+              pricetotal: u.pricetotal ? parseFloat(u.pricetotal.toString()) : null,
+              status: u.status || 'Available'
+            };
+          })
         });
       }
 

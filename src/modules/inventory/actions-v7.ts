@@ -142,11 +142,12 @@ export const getAllProjectsV7 = cache(
   { revalidate: 300, tags: ['projects'] }
 );
 
-export const getProjectByIdV7 = cache(
-  async (projectId: string): Promise<ProjectFullV7 | null> => {
+export async function getProjectByIdV7(projectId: string): Promise<ProjectFullV7 | null> {
+  return cache(
+    async (id: string): Promise<ProjectFullV7 | null> => {
     try {
       const p = await prisma.project.findUnique({
-        where: { id: projectId },
+        where: { id: id },
         include: {
           projectunits: true,
           amenities: true,
@@ -300,9 +301,10 @@ export const getProjectByIdV7 = cache(
       return null;
     }
   },
-  ['project-by-id-v7'],
+  ['project-by-id-v7', projectId],
   { revalidate: 300, tags: ['projects'] }
-);
+)(projectId);
+}
 
 export const getMapProjectsV7 = cache(
   async (): Promise<ProjectV7[]> => {

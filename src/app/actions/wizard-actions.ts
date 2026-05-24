@@ -385,7 +385,8 @@ export async function createLiveProjectDirectly(
                             facing: u.facing || null,
                             wccount: (u.wccount !== undefined && u.wccount !== null && u.wccount !== '') ? (u.wccount === '6+' ? 6 : parseInt(String(u.wccount), 10)) : null,
                             balconycount: (u.balconycount !== undefined && u.balconycount !== null && u.balconycount !== '') ? (u.balconycount === '5+' ? 5 : parseInt(String(u.balconycount), 10)) : null,
-                            pricetotal: u.pricetotal !== undefined && !isNaN(Number(u.pricetotal)) ? Number(u.pricetotal) : null,
+                            pricepersqft: parseNumber(u.pricepersqft),
+                            pricetotal: parseNumber(u.pricetotal),
                             status: u.status ?? 'Available',
                         };
                     }),
