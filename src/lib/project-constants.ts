@@ -68,7 +68,7 @@ export type UnitFacing = (typeof UNIT_FACINGS)[number];
 
 // ─── Unit Variants / Luxe ───────────────────────────────────────────────────
 
-export const UNIT_VARIANTS = ['Standard', 'Premium', 'Luxe', 'Super Luxe', 'Ultra Luxe'] as const;
+export const UNIT_VARIANTS = ['Standard', 'Premium', 'Luxe', 'Super Luxe', 'Ultra Luxe', 'Row House', 'Villa', 'Penthouse'] as const;
 export type UnitVariant = (typeof UNIT_VARIANTS)[number];
 
 // ─── Bathroom Counts ──────────────────────────────────────────────────────────
