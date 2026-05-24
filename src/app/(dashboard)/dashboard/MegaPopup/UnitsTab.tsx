@@ -38,6 +38,25 @@ export function UnitsTab({ property }: Props) {
 
   return (
     <div className="h-full flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        {/* Project Summary */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-white border border-slate-200 rounded-lg p-4 shadow-sm mt-2">
+          <div>
+            <p className="text-xs text-slate-500 font-semibold uppercase">Project Theme</p>
+            <p className="font-bold text-slate-800">{property.project_theme || 'Standard'}</p>
+          </div>
+          <div>
+            <p className="text-xs text-slate-500 font-semibold uppercase">Land Area</p>
+            <p className="font-bold text-slate-800">{property.total_land_area || 'N/A'}</p>
+          </div>
+          <div>
+            <p className="text-xs text-slate-500 font-semibold uppercase">Total Phases</p>
+            <p className="font-bold text-slate-800">{property.total_phases || 1}</p>
+          </div>
+          <div>
+            <p className="text-xs text-slate-500 font-semibold uppercase">Selling Phase</p>
+            <p className="font-bold text-slate-800">{property.current_phase_under_sale || 'Phase 1'}</p>
+          </div>
+        </div>
       {/* Header */}
       <div className="p-4 border-b border-slate-200 bg-slate-50/50">
         <div className="flex justify-between items-start mb-4">

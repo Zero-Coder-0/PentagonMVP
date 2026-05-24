@@ -1,11 +1,13 @@
 import React from 'react';
 import Link from 'next/link';
 import { LayoutDashboard, Database, Users, PlusCircle, LogOut } from 'lucide-react';
+import Image from 'next/image';
 
 export default function AdminSidebar() {
   return (
     <aside className="fixed left-0 top-0 h-full w-64 bg-slate-900 text-white shadow-xl z-50 flex flex-col">
       <div className="p-6 border-b border-slate-800">
+        <Image src="/images/admin-logo.png" alt="Admin logo" width={48} height={48} className="mb-2" />
         <h1 className="text-xl font-bold tracking-tight text-white">
           Pentagon<span className="text-indigo-400">MVP</span>
         </h1>

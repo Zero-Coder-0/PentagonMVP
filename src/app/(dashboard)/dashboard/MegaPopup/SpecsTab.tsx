@@ -42,19 +42,18 @@ export function SpecsTab({ property }: Props) {
 
         {/* Kitchen & Electrical */}
         <section className="bg-slate-50 p-3 rounded border border-slate-200">
-          <h4 className="text-sm font-medium text-slate-600 mb-2">Kitchen & Electrical</h4>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <h5 className="text-xs font-bold text-slate-400 uppercase mb-1">🍳 Kitchen</h5>
-              <SpecItem label="Countertop" value={property.kitchen_countertop} />
-              <SpecItem label="Sink/Fittings" value={property.kitchen_sink_details} />
-              <SpecItem label="Gas Pipeline" value={property.gas_pipeline_provision} />
-            </div>
-            <div>
-              <h5 className="text-xs font-bold text-slate-400 uppercase mb-1">🔌 Electrical</h5>
-              <SpecItem label="Power Backup" value={property.power_backup} />
-              <SpecItem label="Switches" value={property.electrical_switches} />
-            </div>
+          <h4 className="text-sm font-medium text-slate-600 mb-2">Kitchen</h4>
+          <div className="grid md:grid-cols-1 gap-4">
+            <SpecItem label="Countertop" value={property.kitchen_countertop} />
+            <SpecItem label="Sink/Fittings" value={property.kitchen_sink_details} />
+            <SpecItem label="Gas Pipeline" value={property.gas_pipeline_provision} />
+          </div>
+        </section>
+        <section className="bg-slate-50 p-3 rounded border border-slate-200">
+          <h4 className="text-sm font-medium text-slate-600 mb-2">Electrical</h4>
+          <div className="grid md:grid-cols-1 gap-4">
+            <SpecItem label="Power Backup" value={property.power_backup} />
+            <SpecItem label="Switches" value={property.electrical_switches} />
           </div>
         </section>
 

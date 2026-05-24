@@ -102,7 +102,7 @@ export function LocationTab({ property }: Props) {
                   <div key={i} className="p-2 bg-blue-50 rounded border border-blue-100 flex justify-between">
                     <div>
                       <div className="font-bold text-sm text-blue-900">{landmark.name}</div>
-                      {landmark.category && <div className="text-xs text-blue-600">{landmark.category}</div>}
+                      {landmark.category && <div className="font-bold text-xs text-blue-600">{landmark.category}</div>}
                     </div>
                     {landmark.distance && (
                       <div className="text-right">

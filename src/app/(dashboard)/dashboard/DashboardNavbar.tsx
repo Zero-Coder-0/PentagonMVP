@@ -2,6 +2,7 @@
 
 import React, { useRef, useEffect, useMemo } from 'react';
 import { MapPin, Search, Filter, X, ChevronDown, Calendar, Building2, HardHat } from 'lucide-react';
+import Image from 'next/image';
 import { useDashboard } from './page';
 import LocationSearch from '@/modules/map-engine/components/LocationSearch';
 import {
@@ -110,11 +111,9 @@ export default function DashboardNavbar() {
     return (
         <nav className="flex items-center justify-between px-4 py-2 bg-white border-b border-slate-200 shadow-sm z-50 relative min-h-[56px] w-full">
             
-            {/* 1. Left side - Logo (Pentagon-like) */}
+            {/* 1. Left side - Logo */}
             <div className="flex items-center gap-2 mr-4">
-                <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-lg shadow-blue-200 rotate-3 hover:rotate-0 transition-transform">
-                    P
-                </div>
+                <Image src="/images/dashboard-logo.png" alt="Dashboard logo" width={32} height={32} className="shrink-0" />
                 <span className="hidden lg:block text-sm font-black text-slate-900 tracking-tight">Pentagon Properties</span>
             </div>
 
