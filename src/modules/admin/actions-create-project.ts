@@ -1,7 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/prisma';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 
 /**
  * Bridge Function: Transforms ProjectWizard JSON output into 9 Prisma tables
@@ -292,6 +292,8 @@ export async function createProjectAction(wizardData: any) {
 
     revalidatePath('/dashboard');
     revalidatePath('/admin');
+    // @ts-ignore
+    revalidateTag('projects');
 
     return {
       success: true,

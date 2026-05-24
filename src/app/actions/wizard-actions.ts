@@ -1,7 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { UserRole } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { createClient } from '@/core/db/server';
@@ -397,6 +397,9 @@ export async function approveDraftToLive(
 
     revalidatePath('/admin/approvals');
     revalidatePath('/admin/inventory');
+    revalidatePath('/dashboard');
+    // @ts-ignore
+    revalidateTag('projects');
     return { success: true, projectId: project.id };
 }
 
@@ -435,6 +438,8 @@ export async function updateLiveProject(
             project_theme: flatFormData.project_theme || null,
             possession_month: flatFormData.possession_month || null,
             possession_year: flatFormData.possession_year !== undefined && !isNaN(Number(flatFormData.possession_year)) ? Number(flatFormData.possession_year) : null,
+            slug: flatFormData.slug || null,
+            current_phase_under_sale: flatFormData.current_phase_under_sale || null,
             pricedisplay: flatFormData.pricedisplay || null,
             pricemin: flatFormData.pricemin !== undefined && !isNaN(Number(flatFormData.pricemin)) ? Number(flatFormData.pricemin) : null,
             pricemax: flatFormData.pricemax !== undefined && !isNaN(Number(flatFormData.pricemax)) ? Number(flatFormData.pricemax) : null,
@@ -621,6 +626,10 @@ export async function updateLiveProject(
     }
 
     revalidatePath(`/admin/inventory/${projectId}`);
+    revalidatePath('/admin/inventory');
+    revalidatePath('/dashboard');
+    // @ts-ignore
+    revalidateTag('projects');
     return { success: true };
 }
 
