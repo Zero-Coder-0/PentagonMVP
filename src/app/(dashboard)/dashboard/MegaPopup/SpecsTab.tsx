@@ -28,66 +28,64 @@ export function SpecsTab({ property }: Props) {
       </h3>
       <div className="space-y-6">
         {/* Master Structure */}
-        <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-          <SpecItem label="Construction Type" value={property.construction_type} />
-          <SpecItem label="Structure Details" value={property.structure_details} />
-          <SpecItem label="Towers" value={data.towers} />
-          <SpecItem label="Total Floors" value={data.floors} />
-          <SpecItem label="Units per Floor" value={property.units_per_floor} />
-          <SpecItem label="Elevators" value={data.elevators} />
-        </div>
+        <section className="bg-slate-50 p-3 rounded border border-slate-200">
+          <h4 className="text-sm font-medium text-slate-600 mb-2">Master Structure</h4>
+          <div className="grid grid-cols-2 gap-4">
+            <SpecItem label="Construction Type" value={property.construction_type} />
+            <SpecItem label="Structure Details" value={property.structure_details} />
+            <SpecItem label="Towers" value={data.towers} />
+            <SpecItem label="Total Floors" value={data.floors} />
+            <SpecItem label="Units per Floor" value={property.units_per_floor} />
+            <SpecItem label="Elevators" value={data.elevators} />
+          </div>
+        </section>
 
         {/* Kitchen & Electrical */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 border-t border-slate-100 pt-4">
-          <div>
-            <h4 className="text-xs font-bold text-slate-400 uppercase mb-2">🍳 Kitchen</h4>
-            <div className="space-y-1">
+        <section className="bg-slate-50 p-3 rounded border border-slate-200">
+          <h4 className="text-sm font-medium text-slate-600 mb-2">Kitchen & Electrical</h4>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <h5 className="text-xs font-bold text-slate-400 uppercase mb-1">🍳 Kitchen</h5>
               <SpecItem label="Countertop" value={property.kitchen_countertop} />
               <SpecItem label="Sink/Fittings" value={property.kitchen_sink_details} />
               <SpecItem label="Gas Pipeline" value={property.gas_pipeline_provision} />
             </div>
-          </div>
-          <div>
-            <h4 className="text-xs font-bold text-slate-400 uppercase mb-2">🔌 Electrical</h4>
-            <div className="space-y-1">
+            <div>
+              <h5 className="text-xs font-bold text-slate-400 uppercase mb-1">🔌 Electrical</h5>
               <SpecItem label="Power Backup" value={property.power_backup} />
               <SpecItem label="Switches" value={property.electrical_switches} />
             </div>
           </div>
-          <div>
-            <h4 className="text-xs font-bold text-slate-400 uppercase mb-2">🚪 Doors</h4>
-            <div className="space-y-1">
-              <SpecItem label="Main Door" value={property.main_door_specs} />
-              <SpecItem label="Internal Doors" value={property.internal_doors_specs} />
-            </div>
+        </section>
+
+        {/* Doors */}
+        <section className="bg-slate-50 p-3 rounded border border-slate-200">
+          <h4 className="text-sm font-medium text-slate-600 mb-2">Doors</h4>
+          <SpecItem label="Main Door" value={property.main_door_specs} />
+          <SpecItem label="Internal Doors" value={property.internal_doors_specs} />
+        </section>
+
+        {/* Flooring & Bathrooms */}
+        <section className="bg-slate-50 p-3 rounded border border-slate-200">
+          <h4 className="text-sm font-medium text-slate-600 mb-2">Finishes</h4>
+          { (property.flooring_living_dining || property.flooring_master_bedroom) && (
+            <SpecItem label="Flooring" value={`${property.flooring_living_dining || '-'} (Living/Dining), ${property.flooring_master_bedroom || '-'} (Master)`} />
+          ) }
+          { property.bathroom_sanitary_ware && (
+            <SpecItem label="Bathrooms" value={property.bathroom_sanitary_ware} />
+          ) }
+        </section>
+
+        {/* Summary */}
+        <section className="bg-slate-50 p-3 rounded border border-slate-200">
+          <h4 className="text-sm font-medium text-slate-600 mb-2">Project Summary</h4>
+          <div className="grid grid-cols-2 gap-4">
+            <SpecItem label="Land Area" value={data.landArea ? `${data.landArea} Acres` : '-'} />
+            <SpecItem label="Total Units" value={data.totalUnits} />
+            <SpecItem label="Builder Grade" value={data.builderGrade} />
+            <SpecItem label="RERA No" value={data.rera} />
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 border-t border-slate-100 pt-4">
-          {(property.flooring_living_dining || property.flooring_master_bedroom) && (
-            <div>
-              <h4 className="text-xs font-bold text-slate-400 uppercase mb-2">🪵 Flooring</h4>
-              <p className="text-sm text-slate-700">
-                {property.flooring_living_dining || '-'} (Living/Dining), {property.flooring_master_bedroom || '-'} (Master)
-              </p>
-            </div>
-          )}
-          {property.bathroom_sanitary_ware && (
-            <div>
-              <h4 className="text-xs font-bold text-slate-400 uppercase mb-2">🚿 Bathrooms</h4>
-              <p className="text-sm text-slate-700">
-                {property.bathroom_sanitary_ware || '-'} (Sanitary Ware)
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-x-6 gap-y-2 border-t border-slate-100 pt-4">
-          <SpecItem label="Land Area" value={data.landArea ? `${data.landArea} Acres` : '-'} />
-          <SpecItem label="Total Units" value={data.totalUnits} />
-          <SpecItem label="Builder Grade" value={data.builderGrade} />
-          <SpecItem label="RERA No" value={data.rera} />
-        </div>
+        </section>
       </div>
     </div>
   );

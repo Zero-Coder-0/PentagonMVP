@@ -1,6 +1,7 @@
 'use client';
 
 import { MapPin, Clock, Navigation } from 'lucide-react';
+import { useMemo } from 'react';
 import type { ProjectFullV7, ProjectV7 } from '@/modules/inventory/types-v7';
 
 const getLocationData = (property: ProjectFullV7) => ({
@@ -22,6 +23,15 @@ interface Props {
 
 export function LocationTab({ property }: Props) {
   const { landmarks, competitors } = getLocationData(property);
+  const groupedLandmarks = useMemo(() => {
+    const map: Record<string, typeof landmarks> = {};
+    landmarks.forEach((l) => {
+      const cat = l.category || 'Other';
+      if (!map[cat]) map[cat] = [];
+      map[cat].push(l);
+    });
+    return map;
+  }, [landmarks]);
 
   return (
     <div className="space-y-4">
@@ -84,22 +94,27 @@ export function LocationTab({ property }: Props) {
           <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
             <MapPin size={16} className="text-blue-600" /> Nearby Landmarks
           </h3>
-          <div className="grid grid-cols-2 gap-3">
-            {landmarks.map((landmark, i) => (
-              <div key={i} className="p-2 bg-blue-50 rounded border border-blue-100 flex justify-between">
-                <div>
-                  <div className="font-bold text-sm text-blue-900">{landmark.name}</div>
-                  {landmark.category && <div className="text-xs text-blue-600">{landmark.category}</div>}
-                </div>
-                {landmark.distance && (
-                  <div className="text-right">
-                    <div className="font-bold text-sm text-blue-800">{(landmark.distance ?? '').toString().replace(/km/ig, '').trim()} km</div>
-                    {landmark.travelTime && <div className="text-xs text-blue-600">{(landmark.travelTime ?? '').toString().replace(/mins?/ig, '').trim()} mins</div>}
+          {Object.entries(groupedLandmarks).map(([category, items]) => (
+            <section key={category} className="mb-4">
+              <h4 className="font-semibold text-slate-600 mb-2">{category}</h4>
+              <div className="grid grid-cols-2 gap-3">
+                {items.map((landmark, i) => (
+                  <div key={i} className="p-2 bg-blue-50 rounded border border-blue-100 flex justify-between">
+                    <div>
+                      <div className="font-bold text-sm text-blue-900">{landmark.name}</div>
+                      {landmark.category && <div className="text-xs text-blue-600">{landmark.category}</div>}
+                    </div>
+                    {landmark.distance && (
+                      <div className="text-right">
+                        <div className="font-bold text-sm text-blue-800">{(landmark.distance ?? '').toString().replace(/km/ig, '').trim()} km</div>
+                        {landmark.travelTime && <div className="text-xs text-blue-600">{(landmark.travelTime ?? '').toString().replace(/mins?/ig, '').trim()} mins</div>}
+                      </div>
+                    )}
                   </div>
-                )}
+                ))}
               </div>
-            ))}
-          </div>
+            </section>
+          ))}
         </div>
       )}
 

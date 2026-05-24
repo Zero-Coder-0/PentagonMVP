@@ -28,12 +28,32 @@ export function UnitsTab({ property }: Props) {
     });
   }, [property.units]);
 
+  const summary = useMemo(() => {
+    const configs = Array.from(new Set(sortedUnits.map((u) => u.config).filter(Boolean)));
+    return configs.map((config) => ({
+      config,
+      count: sortedUnits.filter((u) => u.config === config).length,
+    }));
+  }, [sortedUnits]);
+
   return (
     <div className="h-full flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="p-3 bg-slate-50 border-b border-slate-200 font-bold text-sm text-slate-700 flex justify-between items-center">
-        <span className="flex items-center gap-2"><Home size={14} /> Unit Inventory & Details</span>
-        <span className="text-xs font-normal text-slate-500">{sortedUnits.length} units listed</span>
+      <div className="p-4 border-b border-slate-200 bg-slate-50/50">
+        <div className="flex justify-between items-start mb-4">
+          <span className="flex items-center gap-2 font-bold text-slate-700"><Home size={16} /> Unit Inventory</span>
+          <span className="text-xs font-medium bg-white px-2 py-1 rounded border border-slate-200 text-slate-500 shadow-sm">
+            {sortedUnits.length} Total Units
+          </span>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {summary.map((s) => (
+            <div key={s.config} className="bg-white p-2 rounded border border-slate-200 text-center">
+              <div className="text-[10px] uppercase font-bold text-slate-400">{s.config}</div>
+              <div className="text-sm font-bold text-slate-700">{s.count}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Table */}

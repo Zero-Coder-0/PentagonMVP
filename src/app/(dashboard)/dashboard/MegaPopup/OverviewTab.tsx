@@ -25,20 +25,8 @@ export function OverviewTab({ property }: Props) {
       {/* Core Project Highlights */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
         <div>
-          <p className="text-xs text-slate-500 font-semibold uppercase">Project Theme</p>
-          <p className="font-bold text-slate-800">{property.project_theme || 'Standard'}</p>
-        </div>
-        <div>
-          <p className="text-xs text-slate-500 font-semibold uppercase">Land Area</p>
-          <p className="font-bold text-slate-800">{property.total_land_area || 'N/A'}</p>
-        </div>
-        <div>
-          <p className="text-xs text-slate-500 font-semibold uppercase">Total Phases</p>
-          <p className="font-bold text-slate-800">{property.total_phases || 1}</p>
-        </div>
-        <div>
-          <p className="text-xs text-slate-500 font-semibold uppercase">Selling Phase</p>
-          <p className="font-bold text-slate-800">{property.current_phase_under_sale || 'Phase 1'}</p>
+          <p className="text-xs text-slate-500 font-semibold uppercase">Total Units for Whole Project</p>
+          <p className="font-bold text-slate-800">{property.total_units || 'N/A'}</p>
         </div>
       </div>
 
