@@ -239,11 +239,13 @@ export default function ProjectWizardV7({
         await approveDraftToLive(draftId, payloadWithMediaUrls);
         alert("Project Approved & Published Live!");
         router.push('/admin/inventory');
+        router.refresh();
       }
       else if (mode === 'edit_live') {
         if (!projectId) throw new Error("Project ID is missing");
         await updateLiveProject(projectId, payloadWithMediaUrls);
         alert("Live Inventory Updated Successfully!");
+        router.refresh();
       }
       else if (mode === 'admin_create') {
         // Admin direct creation flow (calling the bridge action)
@@ -252,6 +254,7 @@ export default function ProjectWizardV7({
         if (result.success) {
           alert('✅ Project created successfully! ID: ' + result.projectId);
           router.push('/admin/inventory');
+          router.refresh();
         } else {
           throw new Error(result.error || 'Project creation failed');
         }
