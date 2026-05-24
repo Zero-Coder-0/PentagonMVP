@@ -18,13 +18,13 @@ interface Props {
 }
 
 export function UnitsTab({ property }: Props) {
-  // ✅ Memoize and sort units by price (handles both old/new data)
+  // ✅ Memoize and sort units alphanumerically by unit number (natural sorting: A1, A2, A3...)
   const sortedUnits = useMemo(() => {
     if (!property.units || property.units.length === 0) return [];
     return [...property.units].sort((a, b) => {
-      const aPrice = a.pricetotal || 0;
-      const bPrice = b.pricetotal || 0;
-      return aPrice - bPrice;
+      const aNo = a.unitnumber || '';
+      const bNo = b.unitnumber || '';
+      return aNo.localeCompare(bNo, undefined, { numeric: true, sensitivity: 'base' });
     });
   }, [property.units]);
 
@@ -50,14 +50,27 @@ export function UnitsTab({ property }: Props) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {sortedUnits.map((u, i) => (
+            {sortedUnits.map((u, i) => {
+              const rawUnitNo = u.unitnumber || '';
+              const match = rawUnitNo.match(/^([^(]+)(?:\(([^)]+)\))?$/);
+              const parsedUnitNo = match ? match[1].trim() : rawUnitNo;
+              const parsedPhase = match && match[2] ? match[2].trim() : undefined;
+
+              return (
               <tr key={i} className="hover:bg-blue-50/50 transition-colors">
                 <td className="px-3 py-3">
                   <div className="font-bold text-slate-800">{u.config || 'Unknown BHK'}</div>
                   <div className="text-xs text-slate-500">{u.type || 'Standard'}</div>
                 </td>
                 <td className="px-3 py-3 text-xs">
-                  <div className="font-mono font-medium text-slate-700">Unit: {u.unitnumber || '-'}</div>
+                  <div className="font-mono font-medium text-slate-700 flex items-center gap-1.5">
+                    Unit: <span className="font-bold text-slate-900">{parsedUnitNo}</span>
+                    {parsedPhase && (
+                      <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-sans font-bold text-[9px] uppercase tracking-wider border border-blue-100">
+                        {parsedPhase}
+                      </span>
+                    )}
+                  </div>
                   {(u.tower || u.floornumber) && (
                     <div className="text-slate-500 mt-0.5">
                       {u.tower ? `Tower ${u.tower}` : ''} {u.floornumber ? `| Floor ${u.floornumber}` : ''}
@@ -90,7 +103,8 @@ export function UnitsTab({ property }: Props) {
                   {u.pricepersqft ? <div className="text-[10px] text-slate-500 mt-0.5">₹{u.pricepersqft.toLocaleString()}/sqft</div> : null}
                 </td>
               </tr>
-            ))}
+              );
+            })}
             {sortedUnits.length === 0 && (
               <tr>
                 <td colSpan={6} className="p-12 text-center text-slate-400 bg-slate-50">
