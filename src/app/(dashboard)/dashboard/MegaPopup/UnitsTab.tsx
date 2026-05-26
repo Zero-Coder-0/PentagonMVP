@@ -39,7 +39,7 @@ export function UnitsTab({ property }: Props) {
   return (
     <div className="h-full flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         {/* Project Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-white border border-slate-200 rounded-lg p-4 shadow-sm mt-2">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 bg-white border border-slate-200 rounded-lg p-4 shadow-sm mt-2">
           <div>
             <p className="text-xs text-slate-500 font-semibold uppercase">Project Theme</p>
             <p className="font-bold text-slate-800">{property.project_theme || 'Standard'}</p>
@@ -51,6 +51,10 @@ export function UnitsTab({ property }: Props) {
           <div>
             <p className="text-xs text-slate-500 font-semibold uppercase">Total Phases</p>
             <p className="font-bold text-slate-800">{property.total_phases || 1}</p>
+          </div>
+          <div>
+            <p className="text-xs text-slate-500 font-semibold uppercase">Total Units for Whole Project</p>
+            <p className="font-bold text-slate-800">{property.total_units || 'N/A'}</p>
           </div>
           <div>
             <p className="text-xs text-slate-500 font-semibold uppercase">Selling Phase</p>
