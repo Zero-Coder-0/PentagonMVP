@@ -222,7 +222,7 @@ export async function getProjectByIdV7(projectId: string): Promise<ProjectFullV7
 
         // ProjectFullV7 Extras
         total_land_area: p.total_land_area ?? undefined,
-        total_units: units.length,
+        total_units: p.total_units ?? undefined,
         total_phases: p.total_phases ?? undefined,
         project_theme: p.project_theme ?? undefined,
         current_phase_under_sale: p.current_phase_under_sale ?? undefined,
