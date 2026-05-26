@@ -96,7 +96,24 @@ const InteractionController = ({
 // ==========================================
 function ResizeMap() {
   const map = useMap();
-  useEffect(() => { setTimeout(() => map.invalidateSize(), 100); }, [map]);
+  
+  useEffect(() => {
+    const container = map.getContainer();
+    if (!container) return;
+
+    // Watch the map container element for any size changes (drag, flex resize, screen size)
+    const resizeObserver = new ResizeObserver(() => {
+      // Force Leaflet to recalculate container boundaries instantly
+      map.invalidateSize();
+    });
+
+    resizeObserver.observe(container);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [map]);
+
   return null;
 }
 
