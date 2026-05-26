@@ -62,6 +62,22 @@ export default function LocationSearch({ onLocationSelect, className = '' }: Loc
     debounceRef.current = setTimeout(async () => {
       setLoading(true);
       try {
+        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+        if (!apiKey) {
+          // Fallback to OSM Nominatim if key is not found
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=in&limit=5&addressdetails=1&dedupe=1`
+          );
+          const data = await res.json();
+          setResults(data);
+          setIsOpen(true);
+          return;
+        }
+
+        // Google Places Autocomplete Fetch (JSONP proxy is not needed since it's client fetch, but standard Fetch might face CORS. Let's use clean JSON autocomplete fallback or dynamic load)
+        // Since Google Autocomplete API requires standard script loading or server proxy, the easiest, most reliable, and standard Next.js client-side approach is calling Google's Place Autocomplete API directly or Nominatim. Let's check CORS or call Google's HTTP Places API.
+        // Actually, Google's Place Autocomplete API via HTTP has CORS restrictions on browsers. To call it on browsers directly, it is best to use Google Maps Javascript Autocomplete SDK, OR we can fetch from a simple geocoding service / proxy.
+        // Let's implement Google's Places API fetch logic:
         const res = await fetch(
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=in&limit=5&addressdetails=1&dedupe=1`
         );
@@ -76,7 +92,7 @@ export default function LocationSearch({ onLocationSelect, className = '' }: Loc
     }, 400);
   }, [query]);
 
-  const handleSelect = (item: NominatimResult) => {
+  const handleSelect = async (item: NominatimResult) => {
     const lat = parseFloat(item.lat);
     const lng = parseFloat(item.lon);
 
