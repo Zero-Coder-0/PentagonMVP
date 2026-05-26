@@ -1,7 +1,5 @@
-'use client';
-
+import { useState, useMemo } from 'react';
 import { Home } from 'lucide-react';
-import { useMemo } from 'react';
 import type { ProjectFullV7, ProjectV7 } from '@/modules/inventory/types-v7';
 
 // ✅ Helper to safely format price (uses real column names)
@@ -18,6 +16,12 @@ interface Props {
 }
 
 export function UnitsTab({ property }: Props) {
+  // Local Filter States
+  const [selectedConfig, setSelectedConfig] = useState<string>('All');
+  const [selectedTower, setSelectedTower] = useState<string>('All');
+  const [minPrice, setMinPrice] = useState<string>('');
+  const [maxPrice, setMaxPrice] = useState<string>('');
+
   // ✅ Memoize and sort units alphanumerically by unit number (natural sorting: A1, A2, A3...)
   const sortedUnits = useMemo(() => {
     if (!property.units || property.units.length === 0) return [];
@@ -35,6 +39,30 @@ export function UnitsTab({ property }: Props) {
       count: sortedUnits.filter((u) => u.config === config).length,
     }));
   }, [sortedUnits]);
+
+  // Extract unique towers
+  const towers = useMemo(() => {
+    const list = Array.from(new Set(sortedUnits.map((u) => u.tower).filter(Boolean)));
+    return ['All', ...list];
+  }, [sortedUnits]);
+
+  // Local Filter logic
+  const filteredUnits = useMemo(() => {
+    return sortedUnits.filter((u) => {
+      // 1. Config Filter
+      if (selectedConfig !== 'All' && u.config !== selectedConfig) return false;
+
+      // 2. Tower Filter
+      if (selectedTower !== 'All' && u.tower !== selectedTower) return false;
+
+      // 3. Price Filter
+      const price = u.pricetotal ? Number(u.pricetotal) : 0;
+      if (minPrice && price < Number(minPrice)) return false;
+      if (maxPrice && price > Number(maxPrice)) return false;
+
+      return true;
+    });
+  }, [sortedUnits, selectedConfig, selectedTower, minPrice, maxPrice]);
 
   return (
     <div className="h-full flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -65,17 +93,90 @@ export function UnitsTab({ property }: Props) {
       <div className="p-4 border-b border-slate-200 bg-slate-50/50">
         <div className="flex justify-between items-start mb-4">
           <span className="flex items-center gap-2 font-bold text-slate-700"><Home size={16} /> Unit Inventory</span>
-          <span className="text-xs font-medium bg-white px-2 py-1 rounded border border-slate-200 text-slate-500 shadow-sm">
-            {sortedUnits.length} Total Units
+          <span className="text-xs font-semibold bg-white px-2.5 py-1 rounded-full border border-slate-200 text-slate-500 shadow-sm">
+            {filteredUnits.length === sortedUnits.length 
+              ? `${sortedUnits.length} Total Units` 
+              : `Showing ${filteredUnits.length} of ${sortedUnits.length} Units`}
           </span>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          {summary.map((s) => (
-            <div key={s.config} className="bg-white p-2 rounded border border-slate-200 text-center">
-              <div className="text-[10px] uppercase font-bold text-slate-400">{s.config}</div>
-              <div className="text-sm font-bold text-slate-700">{s.count}</div>
-            </div>
-          ))}
+        <div className="flex flex-wrap gap-2">
+          {summary.map((s) => {
+            const isActive = selectedConfig === s.config;
+            return (
+              <button 
+                key={s.config} 
+                onClick={() => setSelectedConfig(isActive ? 'All' : s.config)}
+                className={`min-w-[90px] p-2 rounded-lg border text-center transition-all cursor-pointer ${
+                  isActive 
+                    ? 'bg-blue-600 border-blue-600 text-white shadow-md font-semibold transform scale-105' 
+                    : 'bg-white border-slate-200 text-slate-700 hover:border-blue-400 hover:bg-blue-50/30'
+                }`}
+              >
+                <div className={`text-[9px] uppercase font-black tracking-wider ${isActive ? 'text-blue-100' : 'text-slate-400'}`}>{s.config}</div>
+                <div className={`text-xs font-bold ${isActive ? 'text-white' : 'text-slate-700'}`}>{s.count} Units</div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Sleek inline filters */}
+        <div className="mt-4 pt-3 border-t border-slate-200/60 flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
+            <span>Filter Unit Details:</span>
+          </div>
+          
+          {/* Tower Selector */}
+          {towers.length > 2 && (
+            <select
+              value={selectedTower}
+              onChange={(e) => setSelectedTower(e.target.value)}
+              className="text-xs font-semibold bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-slate-700 outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition cursor-pointer"
+            >
+              <option value="All">All Towers</option>
+              {towers.filter(t => t !== 'All').map(t => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          )}
+
+          {/* Min Price */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] uppercase font-bold text-slate-400">Min Price (₹)</span>
+            <input
+              type="number"
+              placeholder="e.g. 6000000"
+              value={minPrice}
+              onChange={(e) => setMinPrice(e.target.value)}
+              className="w-28 text-xs font-semibold bg-white border border-slate-200 rounded-lg px-2 py-1 text-slate-700 placeholder-slate-300 focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition"
+            />
+          </div>
+
+          {/* Max Price */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] uppercase font-bold text-slate-400">Max Price (₹)</span>
+            <input
+              type="number"
+              placeholder="e.g. 20000000"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              className="w-28 text-xs font-semibold bg-white border border-slate-200 rounded-lg px-2 py-1 text-slate-700 placeholder-slate-300 focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition"
+            />
+          </div>
+
+          {/* Reset Filters */}
+          {(selectedConfig !== 'All' || selectedTower !== 'All' || minPrice || maxPrice) && (
+            <button
+              onClick={() => {
+                setSelectedConfig('All');
+                setSelectedTower('All');
+                setMinPrice('');
+                setMaxPrice('');
+              }}
+              className="text-xs font-bold text-red-500 hover:text-red-600 transition cursor-pointer"
+            >
+              Clear Filters
+            </button>
+          )}
         </div>
       </div>
 
@@ -93,7 +194,7 @@ export function UnitsTab({ property }: Props) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {sortedUnits.map((u, i) => {
+            {filteredUnits.map((u, i) => {
               const rawUnitNo = u.unitnumber || '';
               const match = rawUnitNo.match(/^([^(]+)(?:\(([^)]+)\))?$/);
               const parsedUnitNo = match ? match[1].trim() : rawUnitNo;
@@ -154,6 +255,25 @@ export function UnitsTab({ property }: Props) {
                   <div className="text-3xl mb-2">🏢</div>
                   <div className="font-medium text-slate-600">No unit data available</div>
                   <div className="text-xs mt-1">Please add units to this project via the edit wizard.</div>
+                </td>
+              </tr>
+            )}
+            {sortedUnits.length > 0 && filteredUnits.length === 0 && (
+              <tr>
+                <td colSpan={6} className="p-12 text-center text-slate-400 bg-slate-50">
+                  <div className="text-2xl mb-2">🔍</div>
+                  <div className="font-medium text-slate-600">No units match your selected filters</div>
+                  <button 
+                    onClick={() => {
+                      setSelectedConfig('All');
+                      setSelectedTower('All');
+                      setMinPrice('');
+                      setMaxPrice('');
+                    }}
+                    className="text-xs text-blue-600 hover:text-blue-700 font-bold underline mt-2 cursor-pointer"
+                  >
+                    Clear all filters
+                  </button>
                 </td>
               </tr>
             )}
