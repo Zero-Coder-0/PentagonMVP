@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useMemo } from 'react';
 import { Home } from 'lucide-react';
 import type { ProjectFullV7, ProjectV7 } from '@/modules/inventory/types-v7';
