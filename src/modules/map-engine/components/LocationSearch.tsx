@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, MapPin, Loader2, X, Crosshair } from 'lucide-react';
+import LocationSearchGoogle from './LocationSearchGoogle';
 
 interface LocationSearchProps {
   onLocationSelect: (lat: number, lng: number, label: string) => void;
@@ -28,10 +29,12 @@ export default function LocationSearch({ onLocationSelect, className = '' }: Loc
   const [results, setResults] = useState<NominatimResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [locating, setLocating] = useState(false); // State for geolocation
+  const [locating, setLocating] = useState(false);
 
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -40,14 +43,16 @@ export default function LocationSearch({ onLocationSelect, className = '' }: Loc
         setIsOpen(false);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Search Debouncing Logic
+  // Search Debouncing Logic for Nominatim
   useEffect(() => {
+    if (apiKey) return; // Skip OSM search completely if Google Maps is active
+
     if (query.length < 3) {
-      if (query !== "Current Location") { // Don't clear if it's the GPS label
+      if (query !== 'Current Location') {
         setResults([]);
         setIsOpen(false);
       }
@@ -56,28 +61,11 @@ export default function LocationSearch({ onLocationSelect, className = '' }: Loc
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
-    // Skip API search if it's the magic "Current Location" string
-    if (query === "Current Location") return;
+    if (query === 'Current Location') return;
 
     debounceRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-        if (!apiKey) {
-          // Fallback to OSM Nominatim if key is not found
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=in&limit=5&addressdetails=1&dedupe=1`
-          );
-          const data = await res.json();
-          setResults(data);
-          setIsOpen(true);
-          return;
-        }
-
-        // Google Places Autocomplete Fetch (JSONP proxy is not needed since it's client fetch, but standard Fetch might face CORS. Let's use clean JSON autocomplete fallback or dynamic load)
-        // Since Google Autocomplete API requires standard script loading or server proxy, the easiest, most reliable, and standard Next.js client-side approach is calling Google's Place Autocomplete API directly or Nominatim. Let's check CORS or call Google's HTTP Places API.
-        // Actually, Google's Place Autocomplete API via HTTP has CORS restrictions on browsers. To call it on browsers directly, it is best to use Google Maps Javascript Autocomplete SDK, OR we can fetch from a simple geocoding service / proxy.
-        // Let's implement Google's Places API fetch logic:
         const res = await fetch(
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=in&limit=5&addressdetails=1&dedupe=1`
         );
@@ -85,18 +73,17 @@ export default function LocationSearch({ onLocationSelect, className = '' }: Loc
         setResults(data);
         setIsOpen(true);
       } catch (err) {
-        console.error("Search failed", err);
+        console.error('Search failed', err);
       } finally {
         setLoading(false);
       }
     }, 400);
-  }, [query]);
+  }, [query, apiKey]);
 
-  const handleSelect = async (item: NominatimResult) => {
+  const handleSelect = (item: NominatimResult) => {
     const lat = parseFloat(item.lat);
     const lng = parseFloat(item.lon);
 
-    // Construct a cleaner label
     const mainName = item.address.suburb || item.address.road || item.address.city_district || item.display_name.split(',')[0];
     const subName = item.address.city || item.address.state || '';
     const label = subName ? `${mainName}, ${subName}` : mainName;
@@ -112,10 +99,9 @@ export default function LocationSearch({ onLocationSelect, className = '' }: Loc
     setIsOpen(false);
   };
 
-  // --- Handle Current Location ---
   const handleCurrentLocation = () => {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
+      alert('Geolocation is not supported by your browser');
       return;
     }
 
@@ -123,18 +109,41 @@ export default function LocationSearch({ onLocationSelect, className = '' }: Loc
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        onLocationSelect(latitude, longitude, "Current Location");
-        setQuery("Current Location");
+        onLocationSelect(latitude, longitude, 'Current Location');
+        setQuery('Current Location');
         setLocating(false);
         setIsOpen(false);
       },
       (error) => {
-        console.warn("Location error:", error.message);
+        console.warn('Location error:', error.message);
         setLocating(false);
       }
     );
   };
 
+  // If Google Maps API Key is active, render the dedicated Google Autocomplete Component
+  if (apiKey) {
+    return (
+      <div className={`flex gap-2 w-full z-[1001] ${className}`}>
+        <LocationSearchGoogle onLocationSelect={onLocationSelect} className="flex-1" />
+        <button
+          onClick={handleCurrentLocation}
+          className="bg-white/95 backdrop-blur-sm px-3 rounded-lg shadow-md border border-slate-200 text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-all active:scale-95 disabled:opacity-50 h-[38px] flex items-center justify-center shrink-0"
+          title="Use Current Location"
+          type="button"
+          disabled={locating}
+        >
+          {locating ? (
+            <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+          ) : (
+            <Crosshair className="w-5 h-5" />
+          )}
+        </button>
+      </div>
+    );
+  }
+
+  // Fallback / default layout using OpenStreetMap Nominatim
   return (
     <div ref={wrapperRef} className={`relative w-full z-[1001] ${className}`}>
       <div className="flex gap-2">
@@ -146,7 +155,9 @@ export default function LocationSearch({ onLocationSelect, className = '' }: Loc
             className="w-full pl-9 pr-8 py-2.5 rounded-lg shadow-md border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 text-slate-800 text-sm font-medium transition-all outline-none bg-white/95 backdrop-blur-sm"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => { if (results.length > 0) setIsOpen(true); }}
+            onFocus={() => {
+              if (results.length > 0) setIsOpen(true);
+            }}
           />
 
           <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
