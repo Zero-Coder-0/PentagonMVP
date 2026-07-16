@@ -243,22 +243,24 @@ const LeafletMap: React.FC<LeafletMapProps> = ({
       )}
 
       {/* Nearby Google Places Search Result Markers (Black Pentagons) */}
-      {nearbySearchResults && nearbySearchResults.map((place: any) => {
-        const isSelected = selectedNearbyProperty?.id === place.id;
-        return (
-          <Marker
-            key={place.id}
-            position={[place.lat, place.lng]}
-            icon={createPentagonIcon(isSelected)}
-            zIndexOffset={isSelected ? 2000 : 1000}
-            eventHandlers={{
-              click: () => {
-                setSelectedNearbyProperty(place);
-              }
-            }}
-          />
-        );
-      })}
+      {nearbySearchResults && nearbySearchResults
+        .filter((place: any) => !place.isLocalDb)
+        .map((place: any) => {
+          const isSelected = selectedNearbyProperty?.id === place.id;
+          return (
+            <Marker
+              key={place.id}
+              position={[place.lat, place.lng]}
+              icon={createPentagonIcon(isSelected)}
+              zIndexOffset={isSelected ? 2000 : 1000}
+              eventHandlers={{
+                click: () => {
+                  setSelectedNearbyProperty(place);
+                }
+              }}
+            />
+          );
+        })}
 
       {/* Property Markers */}
       {items
