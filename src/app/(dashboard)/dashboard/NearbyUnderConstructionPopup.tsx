@@ -354,21 +354,58 @@ export default function NearbyUnderConstructionPopup() {
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">
           <div className="bg-white w-full max-w-lg rounded-[32px] shadow-2xl border border-slate-100 flex flex-col max-h-[80vh] animate-in zoom-in-95 duration-300 relative overflow-hidden">
             {/* Header */}
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-t-[32px]">
-              <div>
-                <h3 className="text-sm font-black text-slate-800">
-                  Nearby: &quot;{nearbySearchQuery}&quot;
-                </h3>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
-                  Sorted by distance • {nearbySearchResults.length} properties
-                </p>
+            <div className="p-6 border-b border-slate-100 flex flex-col gap-4 bg-slate-50/50 rounded-t-[32px]">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-black text-slate-800">
+                    Nearby Properties
+                  </h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                    Sorted by distance • {nearbySearchResults.length} properties found
+                  </p>
+                </div>
+                <button
+                  onClick={() => setNearbySearchPopupOpen(false)}
+                  className="p-1.5 hover:bg-slate-200 rounded-full text-slate-400 hover:text-slate-600 bg-slate-100 transition-colors"
+                >
+                  <X size={16} />
+                </button>
               </div>
-              <button
-                onClick={() => setNearbySearchPopupOpen(false)}
-                className="p-1.5 hover:bg-slate-200 rounded-full text-slate-400 hover:text-slate-600 bg-slate-100 transition-colors"
-              >
-                <X size={16} />
-              </button>
+
+              {/* Dynamic In-Modal Search controls */}
+              <div className="grid grid-cols-4 gap-3 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm items-center">
+                {/* Query Input */}
+                <div className="relative col-span-3">
+                  <input
+                    type="text"
+                    value={localQuery}
+                    onChange={(e) => setLocalQuery(e.target.value)}
+                    onKeyDown={handleKeyPress}
+                    placeholder="Search e.g. underconstruction..."
+                    className="w-full h-9 pl-8 pr-2 bg-transparent text-slate-850 text-xs font-bold focus:outline-none placeholder:text-slate-400 border-none outline-none"
+                    disabled={loading}
+                  />
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                </div>
+
+                {/* Radius Input */}
+                <div className="relative col-span-1 flex items-center gap-1.5 border-l border-slate-150 pl-3">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest shrink-0">
+                    KM
+                  </span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={localRadius}
+                    onChange={(e) => setLocalRadius(Math.max(1, parseInt(e.target.value) || 1))}
+                    onKeyDown={handleKeyPress}
+                    placeholder="5"
+                    className="w-full h-9 bg-transparent font-bold text-slate-800 text-xs focus:outline-none border-none outline-none text-center"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Results List */}
