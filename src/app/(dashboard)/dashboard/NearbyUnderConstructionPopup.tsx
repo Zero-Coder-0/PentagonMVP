@@ -57,36 +57,93 @@ export default function NearbyUnderConstructionPopup() {
     const dummyEl = document.createElement('div');
     const service = new win.google.maps.places.PlacesService(dummyEl);
 
+    // Optimize query for under-construction residential properties
+    let searchQuery = localQuery.trim();
+    if (searchQuery.toLowerCase() === 'underconstruction' || searchQuery.toLowerCase() === 'uc') {
+      searchQuery = 'under construction apartments';
+    } else {
+      const lowerQ = searchQuery.toLowerCase();
+      if (!lowerQ.includes('apartment') && !lowerQ.includes('project') && !lowerQ.includes('villa') && !lowerQ.includes('homes') && !lowerQ.includes('residency')) {
+        searchQuery = `${searchQuery} apartments`;
+      }
+    }
+
     // Bias search around seed location
     const request = {
       location: new win.google.maps.LatLng(userLocation.lat, userLocation.lng),
       radius: 5000, // 5km radius
-      query: `${localQuery} apartments near ${userLocation.displayName}`,
+      query: `${searchQuery} near ${userLocation.displayName}`,
     };
 
     service.textSearch(request, (results: any, status: any) => {
       setLoading(false);
       if (status === win.google.maps.places.PlacesServiceStatus.OK && results) {
-        const processed = results.map((place: any) => {
-          const lat = place.geometry.location.lat();
-          const lng = place.geometry.location.lng();
-          const distance = getDistanceKm(userLocation.lat, userLocation.lng, lat, lng);
-          
-          return {
-            id: place.place_id,
-            place_id: place.place_id,
-            name: place.name,
-            address: place.formatted_address || place.vicinity,
-            lat,
-            lng,
-            distance,
-            rating: place.rating || 0,
-            user_ratings_total: place.user_ratings_total || 0,
-            photoUrl: place.photos && place.photos.length > 0 
-              ? place.photos[0].getUrl({ maxWidth: 400, maxHeight: 300 })
-              : null,
-          };
-        });
+        // Exclude commercial entities, contractors, and offices to focus purely on residential projects
+        const excludedTypes = [
+          'real_estate_agency',
+          'general_contractor',
+          'contractor',
+          'roofing_contractor',
+          'moving_company',
+          'local_government_office',
+          'lawyer',
+          'store',
+          'office',
+          'finance',
+          'bank',
+          'school',
+          'doctor',
+          'physiotherapist',
+          'dentist',
+          'accounting',
+          'insurance_agency',
+          'travel_agency'
+        ];
+
+        const processed = results
+          .filter((place: any) => {
+            if (place.types && place.types.some((t: string) => excludedTypes.includes(t))) {
+              // Keep only if name contains residential keywords
+              const nameLower = place.name.toLowerCase();
+              const hasResidentialKeyword = 
+                nameLower.includes('apartment') || 
+                nameLower.includes('residency') || 
+                nameLower.includes('homes') || 
+                nameLower.includes('villas') || 
+                nameLower.includes('heights') || 
+                nameLower.includes('enclave') || 
+                nameLower.includes('gardens') || 
+                nameLower.includes('flats') || 
+                nameLower.includes('township') || 
+                nameLower.includes('society') ||
+                nameLower.includes('project');
+              
+              if (!hasResidentialKeyword) {
+                return false; // Filter out company/office
+              }
+            }
+            return true;
+          })
+          .map((place: any) => {
+            const lat = place.geometry.location.lat();
+            const lng = place.geometry.location.lng();
+            const distance = getDistanceKm(userLocation.lat, userLocation.lng, lat, lng);
+            
+            return {
+              id: place.place_id,
+              place_id: place.place_id,
+              name: place.name,
+              address: place.formatted_address || place.vicinity,
+              lat,
+              lng,
+              distance,
+              rating: place.rating || 0,
+              user_ratings_total: place.user_ratings_total || 0,
+              photoUrl: place.photos && place.photos.length > 0 
+                ? place.photos[0].getUrl({ maxWidth: 400, maxHeight: 300 })
+                : null,
+            };
+          });
 
         // Sort by distance (ascending)
         processed.sort((a: any, b: any) => a.distance - b.distance);
@@ -196,74 +253,79 @@ export default function NearbyUnderConstructionPopup() {
         </div>
       )}
 
-      {/* 2. RESULTS LIST POPUP (Side Drawer/Panel) */}
+      {/* 2. RESULTS LIST POPUP (Centered Modal Dialog) */}
       {nearbySearchPopupOpen && nearbySearchResults.length > 0 && (
-        <div className="fixed top-20 right-4 z-[1000] w-96 bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl border border-slate-200/80 flex flex-col max-h-[calc(100vh-120px)] animate-in slide-in-from-right-10 duration-300">
-          {/* Header */}
-          <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-t-3xl">
-            <div>
-              <h3 className="text-sm font-black text-slate-800">
-                Nearby: &quot;{nearbySearchQuery}&quot;
-              </h3>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
-                Sorted by distance • {nearbySearchResults.length} properties
-              </p>
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-lg rounded-[32px] shadow-2xl border border-slate-100 flex flex-col max-h-[80vh] animate-in zoom-in-95 duration-300 relative overflow-hidden">
+            {/* Header */}
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-t-[32px]">
+              <div>
+                <h3 className="text-sm font-black text-slate-800">
+                  Nearby: &quot;{nearbySearchQuery}&quot;
+                </h3>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                  Sorted by distance • {nearbySearchResults.length} properties
+                </p>
+              </div>
+              <button
+                onClick={() => setNearbySearchPopupOpen(false)}
+                className="p-1.5 hover:bg-slate-200 rounded-full text-slate-400 hover:text-slate-600 bg-slate-100 transition-colors"
+              >
+                <X size={16} />
+              </button>
             </div>
-            <button
-              onClick={() => setNearbySearchPopupOpen(false)}
-              className="p-1.5 hover:bg-slate-200 rounded-full text-slate-400 hover:text-slate-600 bg-slate-100 transition-colors"
-            >
-              <X size={16} />
-            </button>
-          </div>
 
-          {/* Results List */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-            {nearbySearchResults.map((item) => {
-              const isSelected = selectedNearbyProperty?.id === item.id;
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => setSelectedNearbyProperty(item)}
-                  className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col gap-2 ${
-                    isSelected
-                      ? 'bg-blue-50/70 border-blue-500 shadow-md shadow-blue-50'
-                      : 'bg-white hover:bg-slate-50/80 border-slate-100 hover:border-slate-200 shadow-sm'
-                  }`}
-                >
-                  <div className="flex justify-between items-start gap-2">
-                    <h4 className="text-xs font-bold text-slate-800 line-clamp-1 flex-1">
-                      {item.name}
-                    </h4>
-                    <span className="text-[10px] font-black text-slate-500 bg-slate-100 px-2 py-0.5 rounded shrink-0">
-                      {formatDistanceKm(item.distance)}
-                    </span>
-                  </div>
-
-                  <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
-                    {item.address}
-                  </p>
-
-                  <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-slate-50">
-                    <div className="flex items-center gap-1">
-                      <Star size={12} className="text-amber-400 fill-amber-400" />
-                      <span className="text-[10px] font-bold text-slate-600">
-                        {item.rating > 0 ? item.rating.toFixed(1) : 'No reviews'}
+            {/* Results List */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar">
+              {nearbySearchResults.map((item) => {
+                const isSelected = selectedNearbyProperty?.id === item.id;
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => {
+                      setSelectedNearbyProperty(item);
+                      setNearbySearchPopupOpen(false); // Close list to view details
+                    }}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col gap-2 ${
+                      isSelected
+                        ? 'bg-blue-50/70 border-blue-500 shadow-md shadow-blue-50'
+                        : 'bg-white hover:bg-slate-50/80 border-slate-100 hover:border-slate-200 shadow-sm'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start gap-2">
+                      <h4 className="text-xs font-bold text-slate-800 line-clamp-1 flex-1">
+                        {item.name}
+                      </h4>
+                      <span className="text-[10px] font-black text-slate-500 bg-slate-100 px-2 py-0.5 rounded shrink-0">
+                        {formatDistanceKm(item.distance)}
                       </span>
-                      {item.user_ratings_total > 0 && (
-                        <span className="text-[9px] text-slate-400">
-                          ({item.user_ratings_total})
-                        </span>
-                      )}
                     </div>
 
-                    <span className="text-[9px] font-bold text-blue-600 group-hover:underline flex items-center gap-0.5">
-                      View Details &rarr;
-                    </span>
+                    <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
+                      {item.address}
+                    </p>
+
+                    <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-slate-50">
+                      <div className="flex items-center gap-1">
+                        <Star size={12} className="text-amber-400 fill-amber-400" />
+                        <span className="text-[10px] font-bold text-slate-600">
+                          {item.rating > 0 ? item.rating.toFixed(1) : 'No reviews'}
+                        </span>
+                        {item.user_ratings_total > 0 && (
+                          <span className="text-[9px] text-slate-400">
+                            ({item.user_ratings_total})
+                          </span>
+                        )}
+                      </div>
+
+                      <span className="text-[9px] font-bold text-blue-600 group-hover:underline flex items-center gap-0.5">
+                        View Details &rarr;
+                      </span>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
