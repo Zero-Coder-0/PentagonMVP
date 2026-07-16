@@ -57,15 +57,26 @@ export default function NearbyUnderConstructionPopup() {
     const dummyEl = document.createElement('div');
     const service = new win.google.maps.places.PlacesService(dummyEl);
 
-    // Optimize query for under-construction residential properties
+    // Optimize query for under-construction residential properties or support general search
     let searchQuery = localQuery.trim();
-    if (searchQuery.toLowerCase() === 'underconstruction' || searchQuery.toLowerCase() === 'uc') {
+    const queryLower = searchQuery.toLowerCase();
+    
+    // Check if the user is searching for something residential/property related
+    const isResidentialSearch = 
+      queryLower === 'underconstruction' || 
+      queryLower === 'uc' ||
+      queryLower.includes('apartment') || 
+      queryLower.includes('project') || 
+      queryLower.includes('villa') || 
+      queryLower.includes('homes') || 
+      queryLower.includes('residency') ||
+      queryLower.includes('flat') ||
+      queryLower.includes('builder') ||
+      queryLower.includes('society') ||
+      queryLower.includes('property');
+
+    if (queryLower === 'underconstruction' || queryLower === 'uc') {
       searchQuery = 'under construction apartments';
-    } else {
-      const lowerQ = searchQuery.toLowerCase();
-      if (!lowerQ.includes('apartment') && !lowerQ.includes('project') && !lowerQ.includes('villa') && !lowerQ.includes('homes') && !lowerQ.includes('residency')) {
-        searchQuery = `${searchQuery} apartments`;
-      }
     }
 
     // Bias search around seed location
@@ -78,7 +89,7 @@ export default function NearbyUnderConstructionPopup() {
     service.textSearch(request, (results: any, status: any) => {
       setLoading(false);
       if (status === win.google.maps.places.PlacesServiceStatus.OK && results) {
-        // Exclude commercial entities, contractors, and offices to focus purely on residential projects
+        // Exclude commercial entities, contractors, and offices ONLY for residential searches
         const excludedTypes = [
           'real_estate_agency',
           'general_contractor',
@@ -102,7 +113,7 @@ export default function NearbyUnderConstructionPopup() {
 
         const processed = results
           .filter((place: any) => {
-            if (place.types && place.types.some((t: string) => excludedTypes.includes(t))) {
+            if (isResidentialSearch && place.types && place.types.some((t: string) => excludedTypes.includes(t))) {
               // Keep only if name contains residential keywords
               const nameLower = place.name.toLowerCase();
               const hasResidentialKeyword = 
