@@ -18,6 +18,8 @@ import AlternativesSection from './AlternativesSection';
 import ColumnResizer from './ColumnResizer';
 import DashboardNavbar from './DashboardNavbar';
 import MediaGallery from './MediaGallery';
+import NearbyUnderConstructionPopup from './NearbyUnderConstructionPopup';
+import NearbyPropertyDetail from './NearbyPropertyDetail';
 
 import { generateWhatsAppTemplate } from './MegaPopup/whatsapp-template';
 
@@ -72,6 +74,18 @@ interface DashboardContextType {
 
   isWhatsAppModalOpen: boolean;
   setWhatsAppModalOpen: (open: boolean) => void;
+
+  // Nearby Search States
+  nearbySearchResults: any[];
+  setNearbySearchResults: (results: any[]) => void;
+  nearbySearchQuery: string;
+  setNearbySearchQuery: (query: string) => void;
+  nearbySearchPopupOpen: boolean;
+  setNearbySearchPopupOpen: (open: boolean) => void;
+  selectedNearbyProperty: any | null;
+  setSelectedNearbyProperty: (prop: any | null) => void;
+  nearbySearchPinPopupOpen: boolean;
+  setNearbySearchPinPopupOpen: (open: boolean) => void;
 }
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
@@ -123,6 +137,13 @@ export default function DashboardPage() {
   const [mapBounds, setMapBounds] = useState<[[number, number], [number, number]] | undefined>(undefined);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Nearby Search States
+  const [nearbySearchResults, setNearbySearchResults] = useState<any[]>([]);
+  const [nearbySearchQuery, setNearbySearchQuery] = useState<string>('underconstruction');
+  const [nearbySearchPopupOpen, setNearbySearchPopupOpen] = useState<boolean>(false);
+  const [selectedNearbyProperty, setSelectedNearbyProperty] = useState<any | null>(null);
+  const [nearbySearchPinPopupOpen, setNearbySearchPinPopupOpen] = useState<boolean>(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -257,6 +278,16 @@ export default function DashboardPage() {
     setLeftColumnWidth,
     isWhatsAppModalOpen,
     setWhatsAppModalOpen,
+    nearbySearchResults,
+    setNearbySearchResults,
+    nearbySearchQuery,
+    setNearbySearchQuery,
+    nearbySearchPopupOpen,
+    setNearbySearchPopupOpen,
+    selectedNearbyProperty,
+    setSelectedNearbyProperty,
+    nearbySearchPinPopupOpen,
+    setNearbySearchPinPopupOpen,
   };
 
   return (
@@ -348,6 +379,8 @@ export default function DashboardPage() {
 
         {isWhatsAppModalOpen && <WhatsAppModal />}
       </div>
+      <NearbyUnderConstructionPopup />
+      <NearbyPropertyDetail />
     </DashboardContext.Provider>
   );
 }

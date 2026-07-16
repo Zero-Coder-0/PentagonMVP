@@ -6,6 +6,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { ProjectV7, CityZone as Zone } from '../../inventory/types-v7'; // Using your correct types
 import { getZoneFromCoordinates } from '../utils/geo-zone';
+import { useDashboard } from '@/app/(dashboard)/dashboard/page';
 
 // ==========================================
 // 1. ICONS
@@ -43,6 +44,25 @@ const SearchIcon = new L.Icon({
   shadowSize: [41, 41]
 });
 
+// Custom Pentagon Icon for Nearby Searches
+const createPentagonIcon = (isSelected: boolean) => {
+  const size = isSelected ? 36 : 28;
+  const color = isSelected ? '#2563EB' : 'black'; // Blue when selected, black otherwise
+  const svgHtml = `
+    <svg width="${size}" height="${size}" viewBox="0 0 24 24" style="filter: drop-shadow(0px 3px 5px rgba(0,0,0,0.35)); cursor: pointer;">
+      <path d="M12 2L22 9.27L18.18 21H5.82L2 9.27L12 2Z" fill="${color}" stroke="white" stroke-width="1.5" />
+      <circle cx="12" cy="12" r="3" fill="white" />
+    </svg>
+  `;
+  return L.divIcon({
+    html: svgHtml,
+    className: 'custom-pentagon-marker',
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -size / 2],
+  });
+};
+
 // ==========================================
 // 2. CONTROLLER (Supports Bounds, Center, & FlyTo)
 // ==========================================
@@ -60,6 +80,7 @@ const InteractionController = ({
   bounds?: [[number, number], [number, number]] | undefined
 }) => {
   const map = useMap();
+  const { selectedNearbyProperty } = useDashboard();
 
   // Handle "Fly To Selected" (Single Click behavior)
   useEffect(() => {
@@ -73,6 +94,16 @@ const InteractionController = ({
       }
     }
   }, [selectedId, items, map]);
+
+  // Handle Fly To Nearby Property Selected
+  useEffect(() => {
+    if (selectedNearbyProperty) {
+      map.flyTo([selectedNearbyProperty.lat, selectedNearbyProperty.lng], 16, {
+        animate: true,
+        duration: 1.0
+      });
+    }
+  }, [selectedNearbyProperty, map]);
 
   // Handle Initial Center / Bounds Update
   useEffect(() => {
@@ -138,6 +169,12 @@ const LeafletMap: React.FC<LeafletMapProps> = ({
   bounds
 }) => {
   const mapCenter: [number, number] = center || [12.9716, 77.5946];
+  const {
+    nearbySearchResults,
+    selectedNearbyProperty,
+    setSelectedNearbyProperty,
+    setNearbySearchPinPopupOpen,
+  } = useDashboard();
 
   return (
     <MapContainer
@@ -169,17 +206,32 @@ const LeafletMap: React.FC<LeafletMapProps> = ({
             position={center}
             icon={SearchIcon}
             eventHandlers={{
-              // Right-click resets the seed location (from old code)
+              // Double click opens search modal
+              dblclick: () => {
+                setNearbySearchPinPopupOpen(true);
+              },
+              // Right click (or mobile touch hold) opens search modal
               contextmenu: () => {
-                if (onSeedReset) {
-                  onSeedReset();
-                }
+                setNearbySearchPinPopupOpen(true);
               }
             }}
           >
             <Popup>
-              📍 <strong>Seed Location</strong><br />
-              <span className="text-xs text-slate-500">Right-click to reset</span>
+              <div className="p-2 flex flex-col gap-1 text-slate-700 select-none max-w-[200px]">
+                <div className="font-bold text-xs text-slate-800">📍 Desired Location</div>
+                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">
+                  Search Nearby
+                </div>
+                <div className="text-[10px] text-slate-500 leading-normal">
+                  Double-click or Right-click (long press) to find under-construction properties around here.
+                </div>
+                <button
+                  onClick={() => setNearbySearchPinPopupOpen(true)}
+                  className="mt-2.5 text-[10px] font-black text-white bg-slate-900 hover:bg-slate-800 px-3 py-1.5 rounded-xl transition-all text-center w-full uppercase tracking-wider"
+                >
+                  Search Nearby
+                </button>
+              </div>
             </Popup>
           </Marker>
           <Circle
@@ -189,6 +241,24 @@ const LeafletMap: React.FC<LeafletMapProps> = ({
           />
         </>
       )}
+
+      {/* Nearby Google Places Search Result Markers (Black Pentagons) */}
+      {nearbySearchResults && nearbySearchResults.map((place: any) => {
+        const isSelected = selectedNearbyProperty?.id === place.id;
+        return (
+          <Marker
+            key={place.id}
+            position={[place.lat, place.lng]}
+            icon={createPentagonIcon(isSelected)}
+            zIndexOffset={isSelected ? 2000 : 1000}
+            eventHandlers={{
+              click: () => {
+                setSelectedNearbyProperty(place);
+              }
+            }}
+          />
+        );
+      })}
 
       {/* Property Markers */}
       {items
